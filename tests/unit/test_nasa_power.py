@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 import zarr
 
+import env_data_mcp.sources.nasa_power as _nasa_power_mod
 from env_data_mcp.sources.nasa_power import (
     DEFAULT_VARIABLES,
     LICENSE_INFO,
@@ -73,26 +74,47 @@ _MOCK_GROUP = make_mock_zarr_group()
 
 
 # ---------------------------------------------------------------------------
+# Cache isolation fixture
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _reset_nasa_power_caches():
+    """Clear module-level caches so each test runs with a clean slate."""
+    _nasa_power_mod._cached_group = None
+    _nasa_power_mod._cached_for_group = None
+    _nasa_power_mod._cached_lats = None
+    _nasa_power_mod._cached_lons = None
+    _nasa_power_mod._cached_times = None
+    yield
+    _nasa_power_mod._cached_group = None
+    _nasa_power_mod._cached_for_group = None
+    _nasa_power_mod._cached_lats = None
+    _nasa_power_mod._cached_lons = None
+    _nasa_power_mod._cached_times = None
+
+
+# ---------------------------------------------------------------------------
 # _query_point unit tests
 # ---------------------------------------------------------------------------
 
 
 def test_query_point_returns_correct_date():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_GROUP):
-        records = _query_point(_LAT, _LON, "2019-08-19", "2019-08-19", ["T2M"])
+        records, _ = _query_point(_LAT, _LON, "2019-08-19", "2019-08-19", ["T2M"])
     assert len(records) == 1
     assert records[0]["date"] == "2019-08-19"
 
 
 def test_query_point_multi_day_range():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_GROUP):
-        records = _query_point(_LAT, _LON, "2019-08-17", "2019-08-21", ["T2M"])
+        records, _ = _query_point(_LAT, _LON, "2019-08-17", "2019-08-21", ["T2M"])
     assert len(records) == 5
 
 
 def test_query_point_variable_values():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_GROUP):
-        records = _query_point(_LAT, _LON, "2019-08-19", "2019-08-19", ["T2M", "PRECTOTCORR"])
+        records, _ = _query_point(_LAT, _LON, "2019-08-19", "2019-08-19", ["T2M", "PRECTOTCORR"])
     row = records[0]
     assert pytest.approx(row["T2M"], abs=1e-3) == 20.0
     assert pytest.approx(row["PRECTOTCORR"], abs=1e-3) == 1.5
@@ -100,23 +122,26 @@ def test_query_point_variable_values():
 
 def test_query_point_units_present():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_GROUP):
-        records = _query_point(_LAT, _LON, "2019-08-19", "2019-08-19", ["T2M", "PRECTOTCORR"])
+        records, _ = _query_point(_LAT, _LON, "2019-08-19", "2019-08-19", ["T2M", "PRECTOTCORR"])
     assert records[0]["T2M_units"] == "C"
     assert records[0]["PRECTOTCORR_units"] == "mm/day"
 
 
 def test_query_point_unknown_variable_silently_omitted():
-    """Variables not present in the store are silently omitted from records."""
+    """Variables not present in the store are reported in unavailable_variables."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_GROUP):
-        records = _query_point(_LAT, _LON, "2019-08-19", "2019-08-19", ["T2M", "NONEXISTENT"])
+        records, unavailable = _query_point(
+            _LAT, _LON, "2019-08-19", "2019-08-19", ["T2M", "NONEXISTENT"]
+        )
     assert "T2M" in records[0]
     assert "NONEXISTENT" not in records[0]
+    assert "NONEXISTENT" in unavailable
 
 
 def test_query_point_out_of_range_returns_empty():
     """A date range outside the store data returns an empty list."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_GROUP):
-        records = _query_point(_LAT, _LON, "1960-01-01", "1960-01-03", ["T2M"])
+        records, _ = _query_point(_LAT, _LON, "1960-01-01", "1960-01-03", ["T2M"])
     assert records == []
 
 
@@ -188,13 +213,15 @@ def test_nasa_power_query_default_variables():
 
 
 def test_nasa_power_query_invalid_date_raises():
-    with pytest.raises(ValueError):
-        nasa_power_query(
+    with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_GROUP):
+        result = nasa_power_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="not-a-date",
             end_date="2019-08-19",
         )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"]["error"] is not None
 
 
 def test_nasa_power_query_meta_variables():

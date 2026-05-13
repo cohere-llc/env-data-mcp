@@ -171,12 +171,13 @@ def _query_point(
     start_date: str,
     end_date: str,
     variables: list[str],
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[str]]:
     """Extract time-series records for a single point from the Zarr store.
 
-    Returns a list of dicts, one per day in the closed interval
-    ``[start_date, end_date]``.  Each dict contains a ``date`` key plus
-    ``{VAR}`` and ``{VAR}_units`` keys for every variable found in the store.
+    Returns ``(records, unavailable_variables)`` where ``records`` is a list of
+    dicts, one per day in the closed interval ``[start_date, end_date]``, and
+    ``unavailable_variables`` is the list of requested variable names that were
+    not found in the store.
     """
     group = _open_store()
 
@@ -195,19 +196,22 @@ def _query_point(
     # limits the read to only the chunks that overlap the date window.
     time_indices = np.where(time_mask)[0]
     if len(time_indices) == 0:
-        return []
+        return [], []
     t_start = int(time_indices[0])
     t_end = int(time_indices[-1]) + 1
 
     # Pre-fetch each variable's 1-D time series for the (lat_idx, lon_idx) cell.
     # zarr returns a numpy array for [i:j, i, j] slices.
     variable_data: dict[str, tuple[np.ndarray, str]] = {}
+    unavailable: list[str] = []
     for var in variables:
         if var in group:
             arr = group[var]
             series: np.ndarray = np.asarray(arr[t_start:t_end, lat_idx, lon_idx])  # type: ignore[index]
             units: str = str(arr.attrs.get("units", "unknown"))
             variable_data[var] = (series, units)
+        else:
+            unavailable.append(var)
 
     records: list[dict[str, Any]] = []
     for i, t_val in enumerate(selected_times):
@@ -217,7 +221,7 @@ def _query_point(
             row[f"{var}_units"] = units
         records.append(row)
 
-    return records
+    return records, unavailable
 
 
 # ---------------------------------------------------------------------------
@@ -252,9 +256,6 @@ def nasa_power_query(
     if variables is None:
         variables = DEFAULT_VARIABLES
 
-    parse_date(start_date)
-    parse_date(end_date)
-
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
@@ -267,7 +268,9 @@ def nasa_power_query(
     var_info = {k: VARIABLE_INFO[k] for k in variables if k in VARIABLE_INFO}
     t0 = time.perf_counter()
     try:
-        records = _query_point(latitude, longitude, start_date, end_date, variables)
+        parse_date(start_date)
+        parse_date(end_date)
+        records, unavailable = _query_point(latitude, longitude, start_date, end_date, variables)
         latency = time.perf_counter() - t0
         return {
             "data": records,
@@ -279,6 +282,7 @@ def nasa_power_query(
                 license_info=LICENSE_INFO,
                 variables=variables,
                 variable_info=var_info,
+                unavailable_variables=unavailable if unavailable else None,
             ),
         }
     except Exception as exc:
@@ -337,9 +341,6 @@ def nasa_power_bbox_query(
     if variables is None:
         variables = DEFAULT_VARIABLES
 
-    parse_date(start_date)
-    parse_date(end_date)
-
     query_params: dict[str, Any] = {
         "min_lat": min_lat,
         "max_lat": max_lat,
@@ -356,7 +357,9 @@ def nasa_power_bbox_query(
     var_info = {k: VARIABLE_INFO[k] for k in variables if k in VARIABLE_INFO}
     t0 = time.perf_counter()
     try:
-        records = _query_point(clat, clon, start_date, end_date, variables)
+        parse_date(start_date)
+        parse_date(end_date)
+        records, unavailable = _query_point(clat, clon, start_date, end_date, variables)
         latency = time.perf_counter() - t0
         return {
             "data": records,
@@ -368,6 +371,7 @@ def nasa_power_bbox_query(
                 license_info=LICENSE_INFO,
                 variables=variables,
                 variable_info=var_info,
+                unavailable_variables=unavailable if unavailable else None,
             ),
         }
     except Exception as exc:

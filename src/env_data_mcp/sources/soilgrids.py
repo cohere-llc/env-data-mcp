@@ -1,6 +1,6 @@
 """ISRIC SoilGrids v2.0 REST API adapter.
 
-Data source: ``https://rest.soilgrids.org/soilgrids/v2.0/``
+Data source: ``https://rest.isric.org/soilgrids/v2.0/``
 Coverage: Global land areas, 250 m resolution
 Auth required: No
 License: CC BY 4.0 (ISRIC — World Soil Information)
@@ -30,7 +30,7 @@ LICENSE_INFO: dict[str, str] = {
     ),
 }
 
-_SOILGRIDS_URL = "https://rest.soilgrids.org/soilgrids/v2.0/properties/query"
+_SOILGRIDS_URL = "https://rest.isric.org/soilgrids/v2.0/properties/query"
 
 # Properties to fetch in Phase 1; depth fixed at 0–5 cm.
 _PROPERTIES = ["bdod", "clay", "phh2o", "sand", "silt", "soc"]

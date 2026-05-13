@@ -134,6 +134,7 @@ def build_meta(
     error: str | None = None,
     variables: list[str] | None = None,
     variable_info: dict[str, Any] | None = None,
+    unavailable_variables: list[str] | None = None,
 ) -> dict[str, Any]:
     """Construct the standard _meta dict returned by every tool.
 
@@ -158,6 +159,7 @@ def build_meta(
         "source": source,
         "variables": variables if variables is not None else [],
         "variable_info": variable_info if variable_info is not None else {},
+        "unavailable_variables": unavailable_variables if unavailable_variables is not None else [],
         "rows_returned": rows_returned,
         "latency_s": round(latency_s, 3),
         "auth_required": auth_required,

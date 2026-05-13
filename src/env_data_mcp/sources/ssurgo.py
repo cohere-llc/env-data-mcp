@@ -8,6 +8,7 @@ Auth required: No
 
 from __future__ import annotations
 
+import math
 import time
 import xml.etree.ElementTree as ET
 from typing import Any
@@ -31,28 +32,10 @@ LICENSE_INFO: dict[str, str] = {
 
 _SDA_URL = "https://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService/post.rest"
 
-# Column names in SELECT order — used to build row dicts after XML parsing.
-_COLUMNS = [
-    "mukey",
-    "muname",
-    "musym",
-    "compname",
-    "majcompflag",
-    "drainagecl",
-    "comppct_r",
-    "hzdepb_r",
-    "sandtotal_r",
-    "silttotal_r",
-    "claytotal_r",
-    "ph1to1h2o_r",
-    "om_r",
-    "ksat_r",
-    "dbthirdbar_r",
-]
-
 _NO_COVERAGE_MSG = (
-    "No SSURGO data for this location. "
-    "The point may be outside SSURGO coverage (non-US or unmapped area)."
+    "No SSURGO data were returned for this location. "
+    "The point may be outside SSURGO coverage (non-US or unmapped area), "
+    "or the SDA service may have failed to match the point for this request."
 )
 
 # Plain-language descriptions and expected units for every column returned
@@ -186,6 +169,8 @@ def _fetch_ssurgo(lat: float, lon: float) -> tuple[list[dict[str, Any]], float]:
     (longitude latitude).
     """
     wkt = f"POINT({float(lon)} {float(lat)})"
+    if not (math.isfinite(lat) and math.isfinite(lon)):
+        raise ValueError(f"lat and lon must be finite numbers; got lat={lat!r}, lon={lon!r}")
     sql = _build_sql(wkt)
     t0 = time.perf_counter()
     with httpx.Client(timeout=30.0) as client:

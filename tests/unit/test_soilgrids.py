@@ -21,7 +21,7 @@ from env_data_mcp.sources.soilgrids import (
 # JSON response fixture
 # ---------------------------------------------------------------------------
 
-_SOILGRIDS_URL = "https://rest.soilgrids.org/soilgrids/v2.0/properties/query"
+_SOILGRIDS_URL = "https://rest.isric.org/soilgrids/v2.0/properties/query"
 
 # Realistic SoilGrids v2.0 JSON response for a Yakima River point.
 # Values are in mapped units; d_factor converts to target units.

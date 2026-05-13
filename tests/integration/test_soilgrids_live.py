@@ -33,9 +33,11 @@ def _require_soilgrids_api() -> None:
         pytest.skip(f"SoilGrids REST API not reachable: {exc}")
 
 
-# Yakima River WA: confirmed land point with SoilGrids coverage
-_LAT = 46.2531882
-_LON = -119.4768203
+# Yakima Valley WA farmland: confirmed land point with SoilGrids coverage.
+# Note: the river channel itself (46.2531882, -119.4768203) returns null values
+# because SoilGrids excludes water bodies; this point is on adjacent cropland.
+_LAT = 46.30
+_LON = -119.50
 
 
 @pytest.mark.integration
