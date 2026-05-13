@@ -63,6 +63,10 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.ruff.lint.isort]
 known-first-party = ["env_data_mcp"]
 
+[tool.ruff.lint.per-file-ignores]
+# server.py: side-effect imports must follow `mcp = FastMCP(...)` definition
+"src/env_data_mcp/server.py" = ["E402", "F401", "I001"]
+
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "standard"

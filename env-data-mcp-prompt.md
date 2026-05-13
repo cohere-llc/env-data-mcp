@@ -7,7 +7,7 @@
 **Companion plan**: `env-data-prompt.md` — BERIL integration work (logging, Lakehouse, demo notebooks)  
 **Reference templates**: `~/git-repos/external-data-gallery` (NASA POWER Zarr, SSURGO, GBIF, Earth Engine)
 
-> **How to read this plan**: Each phase section lists implementation steps, the helper functions to extract, the tests to write alongside, and (boxed) any account registrations you need to complete before that step. The cross-cutting sections on [Data Licenses](#data-licenses), [Automated Testing Strategy](#automated-testing-strategy), [Reproducibility Practices](#reproducibility-practices), and [Local and Lakehouse Testing](#local-and-lakehouse-testing) provide the standards every implementation step must follow.
+> **How to read this plan**: Each phase section lists implementation steps, the helper functions to extract, the tests to write alongside, and (boxed) any account registrations you need to complete before that step. The cross-cutting sections on [Data Licenses](#data-licenses), [Variable Metadata Standards](#variable-metadata-standards), [Graceful Upstream Failure Handling](#graceful-upstream-failure-handling), [Query Optimization](#query-optimization), [Automated Testing Strategy](#automated-testing-strategy), [Reproducibility Practices](#reproducibility-practices), and [Local and Lakehouse Testing](#local-and-lakehouse-testing) provide the standards every implementation step must follow.
 
 ---
 
@@ -239,6 +239,137 @@ Terms: https://power.larc.nasa.gov/docs/services/terms-conditions/
 
 ## SSURGO ...
 ```
+
+---
+
+## Variable Metadata Standards
+
+Every source module must expose a `VARIABLE_INFO` constant (a dict of variable-name → metadata dict) and include a filtered copy in every tool response under `_meta.variable_info`. This ensures that any LLM or downstream consumer can interpret values without needing external documentation.
+
+### Required format
+
+```python
+# Pattern in each source module
+VARIABLE_INFO: dict[str, dict[str, str]] = {
+    "T2M": {
+        "description": "Air temperature at 2 meters above ground",
+        "units": "°C",
+        "valid_range": "−90 to 60",
+    },
+    "PRECTOTCORR": {
+        "description": "Bias-corrected total precipitation",
+        "units": "mm/day",
+        "valid_range": "0 to ~300",
+    },
+    # ...
+}
+```
+
+### Including in `_meta`
+
+`build_meta()` accepts a `variable_info` keyword argument. Pass the slice of `VARIABLE_INFO` corresponding to the requested variables:
+
+```python
+build_meta(
+    source="nasa_power",
+    ...,
+    variables=variables,
+    variable_info={k: VARIABLE_INFO[k] for k in variables if k in VARIABLE_INFO},
+)
+```
+
+The resulting `_meta` will contain:
+```json
+"variable_info": {
+  "T2M": {"description": "Air temperature at 2 m above ground", "units": "°C", "valid_range": "−90 to 60"},
+  "PRECTOTCORR": {"description": "Bias-corrected total precipitation", "units": "mm/day", "valid_range": "0 to ~300"}
+}
+```
+
+### Testing variable metadata
+
+Every source unit test must assert:
+1. `_meta.variable_info` is present and non-empty
+2. Each requested variable appears as a key in `variable_info`
+3. `variable_info[var]["units"]` matches the `{var}_units` values in the data records
+4. Numeric values in data records fall within the documented `valid_range`
+
+---
+
+## Graceful Upstream Failure Handling
+
+Every source tool must return a structured error response (never raise an unhandled exception) when the upstream data source is unavailable, returns an error, or changes its schema unexpectedly. This lets multi-source workflows continue running even when individual sources are down.
+
+### Required pattern
+
+```python
+@mcp.tool()
+def source_query(latitude, longitude, ...) -> dict[str, Any]:
+    t0 = time.perf_counter()
+    try:
+        data, latency = _fetch(latitude, longitude)
+        ...
+        return {"data": data, "_meta": build_meta(..., success=True)}
+    except Exception as exc:
+        latency = time.perf_counter() - t0
+        return {
+            "data": [],   # or {} for single-record sources
+            "_meta": build_meta(
+                ...,
+                latency_s=latency,   # always capture latency even on error
+                success=False,
+                error=str(exc),
+            ),
+        }
+```
+
+Key rules:
+- **Always capture `latency`** even when an exception is raised (use `time.perf_counter() - t0` in the `except` block, not a hardcoded `0.0`)
+- **Never re-raise** — the caller must be able to inspect `_meta.success` and `_meta.error` without catching exceptions
+- **Distinguish service-down from empty results**: HTTP 4xx/5xx or network errors → `success=False, error=<exception text>`; empty spatial coverage → `success=True, data=[], error="No data for this location"`
+- **Integration tests for externally-hosted APIs** must include an availability guard that skips all tests in the module when the upstream service is unreachable (rather than failing with confusing assertion errors):
+
+```python
+@pytest.fixture(scope="module", autouse=True)
+def _require_api_available() -> None:
+    try:
+        r = httpx.get(API_HEALTH_URL, timeout=5)
+        if r.status_code >= 500:
+            pytest.skip(f"API returned HTTP {r.status_code} — service may be paused")
+    except Exception as exc:
+        pytest.skip(f"API not reachable: {exc}")
+```
+
+---
+
+## Query Optimization
+
+Every source implementation must include an explicit optimization step. Environmental data sources are large (global grids, multi-decade time series, high-resolution imagery) and naive queries can fetch orders of magnitude more data than needed. The optimization step is **not optional** and must be completed before the source module is considered done.
+
+### Optimization checklist for each source
+
+1. **Slice before loading** — for array/raster sources (Zarr, NetCDF, WCS), always narrow the time and space dimensions *before* downloading chunks. Never load the full array and filter in memory.
+2. **Minimize S3 round-trips** — fetch only the zarr chunks that contain the requested spatial cells and time steps. One well-constructed slice request can replace thousands of individual chunk fetches.
+3. **Cache expensive metadata** — coordinate arrays (lat/lon/time) that don't change between calls should be loaded once and cached at module level.
+4. **Enforce size caps on unbounded queries** — any query that could return an unbounded number of rows (GBIF, OpenAQ) must enforce a `limit` parameter and report `_meta.capped = True` when the cap is reached.
+5. **Document the optimization** — add a comment in the source code explaining *what* was optimized and *why* (e.g., `# Slice time dimension first — arr[:, lat_idx, lon_idx] loads 40+ years; t_start:t_end limits to requested window`).
+
+### Per-source optimization notes (Phase 1)
+
+**NASA POWER (Zarr/S3)**:
+- Open the store once per process and cache the `zarr.Group` at module level — S3 metadata roundtrips on every call are expensive
+- Decode the time coordinate once and cache it alongside the group (or at minimum avoid redundant `group["time"][:]` loads when the group is already open)
+- Use `arr[t_start:t_end, lat_idx, lon_idx]` not `arr[:, lat_idx, lon_idx]` — the full MERRA-2 daily record is 40+ years; narrow the time window to only the requested date range before pulling chunks
+- The `CacheStore` wrapper means repeated queries over the same chunks are served from RAM instead of S3 — warm-cache queries should be near-instant
+
+**SSURGO (SDA REST)**:
+- The SQL query already joins component + horizon in a single POST, avoiding multiple round-trips
+- The query uses `SDA_Get_Mukey_from_intersection_with_WktWgs84()` which is server-side; no client-side spatial filtering needed
+- Only `majcompflag = 'Yes'` rows are returned — avoid fetching all components for a map unit
+
+**SoilGrids (REST or WCS)**:
+- Batch all properties in a single request rather than one request per property (the REST API accepts `property` as a repeatable parameter)
+- If switching to WCS: use tight bounding boxes (single pixel or small buffer), not continent-wide extents
 
 ---
 
@@ -510,7 +641,14 @@ Where a data source exposes a version, publication date, or DOI, include it:
 - **Unit tests**: mock the WCS HTTP response with a tiny in-memory GeoTIFF
 - **Integration test**: yakimariver point; assert all 6 properties present and in plausible ranges (e.g., sand 0–100%, pH 3–9)
 
-**Step 1.4 — End-to-end Phase 1 test**
+**Step 1.4 — Optimize Phase 1 queries**
+
+Apply the optimization checklist from [Query Optimization](#query-optimization) to all three sources:
+- **NASA POWER**: verify `arr[t_start:t_end, lat_idx, lon_idx]` slicing is in place; profile a single-day query and confirm it completes in < 5 s on a cold cache (first open) and < 0.5 s on a warm cache
+- **SSURGO**: confirm single-POST SQL join is in place; no further optimization needed for point queries
+- **SoilGrids**: confirm all properties are fetched in one request (not one per property); verify `timeout` is set and not unbounded
+
+**Step 1.5 — End-to-end Phase 1 test**
 - Run `pytest tests/unit/` (zero network calls, \< 30 s)
 - Run `pytest tests/integration/ -m integration -k "nasa_power or ssurgo or soilgrids"` against real APIs
 - Start the MCP server locally and run a manual call (see [Local Testing Walkthrough](#local-and-lakehouse-testing))
@@ -885,19 +1023,29 @@ def test_openaq_returns_expected_shape(httpx_mock: HTTPXMock):
 
 ### Integration test design: API change detection
 
-Integration tests must include **schema stability assertions** that will fail if the upstream API renames a field, changes a URL, or alters units. This is the primary mechanism for detecting upstream changes:
+Integration tests must include **schema stability assertions** that will fail if the upstream API renames a field, changes a URL, or alters units. This is the primary mechanism for detecting upstream changes.
+
+**Value-range assertions** are required for all numeric variables. These catch unit changes (e.g., if a variable switches from °C to K) as well as fill-value leakage:
 
 ```python
 # Annotate each assertion with what it's detecting
 assert "T2M" in row, "NASA POWER: T2M variable renamed or removed"
 assert row["T2M_units"] == "C", "NASA POWER: T2M units changed from Celsius"
+assert -90.0 <= row["T2M"] <= 60.0, f"NASA POWER: T2M={row['T2M']} outside physical range — fill value or unit change?"
 assert "decimalLatitude" in gbif_row, "GBIF Parquet schema: column renamed"
 assert result["_meta"]["rows_returned"] > 0, "OpenAQ: no data for known-active station area"
 ```
 
-When a nightly integration test fails:
-1. GitHub Issue is auto-created with the failure log (see Phase 4.2)
-2. Investigate whether it is an upstream change or a transient error (retry manually)
+**Variable metadata assertions** verify the `_meta.variable_info` dict is populated and consistent with data values:
+
+```python
+assert "variable_info" in result["_meta"]
+info = result["_meta"]["variable_info"]
+assert "T2M" in info
+assert info["T2M"]["units"] == row["T2M_units"], "variable_info units disagree with data row units"
+```
+
+Unit tests must include these same assertions against mock data, so any code change that breaks value semantics is caught before reaching integration tests.
 3. If upstream changed: update the adapter, bump the pinned dependency if needed, update the assertion with the new expected value, and note the change in `CHANGELOG.md`
 
 ### Mocking S3 sources
