@@ -49,7 +49,7 @@ uv sync --extra dev
 uv run pytest tests/unit/ -m "not integration" -v
 ```
 
-Expected output: **62 passed** covering `helpers.py` and `models.py` at 100 %.
+Expected output: all unit tests pass, with `helpers.py` and `models.py` at 100 % coverage.
 
 ### Run tests with coverage report
 
