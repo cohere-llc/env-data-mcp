@@ -122,13 +122,13 @@ class TestDateRange:
             DateRange(start_date="2023-06-01", end_date="2023-05-01")
 
     def test_rejects_invalid_start_date_format(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             DateRange(start_date="05/01/2023", end_date="2023-06-01")
 
     def test_rejects_invalid_end_date_format(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             DateRange(start_date="2023-05-01", end_date="June 1 2023")
 
     def test_rejects_datetime_in_start(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             DateRange(start_date="2023-05-01T00:00:00", end_date="2023-06-01")

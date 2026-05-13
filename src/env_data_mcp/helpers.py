@@ -94,10 +94,24 @@ def clamp_bbox(bbox: dict[str, float], *, max_degrees: float = 10.0) -> dict[str
     if lat_span > max_degrees:
         result["min_lat"] = clat - half
         result["max_lat"] = clat + half
+        # Shift window back into valid latitude range [-90, 90] while preserving span.
+        if result["max_lat"] > 90.0:
+            result["min_lat"] -= result["max_lat"] - 90.0
+            result["max_lat"] = 90.0
+        elif result["min_lat"] < -90.0:
+            result["max_lat"] += -90.0 - result["min_lat"]
+            result["min_lat"] = -90.0
 
     if lon_span > max_degrees:
         result["min_lon"] = clon - half
         result["max_lon"] = clon + half
+        # Shift window back into valid longitude range [-180, 180] while preserving span.
+        if result["max_lon"] > 180.0:
+            result["min_lon"] -= result["max_lon"] - 180.0
+            result["max_lon"] = 180.0
+        elif result["min_lon"] < -180.0:
+            result["max_lon"] += -180.0 - result["min_lon"]
+            result["min_lon"] = -180.0
 
     return result
 

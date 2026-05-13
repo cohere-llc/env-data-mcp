@@ -318,3 +318,47 @@ class TestClampBbox:
         }
         result = clamp_bbox(bbox)
         assert result == bbox
+
+    def test_clamp_near_north_pole_stays_within_valid_range(self) -> None:
+        # Centroid = 90, naive clamp to 10° would give max_lat = 95.
+        # Fix must shift window down to [80, 90] and preserve span.
+        bbox = {"min_lat": 82.0, "max_lat": 98.0, "min_lon": 0.0, "max_lon": 1.0}
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            result = clamp_bbox(bbox, max_degrees=10.0)
+        assert result["max_lat"] == pytest.approx(90.0)
+        assert result["min_lat"] == pytest.approx(80.0)
+        assert result["max_lat"] - result["min_lat"] == pytest.approx(10.0)
+
+    def test_clamp_near_south_pole_stays_within_valid_range(self) -> None:
+        # Centroid = -90, naive clamp to 10° would give min_lat = -95.
+        # Fix must shift window up to [-90, -80] and preserve span.
+        bbox = {"min_lat": -98.0, "max_lat": -82.0, "min_lon": 0.0, "max_lon": 1.0}
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            result = clamp_bbox(bbox, max_degrees=10.0)
+        assert result["min_lat"] == pytest.approx(-90.0)
+        assert result["max_lat"] == pytest.approx(-80.0)
+        assert result["max_lat"] - result["min_lat"] == pytest.approx(10.0)
+
+    def test_clamp_near_antimeridian_stays_within_valid_range(self) -> None:
+        # Centroid lon = 178, naive clamp to 10° would give max_lon = 183.
+        # Fix must shift window left to [170, 180] and preserve span.
+        bbox = {"min_lat": 0.0, "max_lat": 1.0, "min_lon": 160.0, "max_lon": 196.0}
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            result = clamp_bbox(bbox, max_degrees=10.0)
+        assert result["max_lon"] == pytest.approx(180.0)
+        assert result["min_lon"] == pytest.approx(170.0)
+        assert result["max_lon"] - result["min_lon"] == pytest.approx(10.0)
+
+    def test_clamp_near_western_antimeridian_stays_within_valid_range(self) -> None:
+        # Centroid lon = -178, naive clamp to 10° would give min_lon = -183.
+        # Fix must shift window right to [-180, -170] and preserve span.
+        bbox = {"min_lat": 0.0, "max_lat": 1.0, "min_lon": -196.0, "max_lon": -160.0}
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            result = clamp_bbox(bbox, max_degrees=10.0)
+        assert result["min_lon"] == pytest.approx(-180.0)
+        assert result["max_lon"] == pytest.approx(-170.0)
+        assert result["max_lon"] - result["min_lon"] == pytest.approx(10.0)
