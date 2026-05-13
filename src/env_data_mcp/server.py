@@ -19,10 +19,10 @@ mcp = FastMCP(
 )
 
 # Source modules register their tools against this mcp instance.
-# Uncomment each import as the corresponding phase is implemented:
-# from env_data_mcp.sources import nasa_power   # Phase 1
-# from env_data_mcp.sources import ssurgo        # Phase 1
-# from env_data_mcp.sources import soilgrids     # Phase 1
+# Each import has side-effects: tool functions are decorated with @mcp.tool().
+from env_data_mcp.sources import nasa_power  # Phase 1
+from env_data_mcp.sources import soilgrids  # Phase 1
+from env_data_mcp.sources import ssurgo  # Phase 1
 # from env_data_mcp.sources import gbif          # Phase 2
 # from env_data_mcp.sources import sentinel5p    # Phase 2
 # from env_data_mcp.sources import openaq        # Phase 2
