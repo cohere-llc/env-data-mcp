@@ -1,0 +1,2 @@
+# Example notebooks are added here as sources are implemented.
+# Run with: pytest notebooks/ --nbmake

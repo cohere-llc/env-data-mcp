@@ -1,0 +1,3 @@
+# Integration tests live here.
+# Each file is named test_<source>_live.py and marked @pytest.mark.integration.
+# Run with: pytest tests/integration/ -m integration
