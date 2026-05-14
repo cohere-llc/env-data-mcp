@@ -12,6 +12,12 @@ PNNL_BBOX / PNNL_START / PNNL_END: 4-corner bounding box for the PNNL
 """
 
 import pytest
+from dotenv import load_dotenv
+
+# Load .env from the repo root so that integration tests can find credentials
+# (EARTHDATA_TOKEN, OPENAQ_API_KEY, ESSDIVE_TOKEN, etc.) without requiring the
+# caller to manually `source .env` before running pytest.
+load_dotenv()
 
 # ---------------------------------------------------------------------------
 # GROW point-sample fixtures

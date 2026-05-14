@@ -5,6 +5,8 @@ All httpx calls are intercepted by pytest-httpx; no network access required.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from env_data_mcp.sources.openaq import (
@@ -22,6 +24,9 @@ from env_data_mcp.sources.openaq import (
 _YAKIMA_LAT = 46.2531882
 _YAKIMA_LON = -119.4768203
 _API_KEY = "test-api-key-1234"
+
+# Matches any request to the /locations endpoint regardless of query-param format.
+_LOCATIONS_URL_RE = re.compile(rf"{re.escape(_OPENAQ_BASE)}/locations\?")
 
 _LOCATION_RESPONSE = {
     "results": [
@@ -101,7 +106,7 @@ def test_openaq_query_no_api_key_returns_auth_error(_unset_api_key):
 
 def test_openaq_query_success(_set_api_key, httpx_mock):
     httpx_mock.add_response(
-        url=f"{_OPENAQ_BASE}/locations?coordinates={_YAKIMA_LAT},{_YAKIMA_LON}&radius=50000&limit=100",
+        url=_LOCATIONS_URL_RE,
         json=_LOCATION_RESPONSE,
     )
     httpx_mock.add_response(
@@ -131,7 +136,7 @@ def test_openaq_query_success(_set_api_key, httpx_mock):
 
 def test_openaq_query_meta_fields(_set_api_key, httpx_mock):
     httpx_mock.add_response(
-        url=f"{_OPENAQ_BASE}/locations?coordinates={_YAKIMA_LAT},{_YAKIMA_LON}&radius=50000&limit=100",
+        url=_LOCATIONS_URL_RE,
         json=_LOCATION_RESPONSE,
     )
     httpx_mock.add_response(
@@ -160,7 +165,7 @@ def test_openaq_query_meta_fields(_set_api_key, httpx_mock):
 
 def test_openaq_query_variable_info_contains_units(_set_api_key, httpx_mock):
     httpx_mock.add_response(
-        url=f"{_OPENAQ_BASE}/locations?coordinates={_YAKIMA_LAT},{_YAKIMA_LON}&radius=50000&limit=100",
+        url=_LOCATIONS_URL_RE,
         json={"results": []},
     )
     result = openaq_query(
@@ -182,7 +187,7 @@ def test_openaq_query_variable_info_contains_units(_set_api_key, httpx_mock):
 
 def test_openaq_query_no_stations_returns_success_empty(_set_api_key, httpx_mock):
     httpx_mock.add_response(
-        url=f"{_OPENAQ_BASE}/locations?coordinates={_YAKIMA_LAT},{_YAKIMA_LON}&radius=50000&limit=100",
+        url=_LOCATIONS_URL_RE,
         json={"results": []},
     )
     result = openaq_query(
@@ -204,7 +209,7 @@ def test_openaq_query_no_stations_returns_success_empty(_set_api_key, httpx_mock
 
 def test_openaq_query_http_error_returns_structured(_set_api_key, httpx_mock):
     httpx_mock.add_response(
-        url=f"{_OPENAQ_BASE}/locations?coordinates={_YAKIMA_LAT},{_YAKIMA_LON}&radius=50000&limit=100",
+        url=_LOCATIONS_URL_RE,
         status_code=500,
         text="Internal Server Error",
     )
@@ -226,7 +231,7 @@ def test_openaq_query_http_error_returns_structured(_set_api_key, httpx_mock):
 
 def test_openaq_query_params_echoed(_set_api_key, httpx_mock):
     httpx_mock.add_response(
-        url=f"{_OPENAQ_BASE}/locations?coordinates={_YAKIMA_LAT},{_YAKIMA_LON}&radius=50000&limit=100",
+        url=_LOCATIONS_URL_RE,
         json={"results": []},
     )
     result = openaq_query(
@@ -271,7 +276,7 @@ def test_openaq_query_capped_flag_set(_set_api_key, httpx_mock):
         ]
     }
     httpx_mock.add_response(
-        url=f"{_OPENAQ_BASE}/locations?coordinates={_YAKIMA_LAT},{_YAKIMA_LON}&radius=50000&limit=100",
+        url=_LOCATIONS_URL_RE,
         json=loc_response,
     )
     httpx_mock.add_response(

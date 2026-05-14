@@ -168,8 +168,8 @@ When `bbox` is provided, point tools use the centroid for raster sources (NASA P
 | OpenAQ | `openaq_query` | None | Global, 2016–present |
 | OCO-2/OCO-3 L3 | `oco2_query` | NASA EarthData (free) | Global, 2014–present |
 | EMIT hyperspectral | `emit_query` | NASA EarthData (same) | Global land, Aug 2022–present |
-| ESS-DIVE Deep Dive | `essdive_query` | ESS-DIVE token (free) | DOE field datasets |
-| Google Earth Engine | `gee_query` | Google account + GEE project | Any GEE dataset |
+| ESS-DIVE Deep Dive | `essdive_query`, `essdive_bbox_query` | ESS-DIVE token (free) | DOE field datasets | ✅ Phase 3, Step 3.3 |
+| Google Earth Engine | `gee_query` | Google account + GEE project | Any GEE dataset | *(deferred — exploring free-tier alternatives)* |
 
 **Not included** (covered by GeoTap): USGS NWIS, EPA ATTAINS, NOAA rainfall, NWI, FEMA.
 
@@ -380,7 +380,7 @@ env-data-mcp/
 ├── pyproject.toml              # Package config; entry point: env-data-mcp
 ├── README.md                   # Installation, credential setup, .mcp.json snippet
 ├── LICENSES.md                 # Per-source license and citation text (see Data Licenses)
-├── .env.example                # Template: EARTHDATA_TOKEN, ESSDIVE_TOKEN, etc.
+├── .env.example                # Template: EARTHDATA_TOKEN, OPENAQ_API_KEY (ESS-DIVE and GEE deferred)
 ├── src/
 │   └── env_data_mcp/
 │       ├── __init__.py
@@ -423,8 +423,8 @@ env-data-mcp/
         ├── test_openaq_live.py
         ├── test_oco2_live.py       # requires EARTHDATA creds
         ├── test_emit_live.py       # requires EARTHDATA creds
-        ├── test_essdive_live.py    # requires ESSDIVE_TOKEN
-        └── test_gee_live.py        # requires GOOGLE_APPLICATION_CREDENTIALS
+        ├── test_essdive_live.py    # requires ESSDIVE_TOKEN  [DEFERRED]
+        └── test_gee_live.py        # requires GOOGLE_APPLICATION_CREDENTIALS  [DEFERRED]
 ```
 
 ### `pyproject.toml` key dependencies
@@ -506,6 +506,35 @@ def oco2_query(latitude, longitude, start_date, end_date):
                                         "auth_present": True, "success": True, ...}}
 ```
 
+**Expired token handling**
+
+EarthData bearer tokens expire every few months. An expired token returns HTTP 401 — the same status as an absent token. Always check for 401 *after* confirming the token is present, so the error message tells the user to *regenerate* rather than *register*:
+
+```python
+token = os.environ.get("EARTHDATA_TOKEN")
+if not token:
+    return auth_missing_response(source, ...)  # token never set up
+
+resp = httpx.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=30)
+if resp.status_code == 401:
+    return {
+        "data": [],
+        "_meta": {
+            "source": source, "auth_required": True, "auth_present": True,
+            "success": False, "rows_returned": 0, "latency_s": elapsed,
+            "error": (
+                "EarthData token rejected (HTTP 401) — token may be expired. "
+                "Tokens expire every few months. Regenerate at "
+                "https://urs.earthdata.nasa.gov/ → Profile → Generate Token "
+                "and update EARTHDATA_TOKEN in .env."
+            ),
+        },
+    }
+resp.raise_for_status()
+```
+
+Key distinction: `auth_present=True` (the env var is set) but `success=False` (the token was rejected). This lets callers and logs distinguish "user hasn't registered" from "user needs to renew their token".
+
 NASA EarthData supports bearer tokens for all EDL-compliant applications (including OPeNDAP).
 A bearer token is preferred over username/password: it is a single env var, requires no
 `~/.netrc`, and can be revoked without changing your password.
@@ -514,8 +543,9 @@ Generate a token at: https://urs.earthdata.nasa.gov/ → Profile → Generate To
 | Source | Env var | Registration URL |
 |---|---|---|
 | OCO-2, EMIT | `EARTHDATA_TOKEN` | https://urs.earthdata.nasa.gov/ |
+| OpenAQ | `OPENAQ_API_KEY` | https://explore.openaq.org/ |
 | ESS-DIVE | `ESSDIVE_TOKEN` | https://data.ess-dive.lbl.gov/ |
-| GEE | `GOOGLE_APPLICATION_CREDENTIALS` | https://console.cloud.google.com/ + GEE project approval |
+| GEE *(deferred)* | `GOOGLE_APPLICATION_CREDENTIALS` | https://console.cloud.google.com/ + GEE project approval |
 
 ---
 
@@ -749,22 +779,18 @@ No additional registration needed. EMIT uses the same `EARTHDATA_TOKEN`.
   - Return records with `mineral_name`, `abundance`, `granule_id`
   - `LICENSE_INFO` constant
 
-**⚠️ Account registration: ESS-DIVE (do before Step 3.3)**
-
-Required for `essdive_query`.
-
-1. Register at https://data.ess-dive.lbl.gov/ — click "Sign Up" (uses ORCID or Google; free)
-2. Log in → Account Settings → API Tokens → generate a token
-3. Add to `.env`: `ESSDIVE_TOKEN=<your token>`
-4. Verify: `curl -H "Authorization: Bearer $ESSDIVE_TOKEN" https://data.ess-dive.lbl.gov/api/v1/packages?limit=1`
-
-**Step 3.3 — `essdive_query`**
+**Step 3.3 — `essdive_query` + `essdive_bbox_query`** ✅ Complete
 
 - Implement `sources/essdive.py`:
-  - Dataset search: `GET /api/v1/packages?location={lat},{lon}&radius={radius_km}km`
-  - For each result, call Deep Dive: `GET /api/v1/deepdive?packageId={id}&fieldName={field_name}`
-  - Extract `license` from dataset metadata and propagate into `_meta.license` (per-dataset, not a constant)
+  - API base: `https://api.ess-dive.lbl.gov/packages` (Bearer token auth)
+  - Point search: `GET /packages?lat={lat}&lon={lon}&radius={radius_m}&isPublic=true`
+  - Bbox search: `GET /packages?bbox={min_lat},{min_lon},{max_lat},{max_lon}&isPublic=true`
+  - Optional: `beginDate`, `endDate`, `text` free-text filter, `pageSize` (max 100), cursor pagination
+  - Each result includes `license` in the `dataset` object — aggregate unique licenses into `_meta.license`
+  - Extract per-dataset: `doi`, `title`, `license`, `date_published`, `temporal_start/end`, `keywords`, `variables_measured`, `description`, `url`
   - `LICENSE_INFO` stub: `{"license": "Varies per dataset; see _meta.license", "license_url": "https://data.ess-dive.lbl.gov"}`
+
+> **⚠️ DEFERRED:** GEE free-tier options are still being evaluated. Resume Step 3.4 when a solution is confirmed.
 
 **⚠️ Account registration: Google / GEE (do before Step 3.4 — may take 1–3 days for approval)**
 
@@ -778,7 +804,7 @@ Required for `gee_query`.
 6. Also set `GEE_PROJECT=<your cloud project id>`
 7. Verify: `python -c "import ee; ee.Initialize(); print(ee.Image('COPERNICUS/S2').getInfo())"`
 
-**Step 3.4 — `gee_query`**
+**Step 3.4 — `gee_query`** *(DEFERRED)*
 
 *Reference*: `external-data-gallery/notebooks/earth-engine/alpha-earth.ipynb`
 
@@ -793,7 +819,7 @@ Required for `gee_query`.
 - **Integration test**: yakimariver, Sentinel-2 SR, Aug 2019, bands `["B4", "B3", "B2"]`
 
 **Step 3.5 — End-to-end Phase 3 test**
-- `pytest tests/integration/ -m integration` — all 10 sources pass
+- `pytest tests/integration/ -m integration` — all 9 active sources pass (GEE deferred)
 - Update `notebooks/grow_point_sample_demo.ipynb` to include auth-required sources for at least 2 GROW samples
 - Review `LICENSES.md` — fill in any remaining citation stubs now that all modules are implemented
 
@@ -813,7 +839,7 @@ Create `.github/workflows/test.yml`:
 
 Create `.github/workflows/integration.yml`:
 - Trigger: `cron: "0 6 * * *"` + manual `workflow_dispatch`
-- Store all credentials as GitHub Secrets: `EARTHDATA_TOKEN`, `ESSDIVE_TOKEN`, `GOOGLE_APPLICATION_CREDENTIALS` (base64-encoded JSON key)
+- Store all credentials as GitHub Secrets: `EARTHDATA_TOKEN`, `OPENAQ_API_KEY`, `ESSDIVE_TOKEN` (GEE is deferred; add its secret when resumed)
 - Steps: decode GEE key to file, `pytest tests/integration/ -m integration --tb=short`
 - On failure: create a GitHub Issue with the failure summary (use `actions/github-script`)
 - **Purpose**: flags upstream API changes within 24 hours so you know before users do
@@ -928,9 +954,9 @@ EARTHDATA_TOKEN=
 # ESS-DIVE
 ESSDIVE_TOKEN=
 
-# Google Earth Engine
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/gee-credentials.json
-GEE_PROJECT=
+# Google Earth Engine [DEFERRED]
+# GOOGLE_APPLICATION_CREDENTIALS=/path/to/gee-credentials.json
+# GEE_PROJECT=
 ```
 
 **Step 5.3 — BERIL `.mcp.json` and SKILL.md**
@@ -1086,8 +1112,8 @@ Complete these in order before starting the corresponding implementation step. I
 | When | Service | URL | Time to access | What you get |
 |---|---|---|---|---|
 | **Before Phase 3, Step 3.1** | NASA EarthData | https://urs.earthdata.nasa.gov/ | Instant | `EARTHDATA_TOKEN`; generate under Profile → Generate Token; needed for OCO-2 and EMIT |
-| **Before Phase 3, Step 3.3** | ESS-DIVE | https://data.ess-dive.lbl.gov/ | Instant (uses ORCID/Google login) | API token → `ESSDIVE_TOKEN` |
-| **At least 1–3 days before Phase 3, Step 3.4** | Google Earth Engine | https://earthengine.google.com/signup/ | 24–72 h for approval | GEE project access; then create a service account JSON key → `GOOGLE_APPLICATION_CREDENTIALS` |
+| Before Phase 3, Step 3.3 | ESS-DIVE | https://data.ess-dive.lbl.gov/ | Instant | ✅ Registered — `ESSDIVE_TOKEN` added to `.env` |
+| ~~Before Phase 3, Step 3.4~~ | Google Earth Engine | https://earthengine.google.com/signup/ | — | **DEFERRED** — exploring free-tier alternatives |
 
 **Note on GeoTap**: If you want to test the full dual-server setup (GeoTap + env-data-mcp) in BERIL:
 - Register at https://geotap.io/ for a GeoTap API key → `GEOTAP_API_KEY` in BERIL `.mcp.json`
@@ -1126,9 +1152,7 @@ Complete these in order before starting the corresponding implementation step. I
          "args": ["run", "--directory", "/home/user/git-repos/env-data-mcp", "env-data-mcp"],
          "env": {
            "EARTHDATA_TOKEN": "${env:EARTHDATA_TOKEN}",
-           "ESSDIVE_TOKEN": "${env:ESSDIVE_TOKEN}",
-           "GOOGLE_APPLICATION_CREDENTIALS": "${env:GOOGLE_APPLICATION_CREDENTIALS}",
-           "GEE_PROJECT": "${env:GEE_PROJECT}"
+           "OPENAQ_API_KEY": "${env:OPENAQ_API_KEY}"
          }
        }
      }
@@ -1158,9 +1182,7 @@ Complete these in order before starting the corresponding implementation step. I
          "args": ["--from", "/home/user/git-repos/env-data-mcp", "env-data-mcp"],
          "env": {
            "EARTHDATA_TOKEN": "${EARTHDATA_TOKEN}",
-           "ESSDIVE_TOKEN": "${ESSDIVE_TOKEN}",
-           "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}",
-           "GEE_PROJECT": "${GEE_PROJECT}"
+           "OPENAQ_API_KEY": "${OPENAQ_API_KEY}"
          }
        }
      }
@@ -1172,7 +1194,7 @@ Complete these in order before starting the corresponding implementation step. I
 
 3. **Check local log**: After a successful query, verify `~/.beril/env_query_log.jsonl` was written with the correct `_meta` fields. If the file isn't being written, debug the SKILL.md logging instructions.
 
-4. **Test auth-missing response**: Temporarily unset `ESSDIVE_TOKEN` in the MCP server's env block, then ask the agent to call `essdive_query`. Verify the response includes `_meta.auth_present == false` and a clear setup message — and that it does not crash or block the other source queries.
+4. **Test auth-missing response**: Temporarily unset `OPENAQ_API_KEY` in the MCP server's env block, then ask the agent to call `openaq_query`. Verify the response includes `_meta.auth_present == false` and a clear setup message — and that it does not crash or block the other source queries.
 
 ### Testing BERIL integration on-cluster (Lakehouse)
 
@@ -1220,9 +1242,7 @@ No PyPI publishing required for local testing. Add to BERIL's `.mcp.json`:
       "args": ["--from", "/home/user/git-repos/env-data-mcp", "env-data-mcp"],
       "env": {
         "EARTHDATA_TOKEN": "${EARTHDATA_TOKEN}",
-        "ESSDIVE_TOKEN": "${ESSDIVE_TOKEN}",
-        "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}",
-        "GEE_PROJECT": "${GEE_PROJECT}"
+        "OPENAQ_API_KEY": "${OPENAQ_API_KEY}"
       }
     }
   }

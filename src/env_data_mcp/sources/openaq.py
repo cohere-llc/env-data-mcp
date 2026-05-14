@@ -15,6 +15,7 @@ module returns a structured ``auth_present=False`` response rather than raising.
 
 from __future__ import annotations
 
+import math
 import os
 import time
 from typing import Any
@@ -85,16 +86,18 @@ def _fetch_locations(
     api_key: str,
     lat: float,
     lon: float,
-    radius_m: int,
+    radius_km: float,
 ) -> list[dict[str, Any]]:
-    """Return up to 100 nearby sensor locations within radius_m of lat/lon."""
+    """Return up to 100 nearby sensor locations within radius_km of lat/lon.
+
+    Uses bbox format to avoid the 25,000 m radius cap in the OpenAQ v3 API.
+    """
+    lat_d = radius_km / 111.0
+    lon_d = radius_km / (111.0 * math.cos(math.radians(lat)))
+    bbox = f"{lon - lon_d:.6f},{lat - lat_d:.6f},{lon + lon_d:.6f},{lat + lat_d:.6f}"
     resp = client.get(
         f"{_OPENAQ_BASE}/locations",
-        params={
-            "coordinates": f"{lat},{lon}",
-            "radius": radius_m,
-            "limit": 100,
-        },
+        params={"bbox": bbox, "limit": 100},
         headers=_build_headers(api_key),
     )
     resp.raise_for_status()
@@ -149,8 +152,8 @@ def _fetch_measurements(
                         "datetime": m.get("period", {})
                         .get("datetimeFrom", {})
                         .get("local", m.get("date", {}).get("utc", "")),
-                        "latitude": m.get("coordinates", {}).get("latitude"),
-                        "longitude": m.get("coordinates", {}).get("longitude"),
+                        "latitude": (m.get("coordinates") or {}).get("latitude"),
+                        "longitude": (m.get("coordinates") or {}).get("longitude"),
                     }
                 )
             remaining_cap -= len(batch)
@@ -185,11 +188,10 @@ def _fetch_openaq(
 
     Returns a flat list of measurement records capped at *limit* rows.
     """
-    radius_m = int(radius_km * 1000)
     records: list[dict[str, Any]] = []
 
     with httpx.Client(timeout=30.0) as client:
-        locations = _fetch_locations(client, api_key, lat, lon, radius_m)
+        locations = _fetch_locations(client, api_key, lat, lon, radius_km)
         remaining = limit
         for loc in locations:
             if remaining <= 0:
@@ -367,8 +369,6 @@ def openaq_bbox_query(
     )
     lat, lon = (bbox["min_lat"] + bbox["max_lat"]) / 2.0, (bbox["min_lon"] + bbox["max_lon"]) / 2.0
     # Half-diagonal of the bbox in km.
-    import math
-
     lat_half = (bbox["max_lat"] - bbox["min_lat"]) / 2.0 * 111.0
     lon_half = (bbox["max_lon"] - bbox["min_lon"]) / 2.0 * 111.0 * math.cos(math.radians(lat))
     radius_km = math.sqrt(lat_half**2 + lon_half**2)
