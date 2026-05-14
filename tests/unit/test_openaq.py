@@ -25,8 +25,14 @@ _YAKIMA_LAT = 46.2531882
 _YAKIMA_LON = -119.4768203
 _API_KEY = "test-api-key-1234"
 
-# Matches any request to the /locations endpoint regardless of query-param format.
-_LOCATIONS_URL_RE = re.compile(rf"{re.escape(_OPENAQ_BASE)}/locations\?")
+# Matches requests to the /locations endpoint and validates bbox= and limit=100
+# are present (in any order), preventing regressions if the query format changes.
+_LOCATIONS_URL_RE = re.compile(
+    rf"{re.escape(_OPENAQ_BASE)}/locations\?"
+    r"(?=[^#]*\bbbox=[^&]+)"
+    r"(?=[^#]*\blimit=100(?:&|$))"
+    r"[^#]*$"
+)
 
 _LOCATION_RESPONSE = {
     "results": [
@@ -318,4 +324,23 @@ def test_openaq_bbox_query_delegates(_set_api_key, httpx_mock):
         end_date="2019-08-19",
     )
     assert result["_meta"]["source"] == "openaq"
+    assert result["_meta"]["success"] is True
+
+
+# ---------------------------------------------------------------------------
+# _fetch_locations — polar clamping avoids division by zero (line 122)
+# ---------------------------------------------------------------------------
+
+
+def test_openaq_query_near_pole_no_division_error(_set_api_key, httpx_mock):
+    """Querying at lat=90 must not raise ZeroDivisionError."""
+    httpx_mock.add_response(method="GET", json={"results": []})
+    # Should complete without error; polar lat is clamped to 89.9 internally.
+    result = openaq_query(
+        latitude=90.0,
+        longitude=0.0,
+        radius_km=50.0,
+        start_date="2019-08-19",
+        end_date="2019-08-19",
+    )
     assert result["_meta"]["success"] is True

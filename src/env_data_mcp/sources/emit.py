@@ -315,7 +315,12 @@ def _query_granule_bbox(
     gid: str,
     token: str,
 ) -> list[dict[str, Any]]:
-    """Query one EMIT granule for all pixels inside the bounding box."""
+    """Query one EMIT granule for all pixels inside the bounding box.
+
+    Fetches lat/lon/mineral-names in one request, identifies the matching
+    pixels, then fetches a single rectangular OPeNDAP slice covering all of
+    them — O(1) round-trips instead of O(N×M).
+    """
     var_expr1 = "/location/lat,/location/lon,/mineral_metadata/mineral_name"
     content1 = _fetch_opendap_nc4(opendap_url, var_expr1, token)
 
@@ -333,20 +338,40 @@ def _query_granule_bbox(
     if not pixels:
         return []
 
+    # Compute bounding rectangle of matched pixels and fetch it in one request.
+    rows = [p[0] for p in pixels]
+    cols = [p[1] for p in pixels]
+    i_lo, i_hi = min(rows), max(rows)
+    j_lo, j_hi = min(cols), max(cols)
+    n = len(mineral_names)
+    var_expr2 = f"/spectral_abundance[{i_lo}:{i_hi}][{j_lo}:{j_hi}][0:{n - 1}]"
+    content2 = _fetch_opendap_nc4(opendap_url, var_expr2, token)
+
+    with h5py.File(io.BytesIO(content2), "r") as hf:
+        abund_ds = _get_dataset(hf, *_ABUNDANCE_PATHS)
+        if abund_ds is None:
+            return []
+        abund = abund_ds[:]  # shape (i_hi-i_lo+1, j_hi-j_lo+1, n)
+
     records: list[dict[str, Any]] = []
     for i, j in pixels:
-        batch = _mineral_records_for_pixel(
-            opendap_url,
-            i,
-            j,
-            mineral_names,
-            float(lat_arr[i, j]),
-            float(lon_arr[i, j]),
-            acq_date,
-            gid,
-            token,
-        )
-        records.extend(batch)
+        ri, rj = i - i_lo, j - j_lo
+        pixel_lat = float(lat_arr[i, j])
+        pixel_lon = float(lon_arr[i, j])
+        for name, val in zip(mineral_names, abund[ri, rj, :], strict=False):
+            fval = float(val)
+            if fval >= _ABUNDANCE_THRESHOLD and not np.isnan(fval):
+                records.append(
+                    {
+                        "mineral_name": name,
+                        "abundance": round(fval, 4),
+                        "units": "fractional (0–1)",
+                        "latitude": round(pixel_lat, 6),
+                        "longitude": round(pixel_lon, 6),
+                        "acquisition_date": acq_date,
+                        "granule_id": gid,
+                    }
+                )
     return records
 
 
@@ -448,7 +473,6 @@ def emit_query(
     except ValueError as exc:
         latency = time.perf_counter() - t0
         err_str = str(exc)
-        auth_present = "HTTP 401" not in err_str
         return {
             "data": [],
             "_meta": build_meta(
@@ -458,7 +482,7 @@ def emit_query(
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
-                auth_present=auth_present,
+                auth_present=True,
                 success=False,
                 error=err_str,
             ),
@@ -566,7 +590,6 @@ def emit_bbox_query(
     except ValueError as exc:
         latency = time.perf_counter() - t0
         err_str = str(exc)
-        auth_present = "HTTP 401" not in err_str
         return {
             "data": [],
             "_meta": build_meta(
@@ -576,7 +599,7 @@ def emit_bbox_query(
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
-                auth_present=auth_present,
+                auth_present=True,
                 success=False,
                 error=err_str,
             ),

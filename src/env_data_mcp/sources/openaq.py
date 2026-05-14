@@ -93,7 +93,8 @@ def _fetch_locations(
     Uses bbox format to avoid the 25,000 m radius cap in the OpenAQ v3 API.
     """
     lat_d = radius_km / 111.0
-    lon_d = radius_km / (111.0 * math.cos(math.radians(lat)))
+    safe_lat = min(89.9, max(-89.9, lat))
+    lon_d = radius_km / (111.0 * math.cos(math.radians(safe_lat)))
     bbox = f"{lon - lon_d:.6f},{lat - lat_d:.6f},{lon + lon_d:.6f},{lat + lat_d:.6f}"
     resp = client.get(
         f"{_OPENAQ_BASE}/locations",

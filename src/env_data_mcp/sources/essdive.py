@@ -278,7 +278,7 @@ def essdive_query(
                 error=str(exc),
             ),
         }
-    except Exception as exc:
+    except httpx.HTTPError as exc:
         latency = time.perf_counter() - t0
         return {
             "data": [],
@@ -408,7 +408,7 @@ def essdive_bbox_query(
                 error=str(exc),
             ),
         }
-    except Exception as exc:
+    except httpx.HTTPError as exc:
         latency = time.perf_counter() - t0
         return {
             "data": [],

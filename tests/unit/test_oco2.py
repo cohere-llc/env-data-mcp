@@ -6,7 +6,7 @@ All HTTP and HDF5 I/O is mocked; no network access required.
 from __future__ import annotations
 
 import io
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import h5py
 import numpy as np
@@ -14,7 +14,10 @@ import pytest
 
 from env_data_mcp.sources.oco2 import (
     LICENSE_INFO,
+    _cmr_search,
+    _fetch_granule_bytes,
     _get_download_url,
+    _get_fill_value,
     _granule_date,
     _granule_id,
     _grid_params,
@@ -96,6 +99,36 @@ def _make_cmr_granule(
             }
         ],
     }
+
+
+def _make_oco2_hdf5_geos(
+    xco2_mol: float = 4.085e-4,  # mol/mol ≈ 408.5 ppm
+    lat: float = _YAKIMA_LAT,
+    lon: float = _YAKIMA_LON,
+    nrows: int = 10,
+    ncols: int = 20,
+    fill: float = -9.999e20,
+) -> bytes:
+    """Minimal OCO-2 GEOS L3 format: 3-D XCO2 (1,nrows,ncols) + explicit lat/lon."""
+    buf = io.BytesIO()
+    lats = np.linspace(-90.0, 90.0, nrows, dtype=np.float32)
+    lons = np.linspace(-180.0, 180.0, ncols, dtype=np.float32)
+    i = int(np.argmin(np.abs(lats - lat)))
+    j = int(np.argmin(np.abs(lons - lon)))
+    data = np.full((1, nrows, ncols), fill, dtype=np.float32)
+    data[0, i, j] = xco2_mol
+    prec = np.full((1, nrows, ncols), fill, dtype=np.float32)
+    prec[0, i, j] = xco2_mol * 0.01  # ~1 % uncertainty
+    with h5py.File(buf, "w") as hf:
+        grp = hf.require_group("HDFEOS/GRIDS/OCO-2 Level 3 Gridded XCO2/Data Fields")
+        ds = grp.create_dataset("XCO2", data=data)
+        ds.attrs["_FillValue"] = fill
+        prec_ds = grp.create_dataset("XCO2PREC", data=prec)
+        prec_ds.attrs["_FillValue"] = fill
+        hf.create_dataset("lat", data=lats)
+        hf.create_dataset("lon", data=lons)
+    buf.seek(0)
+    return buf.read()
 
 
 # ---------------------------------------------------------------------------
@@ -375,7 +408,7 @@ def test_oco2_query_expired_token_response(monkeypatch):
             end_date="2019-08-19",
         )
     assert result["_meta"]["success"] is False
-    assert result["_meta"]["auth_present"] is False
+    assert result["_meta"]["auth_present"] is True
     assert "HTTP 401" in result["_meta"]["error"]
     assert result["data"] == []
 
@@ -454,3 +487,173 @@ def test_oco2_bbox_query_echoes_clamped_bbox(monkeypatch):
     qp = result["_meta"]["query_params"]
     assert "min_lat" in qp
     assert "max_lat" in qp
+
+
+# ---------------------------------------------------------------------------
+# _get_fill_value — numpy-array attribute (line 90)
+# ---------------------------------------------------------------------------
+
+
+def test_get_fill_value_numpy_array():
+    """_FillValue stored as a numpy array should be unwrapped correctly."""
+    buf = io.BytesIO()
+    fill_arr = np.array([-9999.0], dtype=np.float32)
+    with h5py.File(buf, "w") as hf:
+        ds = hf.create_dataset("XCO2", data=np.ones((3, 4), dtype=np.float32))
+        ds.attrs["_FillValue"] = fill_arr
+    buf.seek(0)
+    with h5py.File(buf, "r") as hf:
+        result = _get_fill_value(hf["XCO2"])
+    assert result == pytest.approx(-9999.0)
+
+
+# ---------------------------------------------------------------------------
+# _get_download_url — last-resort HTTPS branch (lines 150-152)
+# ---------------------------------------------------------------------------
+
+
+def test_get_download_url_last_resort_https():
+    """Branch 3: any HTTPS link that is not HTML."""
+    g = {"links": [{"rel": "related", "href": "https://example.com/file.nc4"}]}
+    url = _get_download_url(g)
+    assert url == "https://example.com/file.nc4"
+
+
+# ---------------------------------------------------------------------------
+# _cmr_search — direct call (lines 94, 99-113)
+# ---------------------------------------------------------------------------
+
+
+def test_cmr_search_success():
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {"feed": {"entry": [{"title": "oco2_granule"}]}}
+    mock_resp.raise_for_status.return_value = None
+    with patch("env_data_mcp.sources.oco2.httpx.get", return_value=mock_resp) as mock_get:
+        result = _cmr_search("2019-08-19", "2019-08-19", "test-token")
+    assert result == [{"title": "oco2_granule"}]
+    call_kwargs = mock_get.call_args
+    assert "Authorization" in call_kwargs.kwargs["headers"]
+
+
+# ---------------------------------------------------------------------------
+# _fetch_granule_bytes — 401 raises ValueError (lines 161-169)
+# ---------------------------------------------------------------------------
+
+
+def test_fetch_granule_bytes_401_raises():
+    mock_resp = MagicMock()
+    mock_resp.status_code = 401
+    with (
+        patch("env_data_mcp.sources.oco2.httpx.get", return_value=mock_resp),
+        pytest.raises(ValueError, match="HTTP 401"),
+    ):
+        _fetch_granule_bytes("https://example.com/data.he5", "bad-token")
+
+
+# ---------------------------------------------------------------------------
+# _parse_xco2_point — GEOS 3-D format (lines 238, 241, 247-252, 263, 275)
+# ---------------------------------------------------------------------------
+
+
+def test_parse_xco2_point_geos_format():
+    """3D data with explicit lat/lon arrays → mol/mol converted to ppm."""
+    content = _make_oco2_hdf5_geos(xco2_mol=4.085e-4)
+    rec = _parse_xco2_point(content, _YAKIMA_LAT, _YAKIMA_LON, "2023-01-01", "geos_test")
+    assert rec is not None
+    assert rec["units"] == "ppm"
+    assert 400.0 < rec["xco2"] < 420.0
+    assert rec["xco2_uncertainty"] is not None
+
+
+# ---------------------------------------------------------------------------
+# _parse_xco2_bbox — GEOS 3-D format (lines 311, 314, 320-331, 357, 368)
+# ---------------------------------------------------------------------------
+
+
+def test_parse_xco2_bbox_geos_format():
+    """Bounding-box parse with 3D GEOS data and explicit lat/lon arrays."""
+    content = _make_oco2_hdf5_geos(xco2_mol=4.085e-4)
+    records = _parse_xco2_bbox(
+        content,
+        min_lat=_YAKIMA_LAT - 20.0,
+        max_lat=_YAKIMA_LAT + 20.0,
+        min_lon=_YAKIMA_LON - 30.0,
+        max_lon=_YAKIMA_LON + 30.0,
+        date_str="2023-01-01",
+        gid="geos_bbox_test",
+    )
+    assert len(records) >= 1
+    assert records[0]["units"] == "ppm"
+    assert 400.0 < records[0]["xco2"] < 420.0
+
+
+# ---------------------------------------------------------------------------
+# oco2_query — granule without URL is skipped (line 445)
+# ---------------------------------------------------------------------------
+
+
+def test_oco2_query_skips_granule_without_url(monkeypatch):
+    monkeypatch.setenv("EARTHDATA_TOKEN", "test-token")
+    # Granule with no matching link → _get_download_url returns None
+    granule_no_url: dict = {"title": "no_url", "time_start": "2019-08-19T00:00:00Z", "links": []}
+    with (
+        patch(f"{_MOD}._cmr_search", return_value=[granule_no_url]),
+    ):
+        result = oco2_query(
+            latitude=_YAKIMA_LAT,
+            longitude=_YAKIMA_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
+        )
+    assert result["_meta"]["success"] is True
+    assert result["data"] == []
+
+
+# ---------------------------------------------------------------------------
+# oco2_bbox_query — expired token (lines 577-580)
+# ---------------------------------------------------------------------------
+
+
+def test_oco2_bbox_query_expired_token(monkeypatch):
+    monkeypatch.setenv("EARTHDATA_TOKEN", "expired")
+    with patch(
+        f"{_MOD}._cmr_search",
+        side_effect=ValueError("EarthData token rejected (HTTP 401)"),
+    ):
+        result = oco2_bbox_query(
+            min_lat=44.0,
+            max_lat=48.0,
+            min_lon=-122.0,
+            max_lon=-117.0,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"]["auth_present"] is True
+    assert "HTTP 401" in result["_meta"]["error"]
+
+
+# ---------------------------------------------------------------------------
+# oco2_bbox_query — capped flag set when limit reached (lines 542-543)
+# ---------------------------------------------------------------------------
+
+
+def test_oco2_bbox_query_capped(monkeypatch):
+    monkeypatch.setenv("EARTHDATA_TOKEN", "test-token")
+    # Two granules, each yielding several records; limit=1 forces early exit.
+    content = _make_oco2_hdf5(xco2_value=408.5)
+    granule = _make_cmr_granule()
+    with (
+        patch(f"{_MOD}._cmr_search", return_value=[granule, granule]),
+        patch(f"{_MOD}._fetch_granule_bytes", return_value=content),
+    ):
+        result = oco2_bbox_query(
+            min_lat=44.0,
+            max_lat=48.0,
+            min_lon=-122.0,
+            max_lon=-117.0,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
+            limit=1,
+        )
+    assert result["_meta"]["capped"] is True

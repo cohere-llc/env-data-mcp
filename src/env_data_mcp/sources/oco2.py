@@ -468,9 +468,7 @@ def oco2_query(
         }
     except ValueError as exc:
         latency = time.perf_counter() - t0
-        # Distinguish expired-token 401 from other errors
         err_str = str(exc)
-        auth_present = "HTTP 401" not in err_str
         return {
             "data": [],
             "_meta": build_meta(
@@ -480,7 +478,7 @@ def oco2_query(
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
-                auth_present=auth_present,
+                auth_present=True,
                 success=False,
                 error=err_str,
             ),
@@ -579,7 +577,6 @@ def oco2_bbox_query(
     except ValueError as exc:
         latency = time.perf_counter() - t0
         err_str = str(exc)
-        auth_present = "HTTP 401" not in err_str
         return {
             "data": [],
             "_meta": build_meta(
@@ -589,7 +586,7 @@ def oco2_bbox_query(
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
-                auth_present=auth_present,
+                auth_present=True,
                 success=False,
                 error=err_str,
             ),

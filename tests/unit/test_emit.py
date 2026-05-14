@@ -16,11 +16,13 @@ from unittest.mock import patch
 
 import h5py
 import numpy as np
+import pytest
 
 from env_data_mcp.sources.emit import (
     LICENSE_INFO,
     _decode_mineral_names,
     _extract_pixels_in_bbox,
+    _fetch_opendap_nc4,
     _find_nearest_pixel,
     _get_dataset,
     _get_opendap_url,
@@ -351,7 +353,7 @@ def test_emit_query_no_granules(monkeypatch):
 
 
 def test_emit_query_expired_token_opendap(monkeypatch):
-    """401 from OPeNDAP raises ValueError → success=False, auth_present=False."""
+    """401 from OPeNDAP raises ValueError → success=False, auth_present=True."""
     monkeypatch.setenv("EARTHDATA_TOKEN", "expired-token")
     granule = _make_cmr_granule(opendap_url=_OPENDAP_BASE_URL)
 
@@ -369,7 +371,7 @@ def test_emit_query_expired_token_opendap(monkeypatch):
             end_date="2023-10-31",
         )
     assert result["_meta"]["success"] is False
-    assert result["_meta"]["auth_present"] is False
+    assert result["_meta"]["auth_present"] is True
 
 
 def test_emit_query_meta_fields(monkeypatch):
@@ -400,6 +402,22 @@ def test_emit_query_meta_fields(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
+def _make_bbox_abundance_nc4(
+    nrows: int = _NROWS,
+    ncols: int = _NCOLS,
+    abundances: np.ndarray = _ABUNDANCES,
+) -> bytes:
+    """Return bytes of an HDF5 file with spectral_abundance shape (nrows, ncols, N)."""
+    buf = io.BytesIO()
+    n = len(abundances)
+    # Tile the per-pixel abundances across all pixels in the rectangular slice.
+    data = np.tile(abundances, (nrows, ncols, 1)).reshape(nrows, ncols, n)
+    with h5py.File(buf, "w") as hf:
+        hf.create_dataset("spectral_abundance", data=data)
+    buf.seek(0)
+    return buf.read()
+
+
 def test_emit_bbox_query_no_token(monkeypatch):
     monkeypatch.delenv("EARTHDATA_TOKEN", raising=False)
     result = emit_bbox_query(
@@ -417,7 +435,8 @@ def test_emit_bbox_query_success(monkeypatch):
     monkeypatch.setenv("EARTHDATA_TOKEN", "test-token")
     granule = _make_cmr_granule(opendap_url=_OPENDAP_BASE_URL)
     n_pixels = _NROWS * _NCOLS
-    opendap_side_effects = [_make_lat_lon_nc4()] + [_make_abundance_nc4()] * n_pixels
+    # Batch fetch: 2 OPeNDAP requests per granule (lat/lon + rectangular slice)
+    opendap_side_effects = [_make_lat_lon_nc4(), _make_bbox_abundance_nc4()]
 
     with (
         patch(f"{_MOD}._cmr_search", return_value=[granule]),
@@ -450,3 +469,52 @@ def test_emit_bbox_query_echoes_clamped_bbox(monkeypatch):
     qp = result["_meta"]["query_params"]
     assert "min_lat" in qp
     assert "max_lat" in qp
+
+
+# ---------------------------------------------------------------------------
+# _fetch_opendap_nc4 — 401 raises ValueError (lines 112-127)
+# ---------------------------------------------------------------------------
+
+
+def test_fetch_opendap_nc4_401_raises():
+    from unittest.mock import MagicMock, patch
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 401
+    with (
+        patch("env_data_mcp.sources.emit.httpx.get", return_value=mock_resp),
+        pytest.raises(ValueError, match="HTTP 401"),
+    ):
+        _fetch_opendap_nc4(
+            "https://opendap.earthdata.nasa.gov/emit/test",
+            "/location/lat",
+            "bad-token",
+        )
+
+
+# ---------------------------------------------------------------------------
+# emit_bbox_query — expired token (lines 591-593)
+# ---------------------------------------------------------------------------
+
+
+def test_emit_bbox_query_expired_token(monkeypatch):
+    monkeypatch.setenv("EARTHDATA_TOKEN", "expired")
+    granule = _make_cmr_granule(opendap_url=_OPENDAP_BASE_URL)
+    with (
+        patch(f"{_MOD}._cmr_search", return_value=[granule]),
+        patch(
+            f"{_MOD}._fetch_opendap_nc4",
+            side_effect=ValueError("EarthData token rejected (HTTP 401)"),
+        ),
+    ):
+        result = emit_bbox_query(
+            min_lat=35.0,
+            max_lat=37.0,
+            min_lon=-116.0,
+            max_lon=-114.0,
+            start_date="2023-10-01",
+            end_date="2023-10-31",
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"]["auth_present"] is True
+    assert "HTTP 401" in result["_meta"]["error"]

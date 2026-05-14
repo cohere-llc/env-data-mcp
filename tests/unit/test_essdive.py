@@ -342,9 +342,11 @@ def test_essdive_query_license_aggregated(monkeypatch):
 
 def test_essdive_query_upstream_exception(monkeypatch):
     monkeypatch.setenv("ESSDIVE_TOKEN", "test_token")
+    import httpx
+
     with patch(
         "env_data_mcp.sources.essdive._search_packages",
-        side_effect=RuntimeError("network timeout"),
+        side_effect=httpx.ConnectError("network timeout"),
     ):
         result = essdive_query(latitude=_YAKIMA_LAT, longitude=_YAKIMA_LON)
     assert result["data"] == []
@@ -426,3 +428,22 @@ def test_essdive_bbox_query_expired_token(monkeypatch):
     assert result["_meta"]["success"] is False
     assert result["_meta"]["auth_present"] is True
     assert "401" in result["_meta"]["error"]
+
+
+# ---------------------------------------------------------------------------
+# essdive_bbox_query — httpx.HTTPError (lines 411-413)
+# ---------------------------------------------------------------------------
+
+
+def test_essdive_bbox_query_http_error(monkeypatch):
+    import httpx
+
+    monkeypatch.setenv("ESSDIVE_TOKEN", "test_token")
+    with patch(
+        "env_data_mcp.sources.essdive._search_packages",
+        side_effect=httpx.ConnectError("connection refused"),
+    ):
+        result = essdive_bbox_query(min_lat=46.0, max_lat=47.0, min_lon=-120.0, max_lon=-119.0)
+    assert result["data"] == []
+    assert result["_meta"]["success"] is False
+    assert "connection refused" in result["_meta"]["error"]
