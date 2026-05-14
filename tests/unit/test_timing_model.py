@@ -81,6 +81,7 @@ def test_timing_model_schema():
     for source, entry in data["model"].items():
         assert "alpha" in entry, f"{source}: missing 'alpha'"
         assert "beta_n_days" in entry, f"{source}: missing 'beta_n_days'"
+        assert "beta_area_deg2" in entry, f"{source}: missing 'beta_area_deg2'"
         assert "equation" in entry, f"{source}: missing 'equation'"
         if entry["alpha"] is not None:
             assert entry["alpha"] >= 0, f"{source}: alpha should be non-negative"

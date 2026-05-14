@@ -13,6 +13,7 @@ import io
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, cast
 
 import h5py
@@ -439,14 +440,19 @@ def oco2_query(
     try:
         granules = _cmr_search(start_date, end_date, token)
         records: list[dict[str, Any]] = []
-        for g in granules:
+
+        def _fetch_point(g: dict[str, Any]) -> dict[str, Any] | None:
             url = _get_download_url(g)
             if not url:
-                continue
+                return None
             content = _fetch_granule_bytes(url, token)
-            rec = _parse_xco2_point(content, latitude, longitude, _granule_date(g), _granule_id(g))
-            if rec is not None:
-                records.append(rec)
+            return _parse_xco2_point(content, latitude, longitude, _granule_date(g), _granule_id(g))
+
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            for rec in pool.map(_fetch_point, granules):
+                if rec is not None:
+                    records.append(rec)
+        records.sort(key=lambda r: r["date"])
         latency = time.perf_counter() - t0
         return {
             "data": records,
@@ -535,17 +541,13 @@ def oco2_bbox_query(
 
     try:
         granules = _cmr_search(start_date, end_date, token)
-        records: list[dict[str, Any]] = []
-        capped = False
-        for g in granules:
-            if len(records) >= limit:
-                capped = True
-                break
+
+        def _fetch_bbox(g: dict[str, Any]) -> list[dict[str, Any]]:
             url = _get_download_url(g)
             if not url:
-                continue
+                return []
             content = _fetch_granule_bytes(url, token)
-            batch = _parse_xco2_bbox(
+            return _parse_xco2_bbox(
                 content,
                 bbox["min_lat"],
                 bbox["max_lat"],
@@ -554,10 +556,14 @@ def oco2_bbox_query(
                 _granule_date(g),
                 _granule_id(g),
             )
-            records.extend(batch)
+
+        records: list[dict[str, Any]] = []
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            for batch in pool.map(_fetch_bbox, granules):
+                records.extend(batch)
+        records.sort(key=lambda r: r["date"])
         records = records[:limit]
-        if not capped:
-            capped = len(records) >= limit
+        capped = len(records) >= limit
         latency = time.perf_counter() - t0
         meta = build_meta(
             source="oco2",

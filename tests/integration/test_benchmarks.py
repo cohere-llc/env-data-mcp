@@ -1,9 +1,9 @@
 """Benchmark integration tests for env-data-mcp sources.
 
-Runs a conservative Phase-1 matrix of (source × date-range) queries, checks
-point/bbox spatial consistency for a small 0.5°×0.5° window, records
-``_meta["latency_s"]`` from every call, fits a per-source linear timing model
-    t_est(n_days) = α + β·n_days
+Runs a Phase-2 matrix of (source × date-range × location × bbox-size) queries,
+checks point/bbox spatial consistency for a small 0.5°×0.5° window, records
+``_meta["latency_s"]`` from every call, fits a per-source 2-D timing model
+    t_est(n_days, area_deg2) = α + β_n·n_days + β_a·area_deg2
 and writes the fitted coefficients + raw timing data to
 ``src/env_data_mcp/timing_model.json``.
 
@@ -62,6 +62,35 @@ _BBOX = {
     "max_lon": _LON + _BBOX_HALF,
 }
 
+# Extra geographic locations to capture regional variation in record density
+_LOCATIONS: list[dict[str, Any]] = [
+    {
+        "name": "yakima_wa",
+        "lat": 46.2531882,
+        "lon": -119.4768203,
+        "label": "Yakima WA (semi-arid, agricultural)",
+    },
+    {
+        "name": "manaus_br",
+        "lat": -3.1019,
+        "lon": -60.025,
+        "label": "Manaus BR (Amazon, tropical)",
+    },
+    {
+        "name": "frankfurt_de",
+        "lat": 50.1109,
+        "lon": 8.6821,
+        "label": "Frankfurt DE (urban, European)",
+    },
+]
+_EXTRA_LOCATIONS = _LOCATIONS[1:]  # additional locations beyond the primary Yakima reference
+
+# Bbox sizes for the 2-D area sweep (n_days × area_deg2)
+_BBOX_SIZES: list[dict[str, Any]] = [
+    {"name": "0.5x0.5", "half": 0.25, "area_deg2": 0.25},  # 0.5° × 0.5°
+    {"name": "2x2", "half": 1.0, "area_deg2": 4.0},  # 2° × 2°
+]
+
 # Maximum acceptable latency per query (hard cap; test fails if exceeded)
 _MAX_LATENCY_S = 60.0
 
@@ -79,18 +108,37 @@ _TIMING_MODEL_PATH = Path(__file__).parents[2] / "src" / "env_data_mcp" / "timin
 _TIMING: dict[str, list[dict[str, Any]]] = {}
 
 
-def _record(source: str, scenario_name: str, n_days: int, result: dict[str, Any]) -> None:
+def _record(
+    source: str,
+    scenario_name: str,
+    n_days: int,
+    result: dict[str, Any],
+    *,
+    area_deg2: float = 0.0,
+    location: str = "yakima_wa",
+) -> None:
     """Append a timing observation to the in-memory accumulator."""
     _TIMING.setdefault(source, []).append(
         {
             "scenario": scenario_name,
             "n_days": n_days,
-            "area_deg2": 0.0,
+            "area_deg2": area_deg2,
+            "location": location,
             "latency_s": result["_meta"].get("latency_s", 0.0),
             "success": result["_meta"].get("success", False),
             "n_records": len(result.get("data", [])),
         }
     )
+
+
+def _make_bbox(lat: float, lon: float, half: float) -> dict[str, float]:
+    """Return a min/max lat/lon bbox dict centred on (lat, lon) with given half-width."""
+    return {
+        "min_lat": lat - half,
+        "max_lat": lat + half,
+        "min_lon": lon - half,
+        "max_lon": lon + half,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -99,45 +147,94 @@ def _record(source: str, scenario_name: str, n_days: int, result: dict[str, Any]
 
 
 def _fit_and_write_model() -> None:
-    """Fit per-source linear timing models and write timing_model.json."""
+    """Fit per-source 2-D timing models and write timing_model.json.
+
+    Model: t_est(n_days, area_deg2) = alpha + beta_n_days·n_days + beta_area_deg2·area_deg2
+    Fitted by OLS across all successful observations (point queries at multiple
+    locations + bbox queries at multiple sizes and date ranges).
+
+    Fit uses only observations that returned at least one record to avoid
+    biasing coefficients with API-overhead-only (empty-result) timings.
+    Centroid-based sources (NASA POWER, SoilGrids, SSURGO) have beta_area_deg2
+    clamped to 0.0 post-fit since their implementation ignores bbox extent.
+    """
+    # Sources whose implementation queries a single centroid regardless of bbox.
+    _CENTROID_SOURCES = {"nasa_power", "soilgrids", "ssurgo"}
+
     if not _TIMING:
         return  # Nothing to write if no benchmarks ran
 
     model: dict[str, Any] = {}
     for source, rows in sorted(_TIMING.items()):
         successful = [r for r in rows if r["success"]]
-        point_rows = [r for r in successful if r["area_deg2"] == 0.0]
 
-        if len(point_rows) >= 3:
-            xs = np.array([r["n_days"] for r in point_rows], dtype=float)
-            ys = np.array([r["latency_s"] for r in point_rows], dtype=float)
-            beta, alpha = np.polyfit(xs, ys, 1)
-            alpha, beta = float(alpha), float(beta)
-            y_pred = alpha + beta * xs
-            ss_res = float(np.sum((ys - y_pred) ** 2))
-            ss_tot = float(np.sum((ys - float(np.mean(ys))) ** 2))
+        if not successful:
+            model[source] = {
+                "alpha": None,
+                "beta_n_days": None,
+                "beta_area_deg2": None,
+                "r2": None,
+                "equation": "no data",
+            }
+            continue
+
+        # Use only observations that returned data for model fitting; this
+        # avoids biasing coefficients with API-overhead-only timings that
+        # arise from empty-result queries (wrong date range, out-of-coverage
+        # location, etc.).  Fall back to all successful rows if none have data.
+        fit_rows = [r for r in successful if r["n_records"] > 0]
+        if not fit_rows:
+            fit_rows = successful  # best we can do
+
+        n_days_arr = np.array([r["n_days"] for r in fit_rows], dtype=float)
+        area_arr = np.array([r["area_deg2"] for r in fit_rows], dtype=float)
+        y_arr = np.array([r["latency_s"] for r in fit_rows], dtype=float)
+        n = len(fit_rows)
+
+        has_area_var = bool(np.any(area_arr != area_arr[0]))
+        has_time_var = bool(np.any(n_days_arr != n_days_arr[0]))
+
+        if n >= 3 and (has_area_var or has_time_var):
+            X = np.column_stack([np.ones(n), n_days_arr, area_arr])
+            coeffs, _, _, _ = np.linalg.lstsq(X, y_arr, rcond=None)
+            alpha, beta_n, beta_a = float(coeffs[0]), float(coeffs[1]), float(coeffs[2])
+            y_pred = X @ coeffs
+            ss_res = float(np.sum((y_arr - y_pred) ** 2))
+            ss_tot = float(np.sum((y_arr - float(np.mean(y_arr))) ** 2))
             r2 = round(1.0 - ss_res / ss_tot, 4) if ss_tot > 0 else None
-            equation = f"t ≈ {alpha:.2f} + {beta:.3f}·n_days"
-        elif len(point_rows) == 2:
-            xs = np.array([r["n_days"] for r in point_rows], dtype=float)
-            ys = np.array([r["latency_s"] for r in point_rows], dtype=float)
-            beta, alpha = np.polyfit(xs, ys, 1)
-            alpha, beta = float(alpha), float(beta)
-            r2 = None  # not meaningful with only 2 points
-            equation = f"t ≈ {alpha:.2f} + {beta:.3f}·n_days  (2-point fit)"
-        elif len(point_rows) == 1:
-            alpha = point_rows[0]["latency_s"]
-            beta = 0.0
+            equation = f"t ≈ {alpha:.2f} + {beta_n:.3f}·n_days + {beta_a:.4f}·area_deg2"
+        elif n == 2:
+            if has_time_var:
+                beta_n = float((y_arr[1] - y_arr[0]) / (n_days_arr[1] - n_days_arr[0] + 1e-9))
+                alpha = float(y_arr[0] - beta_n * n_days_arr[0])
+                beta_a = 0.0
+            else:
+                beta_a = float((y_arr[1] - y_arr[0]) / (area_arr[1] - area_arr[0] + 1e-9))
+                alpha = float(y_arr[0] - beta_a * area_arr[0])
+                beta_n = 0.0
+            r2 = None
+            equation = (
+                f"t ≈ {alpha:.2f} + {beta_n:.3f}·n_days + {beta_a:.4f}·area_deg2  (2-point fit)"
+            )
+        else:
+            alpha = float(np.mean(y_arr))
+            beta_n = 0.0
+            beta_a = 0.0
             r2 = None
             equation = f"t ≈ {alpha:.2f}  (single observation)"
-        else:
-            # No successful runs — emit a placeholder
-            model[source] = {"alpha": None, "beta_n_days": None, "r2": None, "equation": "no data"}
-            continue
+
+        # Centroid-based sources query a single point regardless of bbox size;
+        # area has no genuine effect on their latency.
+        if source in _CENTROID_SOURCES:
+            beta_a = 0.0
+            # Restate equation with the clamped value
+            if n >= 3:
+                equation = f"t ≈ {alpha:.2f} + {beta_n:.3f}·n_days + 0.0000·area_deg2"
 
         model[source] = {
             "alpha": round(alpha, 3),
-            "beta_n_days": round(beta, 4),
+            "beta_n_days": round(beta_n, 4),
+            "beta_area_deg2": round(beta_a, 4),
             "r2": r2,
             "equation": equation,
         }
@@ -145,11 +242,15 @@ def _fit_and_write_model() -> None:
     output = {
         "generated_at": datetime.now(UTC).isoformat(),
         "note": (
-            "Phase 1 — Yakima WA (46.25°, −119.47°), ≤ 1 month, point queries. "
-            "Model: t_est(n_days) = alpha + beta_n_days · n_days  (seconds). "
+            "Phase 3 — multiple locations (Yakima WA, Manaus BR, Frankfurt DE), "
+            "point + bbox queries. Model: t_est(n_days, area_deg2) = "
+            "alpha + beta_n_days\u00b7n_days + beta_area_deg2\u00b7area_deg2 (seconds). "
+            "Fit uses only observations with n_records > 0. "
+            "Centroid-based sources (nasa_power, soilgrids, ssurgo) have "
+            "beta_area_deg2 clamped to 0. "
             "Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration"
         ),
-        "location": {"latitude": _LAT, "longitude": _LON},
+        "locations": _LOCATIONS,
         "model": model,
         "raw": _TIMING,
     }
@@ -231,6 +332,42 @@ def test_nasa_power_timing(sc):
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
+def test_nasa_power_bbox_timing(sc, bz):
+    result = nasa_power_bbox_query(
+        **_make_bbox(_LAT, _LON, bz["half"]),
+        start_date=sc["start"],
+        end_date=sc["end"],
+        variables=["T2M"],
+    )
+    _assert_or_skip(result, "nasa_power/bbox")
+    _record(
+        "nasa_power",
+        f"{sc['name']}/bbox/{bz['name']}",
+        sc["n_days"],
+        result,
+        area_deg2=bz["area_deg2"],
+    )
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_nasa_power_extra_location_timing(loc):
+    result = nasa_power_query(
+        latitude=loc["lat"],
+        longitude=loc["lon"],
+        start_date="2019-08-01",
+        end_date="2019-08-31",
+        variables=["T2M"],
+    )
+    _assert_or_skip(result, f"nasa_power/{loc['name']}")
+    _record("nasa_power", "1month", 31, result, location=loc["name"])
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
 def test_nasa_power_point_bbox_consistent():
     """Centroid-based source: point and small bbox must return identical records."""
     pt = nasa_power_query(
@@ -268,6 +405,24 @@ def test_soilgrids_timing():
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+def test_soilgrids_bbox_timing(bz):
+    result = soilgrids_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]))
+    _assert_or_skip(result, "soilgrids/bbox")
+    _record("soilgrids", f"bbox/{bz['name']}", 0, result, area_deg2=bz["area_deg2"])
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_soilgrids_extra_location_timing(loc):
+    result = soilgrids_query(latitude=loc["lat"], longitude=loc["lon"])
+    _assert_or_skip(result, f"soilgrids/{loc['name']}")
+    _record("soilgrids", "point", 0, result, location=loc["name"])
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
 def test_soilgrids_point_bbox_consistent():
     """Centroid-based: small bbox must return identical records to point query."""
     pt = soilgrids_query(latitude=_LAT, longitude=_LON)
@@ -288,6 +443,26 @@ def test_ssurgo_timing():
     if not result["_meta"].get("success"):
         pytest.skip(f"SSURGO query failed: {result['_meta'].get('error')}")
     _record("ssurgo", "point", 0, result)
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+def test_ssurgo_bbox_timing(bz):
+    result = ssurgo_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]))
+    if not result["_meta"].get("success"):
+        pytest.skip(f"ssurgo/bbox/{bz['name']}: {result['_meta'].get('error')}")
+    _record("ssurgo", f"bbox/{bz['name']}", 0, result, area_deg2=bz["area_deg2"])
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_ssurgo_extra_location_timing(loc):
+    result = ssurgo_query(latitude=loc["lat"], longitude=loc["lon"])
+    if not result["_meta"].get("success"):
+        pytest.skip(f"ssurgo/{loc['name']}: no data (US-only)")
+    _record("ssurgo", "point", 0, result, location=loc["name"])
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
 
 
@@ -314,13 +489,50 @@ def test_gbif_timing(sc):
     result = gbif_occurrences(
         latitude=_LAT,
         longitude=_LON,
-        radius_km=10.0,
+        radius_km=50.0,
         start_date=sc["start"],
         end_date=sc["end"],
-        limit=200,
+        limit=500,
     )
     _assert_or_skip(result, "gbif")
     _record("gbif", sc["name"], sc["n_days"], result)
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("sc", _GBIF_SCENARIOS, ids=lambda s: s["name"])
+def test_gbif_bbox_timing(sc, bz):
+    result = gbif_bbox_occurrences(
+        **_make_bbox(_LAT, _LON, bz["half"]),
+        start_date=sc["start"],
+        end_date=sc["end"],
+        limit=500,
+    )
+    _assert_or_skip(result, "gbif/bbox")
+    _record(
+        "gbif",
+        f"{sc['name']}/bbox/{bz['name']}",
+        sc["n_days"],
+        result,
+        area_deg2=bz["area_deg2"],
+    )
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_gbif_extra_location_timing(loc):
+    result = gbif_occurrences(
+        latitude=loc["lat"],
+        longitude=loc["lon"],
+        radius_km=50.0,
+        start_date="2019-08-01",
+        end_date="2019-08-31",
+        limit=500,
+    )
+    _assert_or_skip(result, f"gbif/{loc['name']}")
+    _record("gbif", "1month", 31, result, location=loc["name"])
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
 
 
@@ -367,6 +579,42 @@ def test_sentinel5p_timing(sc):
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
+def test_sentinel5p_bbox_timing(sc, bz):
+    result = sentinel5p_bbox_query(
+        **_make_bbox(_LAT, _LON, bz["half"]),
+        start_date=sc["start"],
+        end_date=sc["end"],
+        product="CO",
+    )
+    _assert_or_skip(result, "sentinel5p/bbox")
+    _record(
+        "sentinel5p",
+        f"{sc['name']}/bbox/{bz['name']}",
+        sc["n_days"],
+        result,
+        area_deg2=bz["area_deg2"],
+    )
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_sentinel5p_extra_location_timing(loc):
+    result = sentinel5p_query(
+        latitude=loc["lat"],
+        longitude=loc["lon"],
+        start_date="2019-08-01",
+        end_date="2019-08-31",
+        product="CO",
+    )
+    _assert_or_skip(result, f"sentinel5p/{loc['name']}")
+    _record("sentinel5p", "1month", 31, result, location=loc["name"])
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
 def test_sentinel5p_point_bbox_consistent():
     pt = sentinel5p_query(
         latitude=_LAT,
@@ -408,6 +656,43 @@ def test_openaq_timing(sc, _openaq_key):
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
+def test_openaq_bbox_timing(sc, bz, _openaq_key):
+    result = openaq_bbox_query(
+        **_make_bbox(_LAT, _LON, bz["half"]),
+        start_date=sc["start"],
+        end_date=sc["end"],
+        limit=200,
+    )
+    _assert_or_skip(result, "openaq/bbox")
+    _record(
+        "openaq",
+        f"{sc['name']}/bbox/{bz['name']}",
+        sc["n_days"],
+        result,
+        area_deg2=bz["area_deg2"],
+    )
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_openaq_extra_location_timing(loc, _openaq_key):
+    result = openaq_query(
+        latitude=loc["lat"],
+        longitude=loc["lon"],
+        radius_km=50.0,
+        start_date="2019-08-01",
+        end_date="2019-08-31",
+        limit=200,
+    )
+    _assert_or_skip(result, f"openaq/{loc['name']}")
+    _record("openaq", "1month", 31, result, location=loc["name"])
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
 def test_openaq_point_bbox_consistent(_openaq_key):
     pt = openaq_query(
         latitude=_LAT,
@@ -436,16 +721,49 @@ def test_openaq_point_bbox_consistent(_openaq_key):
 @pytest.mark.integration
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
 def test_essdive_timing(sc, _essdive_token):
+    # ESS-DIVE is a dataset catalog — temporal filtering by observation window
+    # is not meaningful and tends to return zero results.  Omit date filter.
     result = essdive_query(
         latitude=_LAT,
         longitude=_LON,
         radius_km=50.0,
-        start_date=sc["start"],
-        end_date=sc["end"],
         limit=10,
     )
     _assert_or_skip(result, "essdive")
     _record("essdive", sc["name"], sc["n_days"], result)
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
+def test_essdive_bbox_timing(sc, bz, _essdive_token):
+    result = essdive_bbox_query(
+        **_make_bbox(_LAT, _LON, bz["half"]),
+        limit=10,
+    )
+    _assert_or_skip(result, "essdive/bbox")
+    _record(
+        "essdive",
+        f"{sc['name']}/bbox/{bz['name']}",
+        sc["n_days"],
+        result,
+        area_deg2=bz["area_deg2"],
+    )
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_essdive_extra_location_timing(loc, _essdive_token):
+    result = essdive_query(
+        latitude=loc["lat"],
+        longitude=loc["lon"],
+        radius_km=50.0,
+        limit=10,
+    )
+    _assert_or_skip(result, f"essdive/{loc['name']}")
+    _record("essdive", "1month", 31, result, location=loc["name"])
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
 
 
@@ -493,6 +811,40 @@ def test_oco2_timing(sc, _earthdata_token):
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("sc", _OCO2_SCENARIOS, ids=lambda s: s["name"])
+def test_oco2_bbox_timing(sc, bz, _earthdata_token):
+    result = oco2_bbox_query(
+        **_make_bbox(_LAT, _LON, bz["half"]),
+        start_date=sc["start"],
+        end_date=sc["end"],
+    )
+    _assert_or_skip(result, "oco2/bbox")
+    _record(
+        "oco2",
+        f"{sc['name']}/bbox/{bz['name']}",
+        sc["n_days"],
+        result,
+        area_deg2=bz["area_deg2"],
+    )
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_oco2_extra_location_timing(loc, _earthdata_token):
+    result = oco2_query(
+        latitude=loc["lat"],
+        longitude=loc["lon"],
+        start_date="2019-08-15",
+        end_date="2019-08-21",
+    )
+    _assert_or_skip(result, f"oco2/{loc['name']}")
+    _record("oco2", "1week", 7, result, location=loc["name"])
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
 def test_oco2_point_bbox_consistent(_earthdata_token):
     pt = oco2_query(
         latitude=_LAT,
@@ -514,7 +866,11 @@ def test_oco2_point_bbox_consistent(_earthdata_token):
 # EMIT — requires EARTHDATA_TOKEN; skip 1-month to stay within time budget
 # ===========================================================================
 
-_EMIT_SCENARIOS = [s for s in _SCENARIOS if s["name"] != "1month"]
+# EMIT launched August 2022 — use 2023 dates (2019 queries return zero granules).
+_EMIT_SCENARIOS: list[dict[str, Any]] = [
+    {"name": "1day", "start": "2023-08-19", "end": "2023-08-19", "n_days": 1},
+    {"name": "1week", "start": "2023-08-15", "end": "2023-08-21", "n_days": 7},
+]
 
 
 @pytest.mark.integration
@@ -532,17 +888,51 @@ def test_emit_timing(sc, _earthdata_token):
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("sc", _EMIT_SCENARIOS, ids=lambda s: s["name"])
+def test_emit_bbox_timing(sc, bz, _earthdata_token):
+    result = emit_bbox_query(
+        **_make_bbox(_LAT, _LON, bz["half"]),
+        start_date=sc["start"],
+        end_date=sc["end"],
+    )
+    _assert_or_skip(result, "emit/bbox")
+    _record(
+        "emit",
+        f"{sc['name']}/bbox/{bz['name']}",
+        sc["n_days"],
+        result,
+        area_deg2=bz["area_deg2"],
+    )
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
+def test_emit_extra_location_timing(loc, _earthdata_token):
+    result = emit_query(
+        latitude=loc["lat"],
+        longitude=loc["lon"],
+        start_date="2023-08-15",
+        end_date="2023-08-21",
+    )
+    _assert_or_skip(result, f"emit/{loc['name']}")
+    _record("emit", "1month", 31, result, location=loc["name"])
+    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+
+
+@pytest.mark.integration
 def test_emit_point_bbox_consistent(_earthdata_token):
     pt = emit_query(
         latitude=_LAT,
         longitude=_LON,
-        start_date="2019-08-19",
-        end_date="2019-08-19",
+        start_date="2023-08-19",
+        end_date="2023-08-19",
     )
     bx = emit_bbox_query(
         **_BBOX,
-        start_date="2019-08-19",
-        end_date="2019-08-19",
+        start_date="2023-08-19",
+        end_date="2023-08-19",
     )
     _assert_or_skip(pt, "emit/point")
     _assert_or_skip(bx, "emit/bbox")

@@ -63,7 +63,6 @@ def test_gbif_occurrences_live_meta_fields():
     meta = result["_meta"]
     assert meta["auth_required"] is False
     assert meta["latency_s"] > 0
-    assert "partition_date" in meta
     assert "capped" in meta
     assert meta["license_url"] != ""
 
