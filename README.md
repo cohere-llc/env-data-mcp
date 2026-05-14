@@ -9,8 +9,8 @@ workflow.  Tools accept a location (point or bounding box) and a date range and 
 structured JSON with the data and a `_meta` block that includes the data licence,
 latency, and enough provenance information to reproduce the query.
 
-**Status:** Phase 2 complete — 5 no-auth sources operational (NASA POWER, SSURGO,
-SoilGrids, GBIF, Sentinel-5P) + 1 auth-required source (OpenAQ, free key).
+**Status:** Phase 3 complete — 9 sources operational (NASA POWER, SSURGO, SoilGrids,
+GBIF, Sentinel-5P, OCO-2, EMIT, ESS-DIVE, OpenAQ).
 
 ---
 
@@ -32,19 +32,31 @@ The server prints no output on start; an MCP client connects via stdio.
 | Tool | Source | Auth | Description |
 |---|---|---|---|
 | `nasa_power_query` | NASA POWER | none | Daily weather (T, precip, RH, radiation) at a point |
+| `nasa_power_bbox_query` | NASA POWER | none | Daily weather statistics over a bounding box |
 | `ssurgo_query` | USDA SSURGO | none | Soil map unit and properties for a US point |
+| `ssurgo_bbox_query` | USDA SSURGO | none | Soil map units within a bounding box |
 | `soilgrids_query` | ISRIC SoilGrids v2 | none | Global soil properties at a point |
+| `soilgrids_bbox_query` | ISRIC SoilGrids v2 | none | Global soil properties over a bounding box |
 | `gbif_occurrences` | GBIF | none | Species occurrence records within a radius |
 | `gbif_bbox_occurrences` | GBIF | none | Species occurrence records within a bounding box |
 | `sentinel5p_query` | Sentinel-5P TROPOMI | none | Atmospheric column at a point (CO / NO₂ / CH₄) |
 | `sentinel5p_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric column mean over a bounding box |
-| `openaq_query` | OpenAQ v3 | API key (free) | Surface air quality measurements |
+| `oco2_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column at a point |
+| `oco2_bbox_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column over a bounding box |
+| `emit_query` | NASA EMIT L2B | NASA EarthData token | Mineral identification at a point |
+| `emit_bbox_query` | NASA EMIT L2B | NASA EarthData token | Mineral identification over a bounding box |
+| `essdive_query` | ESS-DIVE | ESS-DIVE token (free) | DOE environmental field datasets near a point |
+| `essdive_bbox_query` | ESS-DIVE | ESS-DIVE token (free) | DOE environmental field datasets within a bounding box |
+| `openaq_query` | OpenAQ v3 | API key (free) | Surface air quality measurements near a point |
+| `openaq_bbox_query` | OpenAQ v3 | API key (free) | Surface air quality measurements within a bounding box |
 
 ### Environment variables
 
-| Variable | Required | Description |
+| Variable | Required by | Description |
 |---|---|---|
-| `OPENAQ_API_KEY` | Recommended | Free key from [openaq.org](https://openaq.org) — requests without a key are rejected by the API |
+| `EARTHDATA_TOKEN` | OCO-2, EMIT | NASA EarthData bearer token — register free at [urs.earthdata.nasa.gov](https://urs.earthdata.nasa.gov) |
+| `ESSDIVE_TOKEN` | ESS-DIVE | ESS-DIVE API token — register free at [ess-dive.lbl.gov](https://ess-dive.lbl.gov) |
+| `OPENAQ_API_KEY` | OpenAQ | Free key from [openaq.org](https://openaq.org) — requests without a key are rejected by the API |
 
 ---
 
@@ -67,7 +79,7 @@ uv sync --extra dev
 uv run pytest tests/unit/ -m "not integration" -v
 ```
 
-Expected output: 170+ unit tests pass; all HTTP / S3 calls are mocked.
+Expected output: 250+ unit tests pass; all HTTP / S3 calls are mocked.
 
 ### Run tests with coverage report
 
@@ -117,10 +129,9 @@ sources are collected in [LICENSES.md](LICENSES.md).
 | GBIF | CC0 / CC BY / CC BY-NC per record |
 | Sentinel-5P | ESA Copernicus Open Access |
 | OpenAQ | CC BY 4.0 |
-| OCO-2 / OCO-3 | Public domain (NASA) |
+| OCO-2 | Public domain (NASA) |
 | EMIT | Public domain (NASA) |
 | ESS-DIVE | Varies per dataset |
-| Google Earth Engine | Varies per dataset |
 
 ---
 
