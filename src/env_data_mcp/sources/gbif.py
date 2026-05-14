@@ -138,7 +138,7 @@ def _fetch_gbif(
     # before filtering, which takes >120 s. PyArrow's scanner applies row-group
     # statistics pushdown and stops as soon as `limit + 1` rows are found,
     # completing in ~10 s for typical point/bbox queries.
-    s3 = pafs.S3FileSystem(anonymous=True, region="us-east-1")
+    s3 = pafs.S3FileSystem(anonymous=True, region="us-east-1")  # pyright: ignore[reportPrivateImportUsage]
     path = f"{_GBIF_BUCKET}/occurrence/{partition}/occurrence.parquet"
     dataset = pads.dataset(path, filesystem=s3, format="parquet")
 

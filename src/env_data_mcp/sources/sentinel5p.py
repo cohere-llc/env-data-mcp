@@ -102,6 +102,17 @@ VARIABLE_INFO: dict[str, dict[str, str]] = {
 _QA_THRESHOLD = 0.5
 
 
+def _hf_read(hf: h5py.File, key: str) -> np.ndarray:
+    """Read an HDF5 dataset into a numpy array.
+
+    h5py stubs type ``File.__getitem__`` as returning
+    ``Group | Dataset | Datatype``; slicing with ``[()]`` is only valid on
+    ``Dataset``.  This helper centralises the ``# type: ignore`` so callers
+    remain clean.
+    """
+    return hf[key][()]  # type: ignore[index]
+
+
 # ---------------------------------------------------------------------------
 # Core query logic (testable without MCP)
 # ---------------------------------------------------------------------------
@@ -228,8 +239,8 @@ def _query_granules_point(
                 h5py.File(fobj, "r") as hf,
             ):
                 # Load lat/lon first for the cheap bounding-box pre-filter.
-                lat_f = hf["PRODUCT/latitude"][:].ravel()
-                lon_f = hf["PRODUCT/longitude"][:].ravel()
+                lat_f = _hf_read(hf, "PRODUCT/latitude").ravel()
+                lon_f = _hf_read(hf, "PRODUCT/longitude").ravel()
 
                 # Skip granules whose swath doesn't cover the target.
                 if (
@@ -241,8 +252,8 @@ def _query_granules_point(
                     continue
 
                 # Granule passes bbox — load the expensive qa and product arrays.
-                qa_f = hf["PRODUCT/qa_value"][:].ravel()
-                val_f = hf[f"PRODUCT/{variable}"][:].ravel()
+                qa_f = _hf_read(hf, "PRODUCT/qa_value").ravel()
+                val_f = _hf_read(hf, f"PRODUCT/{variable}").ravel()
 
                 value = _extract_pixel_point(lat_f, lon_f, qa_f, val_f, target_lat, target_lon)
         except Exception:
@@ -290,8 +301,8 @@ def _query_granules_bbox(
                 h5py.File(fobj, "r") as hf,
             ):
                 # Load lat/lon first for the cheap bounding-box pre-filter.
-                lat_f = hf["PRODUCT/latitude"][:].ravel()
-                lon_f = hf["PRODUCT/longitude"][:].ravel()
+                lat_f = _hf_read(hf, "PRODUCT/latitude").ravel()
+                lon_f = _hf_read(hf, "PRODUCT/longitude").ravel()
 
                 # Skip granules whose swath doesn't overlap the bbox.
                 if (
@@ -303,8 +314,8 @@ def _query_granules_bbox(
                     continue
 
                 # Granule overlaps bbox — load the expensive qa and product arrays.
-                qa_f = hf["PRODUCT/qa_value"][:].ravel()
-                val_f = hf[f"PRODUCT/{variable}"][:].ravel()
+                qa_f = _hf_read(hf, "PRODUCT/qa_value").ravel()
+                val_f = _hf_read(hf, f"PRODUCT/{variable}").ravel()
 
                 value = _extract_mean_bbox(
                     lat_f, lon_f, qa_f, val_f, min_lat, max_lat, min_lon, max_lon
