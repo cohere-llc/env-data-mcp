@@ -23,9 +23,9 @@ mcp = FastMCP(
 from env_data_mcp.sources import nasa_power  # Phase 1
 from env_data_mcp.sources import soilgrids  # Phase 1
 from env_data_mcp.sources import ssurgo  # Phase 1
-# from env_data_mcp.sources import gbif          # Phase 2
-# from env_data_mcp.sources import sentinel5p    # Phase 2
-# from env_data_mcp.sources import openaq        # Phase 2
+from env_data_mcp.sources import gbif  # Phase 2
+from env_data_mcp.sources import openaq  # Phase 2
+from env_data_mcp.sources import sentinel5p  # Phase 2
 # from env_data_mcp.sources import oco2          # Phase 3
 # from env_data_mcp.sources import emit          # Phase 3
 # from env_data_mcp.sources import essdive       # Phase 3
