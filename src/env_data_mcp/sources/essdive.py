@@ -146,6 +146,10 @@ def _search_packages(
                     "Regenerate at https://data.ess-dive.lbl.gov/ → "
                     "Account Settings → API Tokens and update ESSDIVE_TOKEN in .env."
                 )
+            # ESS-DIVE returns 404 with {"detail":"No datasets were found."} when
+            # the query matches no records — treat this as an empty result set.
+            if resp.status_code == 404:
+                break
             resp.raise_for_status()
 
             body = resp.json()

@@ -1,0 +1,252 @@
+{
+  "generated_at": "2026-05-14T21:57:24.694772+00:00",
+  "note": "Phase 1 \u2014 Yakima WA (46.25\u00b0, \u2212119.47\u00b0), \u2264 1 month, point queries. Model: t_est(n_days) = alpha + beta_n_days \u00b7 n_days  (seconds). Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration",
+  "location": {
+    "latitude": 46.2531882,
+    "longitude": -119.4768203
+  },
+  "model": {
+    "emit": {
+      "alpha": 0.209,
+      "beta_n_days": 0.0022,
+      "r2": null,
+      "equation": "t \u2248 0.21 + 0.002\u00b7n_days  (2-point fit)"
+    },
+    "essdive": {
+      "alpha": 1.636,
+      "beta_n_days": -0.0272,
+      "r2": 0.3475,
+      "equation": "t \u2248 1.64 + -0.027\u00b7n_days"
+    },
+    "gbif": {
+      "alpha": 0.663,
+      "beta_n_days": 0.0017,
+      "r2": 0.6039,
+      "equation": "t \u2248 0.66 + 0.002\u00b7n_days"
+    },
+    "nasa_power": {
+      "alpha": 0.836,
+      "beta_n_days": 0.0054,
+      "r2": 0.0834,
+      "equation": "t \u2248 0.84 + 0.005\u00b7n_days"
+    },
+    "oco2": {
+      "alpha": 0.462,
+      "beta_n_days": 2.6035,
+      "r2": null,
+      "equation": "t \u2248 0.46 + 2.604\u00b7n_days  (2-point fit)"
+    },
+    "openaq": {
+      "alpha": 1.37,
+      "beta_n_days": -0.0119,
+      "r2": 0.4261,
+      "equation": "t \u2248 1.37 + -0.012\u00b7n_days"
+    },
+    "sentinel5p": {
+      "alpha": 3.848,
+      "beta_n_days": 0.129,
+      "r2": 0.9979,
+      "equation": "t \u2248 3.85 + 0.129\u00b7n_days"
+    },
+    "soilgrids": {
+      "alpha": 1.191,
+      "beta_n_days": 0.0,
+      "r2": null,
+      "equation": "t \u2248 1.19  (single observation)"
+    },
+    "ssurgo": {
+      "alpha": 0.541,
+      "beta_n_days": 0.0,
+      "r2": null,
+      "equation": "t \u2248 0.54  (single observation)"
+    }
+  },
+  "raw": {
+    "nasa_power": [
+      {
+        "scenario": "1day",
+        "n_days": 1,
+        "area_deg2": 0.0,
+        "latency_s": 1.089,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "1week",
+        "n_days": 7,
+        "area_deg2": 0.0,
+        "latency_s": 0.565,
+        "success": true,
+        "n_records": 7
+      },
+      {
+        "scenario": "1month",
+        "n_days": 31,
+        "area_deg2": 0.0,
+        "latency_s": 1.065,
+        "success": true,
+        "n_records": 31
+      }
+    ],
+    "soilgrids": [
+      {
+        "scenario": "point",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "latency_s": 1.191,
+        "success": true,
+        "n_records": 12
+      }
+    ],
+    "ssurgo": [
+      {
+        "scenario": "point",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "latency_s": 0.541,
+        "success": true,
+        "n_records": 2
+      }
+    ],
+    "gbif": [
+      {
+        "scenario": "1day",
+        "n_days": 1,
+        "area_deg2": 0.0,
+        "latency_s": 0.684,
+        "success": true,
+        "n_records": 0
+      },
+      {
+        "scenario": "1week",
+        "n_days": 7,
+        "area_deg2": 0.0,
+        "latency_s": 0.651,
+        "success": true,
+        "n_records": 0
+      },
+      {
+        "scenario": "1month",
+        "n_days": 31,
+        "area_deg2": 0.0,
+        "latency_s": 0.721,
+        "success": true,
+        "n_records": 2
+      }
+    ],
+    "sentinel5p": [
+      {
+        "scenario": "1day",
+        "n_days": 1,
+        "area_deg2": 0.0,
+        "latency_s": 3.895,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "1week",
+        "n_days": 7,
+        "area_deg2": 0.0,
+        "latency_s": 4.853,
+        "success": true,
+        "n_records": 7
+      },
+      {
+        "scenario": "1month",
+        "n_days": 31,
+        "area_deg2": 0.0,
+        "latency_s": 7.826,
+        "success": true,
+        "n_records": 31
+      }
+    ],
+    "openaq": [
+      {
+        "scenario": "1day",
+        "n_days": 1,
+        "area_deg2": 0.0,
+        "latency_s": 1.166,
+        "success": true,
+        "n_records": 200
+      },
+      {
+        "scenario": "1week",
+        "n_days": 7,
+        "area_deg2": 0.0,
+        "latency_s": 1.526,
+        "success": true,
+        "n_records": 200
+      },
+      {
+        "scenario": "1month",
+        "n_days": 31,
+        "area_deg2": 0.0,
+        "latency_s": 0.952,
+        "success": true,
+        "n_records": 200
+      }
+    ],
+    "essdive": [
+      {
+        "scenario": "1day",
+        "n_days": 1,
+        "area_deg2": 0.0,
+        "latency_s": 2.126,
+        "success": true,
+        "n_records": 0
+      },
+      {
+        "scenario": "1week",
+        "n_days": 7,
+        "area_deg2": 0.0,
+        "latency_s": 0.799,
+        "success": true,
+        "n_records": 0
+      },
+      {
+        "scenario": "1month",
+        "n_days": 31,
+        "area_deg2": 0.0,
+        "latency_s": 0.921,
+        "success": true,
+        "n_records": 0
+      }
+    ],
+    "oco2": [
+      {
+        "scenario": "1day",
+        "n_days": 1,
+        "area_deg2": 0.0,
+        "latency_s": 3.066,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "1week",
+        "n_days": 7,
+        "area_deg2": 0.0,
+        "latency_s": 18.687,
+        "success": true,
+        "n_records": 7
+      }
+    ],
+    "emit": [
+      {
+        "scenario": "1day",
+        "n_days": 1,
+        "area_deg2": 0.0,
+        "latency_s": 0.211,
+        "success": true,
+        "n_records": 0
+      },
+      {
+        "scenario": "1week",
+        "n_days": 7,
+        "area_deg2": 0.0,
+        "latency_s": 0.224,
+        "success": true,
+        "n_records": 0
+      }
+    ]
+  }
+}
