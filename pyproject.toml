@@ -15,6 +15,10 @@ dependencies = [
     "pandas>=2.0",
     "numpy>=1.26",
     "earthengine-api>=0.1.400",
+    "h5netcdf>=1.8.1",
+    "pyarrow>=24.0.0",
+    "dask[dataframe]>=2026.3.0",
+    "h5py>=3.16.0",
 ]
 
 [project.optional-dependencies]

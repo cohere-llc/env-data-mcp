@@ -9,8 +9,8 @@ workflow.  Tools accept a location (point or bounding box) and a date range and 
 structured JSON with the data and a `_meta` block that includes the data licence,
 latency, and enough provenance information to reproduce the query.
 
-**Status:** Phase 0 scaffold — server starts and responds to the MCP handshake; data
-tools are added in later phases.
+**Status:** Phase 2 complete — 6 no-auth sources operational (NASA POWER, SSURGO,
+SoilGrids, GBIF, Sentinel-5P, OpenAQ).
 
 ---
 
@@ -25,8 +25,26 @@ uv sync
 uv run env-data-mcp
 ```
 
-The server prints no output on start; an MCP client connects via stdio.  With the Phase 0
-scaffold the tool list is empty — tools are added in Phases 1–4.
+The server prints no output on start; an MCP client connects via stdio.
+
+### Available tools
+
+| Tool | Source | Auth | Description |
+|---|---|---|---|
+| `nasa_power_query` | NASA POWER | none | Daily weather (T, precip, RH, radiation) at a point |
+| `ssurgo_query` | USDA SSURGO | none | Soil map unit and properties for a US point |
+| `soilgrids_query` | ISRIC SoilGrids v2 | none | Global soil properties at a point |
+| `gbif_occurrences` | GBIF | none | Species occurrence records within a radius |
+| `gbif_bbox_occurrences` | GBIF | none | Species occurrence records within a bounding box |
+| `sentinel5p_query` | Sentinel-5P TROPOMI | none | Atmospheric column at a point (CO / NO₂ / CH₄) |
+| `sentinel5p_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric column mean over a bounding box |
+| `openaq_query` | OpenAQ v3 | API key (free) | Surface air quality measurements |
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `OPENAQ_API_KEY` | Recommended | Free key from [openaq.org](https://openaq.org) — requests without a key are rejected by the API |
 
 ---
 
@@ -49,7 +67,7 @@ uv sync --extra dev
 uv run pytest tests/unit/ -m "not integration" -v
 ```
 
-Expected output: all unit tests pass, with `helpers.py` and `models.py` at 100 % coverage.
+Expected output: 170+ unit tests pass; all HTTP / S3 calls are mocked.
 
 ### Run tests with coverage report
 
@@ -58,21 +76,30 @@ uv run pytest tests/unit/ -m "not integration" --cov=env_data_mcp --cov-report=h
 # then open htmlcov/index.html
 ```
 
-### Run integration tests (requires network and credentials)
-
-Integration tests are not yet written (Phase 1+).  When available:
+### Run integration tests (requires network)
 
 ```bash
-uv run pytest tests/integration/ -m integration -v
+uv run pytest tests/ -m integration -v
 ```
+
+OpenAQ integration tests also require `OPENAQ_API_KEY` to be set.
 
 ### Run example notebooks
 
-```bash
-uv run pytest notebooks/ --nbmake
-```
+Two demonstration notebooks are included:
 
-No notebooks exist yet; this command will collect zero items and exit successfully.
+| Notebook | Description |
+|---|---|
+| `notebooks/grow_point_sample_demo.ipynb` | All 6 sources for 5 real GROW field samples |
+| `notebooks/pnnl_bbox_demo.ipynb` | NASA POWER + Sentinel-5P over the PNNL Richland bbox |
+
+```bash
+# Run interactively
+jupyter lab notebooks/
+
+# Or run headlessly via nbmake (network required; S5P cells take 30–120 s each)
+uv run pytest notebooks/ --nbmake --ignore=notebooks/api_smoke_test.ipynb
+```
 
 ---
 
