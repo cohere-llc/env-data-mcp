@@ -380,7 +380,7 @@ env-data-mcp/
 ├── pyproject.toml              # Package config; entry point: env-data-mcp
 ├── README.md                   # Installation, credential setup, .mcp.json snippet
 ├── LICENSES.md                 # Per-source license and citation text (see Data Licenses)
-├── .env.example                # Template: EARTHDATA_USERNAME, ESSDIVE_TOKEN, etc.
+├── .env.example                # Template: EARTHDATA_TOKEN, ESSDIVE_TOKEN, etc.
 ├── src/
 │   └── env_data_mcp/
 │       ├── __init__.py
@@ -395,8 +395,8 @@ env-data-mcp/
 │           ├── gbif.py         # anonymous S3 Parquet adapter; LICENSE_INFO constant
 │           ├── sentinel5p.py   # no-sign S3 adapter; LICENSE_INFO constant
 │           ├── openaq.py       # REST adapter; LICENSE_INFO constant
-│           ├── oco2.py         # OPeNDAP + netrc adapter; LICENSE_INFO constant
-│           ├── emit.py         # OPeNDAP + netrc adapter; LICENSE_INFO constant
+│           ├── oco2.py         # OPeNDAP + bearer token adapter; LICENSE_INFO constant
+│           ├── emit.py         # OPeNDAP + bearer token adapter; LICENSE_INFO constant
 │           ├── essdive.py      # REST adapter; LICENSE_INFO constant
 │           └── gee.py          # Earth Engine Python API adapter; LICENSE_INFO constant
 ├── notebooks/
@@ -480,32 +480,40 @@ Auth-required tools check for credentials at call time:
 
 1. Read from environment variables (set in `.mcp.json` `env` block or loaded from `.env`)
 2. If missing: return `{"data": [], "_meta": {"success": false, "auth_required": true, "auth_present": false, "error": "<setup message>"}}` — do not raise an unhandled exception. This allows the caller to log the auth friction and continue with other sources.
-3. Never hard-code credentials or read from files outside of standard paths (`~/.netrc` for EarthData, env vars for everything else)
+3. Never hard-code credentials; always read auth from env vars (never from files on disk)
 
 ```python
 # Pattern for auth-required tools
 @mcp.tool()
 def oco2_query(latitude, longitude, start_date, end_date):
-    username = os.environ.get("EARTHDATA_USERNAME")
-    password = os.environ.get("EARTHDATA_PASSWORD")
-    if not username or not password:
+    token = os.environ.get("EARTHDATA_TOKEN")
+    if not token:
         return {
             "data": [],
             "_meta": {
                 "source": "oco2", "auth_required": True, "auth_present": False,
                 "success": False, "rows_returned": 0, "latency_s": 0,
-                "error": "EARTHDATA_USERNAME and EARTHDATA_PASSWORD required. "
-                         "Register free at https://urs.earthdata.nasa.gov/"
+                "error": "EARTHDATA_TOKEN required. "
+                         "Register free at https://urs.earthdata.nasa.gov/ then generate "
+                         "a token under Profile → Generate Token."
             }
         }
+    headers = {"Authorization": f"Bearer {token}"}
+    # Pass headers= to every httpx / requests call that hits urs.earthdata.nasa.gov
+    # or any EDL-integrated OPeNDAP endpoint (e.g. opendap.earthdata.nasa.gov).
     ...
     return {"data": records, "_meta": {"source": "oco2", "auth_required": True,
                                         "auth_present": True, "success": True, ...}}
 ```
 
-| Source | Env var(s) | Registration URL |
+NASA EarthData supports bearer tokens for all EDL-compliant applications (including OPeNDAP).
+A bearer token is preferred over username/password: it is a single env var, requires no
+`~/.netrc`, and can be revoked without changing your password.
+Generate a token at: https://urs.earthdata.nasa.gov/ → Profile → Generate Token.
+
+| Source | Env var | Registration URL |
 |---|---|---|
-| OCO-2, EMIT | `EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD` | https://urs.earthdata.nasa.gov/ |
+| OCO-2, EMIT | `EARTHDATA_TOKEN` | https://urs.earthdata.nasa.gov/ |
 | ESS-DIVE | `ESSDIVE_TOKEN` | https://data.ess-dive.lbl.gov/ |
 | GEE | `GOOGLE_APPLICATION_CREDENTIALS` | https://console.cloud.google.com/ + GEE project approval |
 
@@ -715,27 +723,22 @@ Required for `oco2_query` (Step 3.1) and `emit_query` (Step 3.2).
 
 1. Register at https://urs.earthdata.nasa.gov/ (free, instant)
 2. Under "Applications" → "Authorized Apps", approve "NASA GESDISC DATA ARCHIVE" and "EARTHDATA OPENDAP"
-3. Create `~/.netrc`:
-   ```
-   machine urs.earthdata.nasa.gov login <username> password <password>
-   ```
-4. `chmod 600 ~/.netrc`
-5. Add `EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD` to `.env` (for MCP server invocation)
-6. Verify: `curl --netrc https://opendap.earthdata.nasa.gov/` returns a directory listing, not a 401
+3. Generate a bearer token: Profile → Generate Token (up to 2 active tokens at a time)
+4. Add `EARTHDATA_TOKEN=<token>` to `.env`
+5. Verify: `curl -H "Authorization: Bearer <token>" https://opendap.earthdata.nasa.gov/` returns a directory listing, not a 401
 
 **Step 3.1 — `oco2_query`**
 
 - Implement `sources/oco2.py`:
   - Target: OCO-2 Level 3 monthly XCO2 via OPeNDAP at `https://opendap.earthdata.nasa.gov/providers/GES_DISC/collections/OCO2_L3CO2_7r.10.3/granules/`
-  - Use `netCDF4` (or `xarray` with `pydap` backend) with `~/.netrc` for auth; no password in env vars at query time (already in netrc)
-  - Also check `os.environ` for `EARTHDATA_USERNAME`/`EARTHDATA_PASSWORD`; write a temporary netrc entry if env vars are present but `~/.netrc` is absent
+  - Use `httpx` with `headers={"Authorization": f"Bearer {token}"}` for all OPeNDAP requests; read token from `EARTHDATA_TOKEN` env var
   - `LICENSE_INFO` constant
 - **Unit tests**: mock the OPeNDAP URL response (a small synthetic NetCDF fixture)
 - **Integration test**: yakimariver, Aug 2019; assert `xco2` column present, values in 390–430 ppm range
 
 **⚠️ Account registration: same NASA EarthData credentials work for EMIT**
 
-No additional registration needed. EMIT uses the same `~/.netrc` and env vars.
+No additional registration needed. EMIT uses the same `EARTHDATA_TOKEN`.
 
 **Step 3.2 — `emit_query`**
 
@@ -810,8 +813,8 @@ Create `.github/workflows/test.yml`:
 
 Create `.github/workflows/integration.yml`:
 - Trigger: `cron: "0 6 * * *"` + manual `workflow_dispatch`
-- Store all credentials as GitHub Secrets: `EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD`, `ESSDIVE_TOKEN`, `GOOGLE_APPLICATION_CREDENTIALS` (base64-encoded JSON key)
-- Steps: decode GEE key to file, write `~/.netrc`, `pytest tests/integration/ -m integration --tb=short`
+- Store all credentials as GitHub Secrets: `EARTHDATA_TOKEN`, `ESSDIVE_TOKEN`, `GOOGLE_APPLICATION_CREDENTIALS` (base64-encoded JSON key)
+- Steps: decode GEE key to file, `pytest tests/integration/ -m integration --tb=short`
 - On failure: create a GitHub Issue with the failure summary (use `actions/github-script`)
 - **Purpose**: flags upstream API changes within 24 hours so you know before users do
 
@@ -919,9 +922,8 @@ Sections:
 **Step 5.2 — `.env.example`**
 
 ```bash
-# NASA EarthData (OCO-2, EMIT)
-EARTHDATA_USERNAME=
-EARTHDATA_PASSWORD=
+# NASA EarthData (OCO-2, EMIT) — generate token at https://urs.earthdata.nasa.gov/
+EARTHDATA_TOKEN=
 
 # ESS-DIVE
 ESSDIVE_TOKEN=
@@ -1083,7 +1085,7 @@ Complete these in order before starting the corresponding implementation step. I
 
 | When | Service | URL | Time to access | What you get |
 |---|---|---|---|---|
-| **Before Phase 3, Step 3.1** | NASA EarthData | https://urs.earthdata.nasa.gov/ | Instant | `EARTHDATA_USERNAME` + `EARTHDATA_PASSWORD`; needed for OCO-2 and EMIT |
+| **Before Phase 3, Step 3.1** | NASA EarthData | https://urs.earthdata.nasa.gov/ | Instant | `EARTHDATA_TOKEN`; generate under Profile → Generate Token; needed for OCO-2 and EMIT |
 | **Before Phase 3, Step 3.3** | ESS-DIVE | https://data.ess-dive.lbl.gov/ | Instant (uses ORCID/Google login) | API token → `ESSDIVE_TOKEN` |
 | **At least 1–3 days before Phase 3, Step 3.4** | Google Earth Engine | https://earthengine.google.com/signup/ | 24–72 h for approval | GEE project access; then create a service account JSON key → `GOOGLE_APPLICATION_CREDENTIALS` |
 
@@ -1123,8 +1125,7 @@ Complete these in order before starting the corresponding implementation step. I
          "command": "uv",
          "args": ["run", "--directory", "/home/user/git-repos/env-data-mcp", "env-data-mcp"],
          "env": {
-           "EARTHDATA_USERNAME": "${env:EARTHDATA_USERNAME}",
-           "EARTHDATA_PASSWORD": "${env:EARTHDATA_PASSWORD}",
+           "EARTHDATA_TOKEN": "${env:EARTHDATA_TOKEN}",
            "ESSDIVE_TOKEN": "${env:ESSDIVE_TOKEN}",
            "GOOGLE_APPLICATION_CREDENTIALS": "${env:GOOGLE_APPLICATION_CREDENTIALS}",
            "GEE_PROJECT": "${env:GEE_PROJECT}"
@@ -1156,8 +1157,7 @@ Complete these in order before starting the corresponding implementation step. I
          "command": "uvx",
          "args": ["--from", "/home/user/git-repos/env-data-mcp", "env-data-mcp"],
          "env": {
-           "EARTHDATA_USERNAME": "${EARTHDATA_USERNAME}",
-           "EARTHDATA_PASSWORD": "${EARTHDATA_PASSWORD}",
+           "EARTHDATA_TOKEN": "${EARTHDATA_TOKEN}",
            "ESSDIVE_TOKEN": "${ESSDIVE_TOKEN}",
            "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}",
            "GEE_PROJECT": "${GEE_PROJECT}"
@@ -1219,8 +1219,7 @@ No PyPI publishing required for local testing. Add to BERIL's `.mcp.json`:
       "command": "uvx",
       "args": ["--from", "/home/user/git-repos/env-data-mcp", "env-data-mcp"],
       "env": {
-        "EARTHDATA_USERNAME": "${EARTHDATA_USERNAME}",
-        "EARTHDATA_PASSWORD": "${EARTHDATA_PASSWORD}",
+        "EARTHDATA_TOKEN": "${EARTHDATA_TOKEN}",
         "ESSDIVE_TOKEN": "${ESSDIVE_TOKEN}",
         "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}",
         "GEE_PROJECT": "${GEE_PROJECT}"

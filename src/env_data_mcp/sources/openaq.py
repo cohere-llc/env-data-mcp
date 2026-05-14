@@ -86,9 +86,8 @@ def _fetch_locations(
     lat: float,
     lon: float,
     radius_m: int,
-    parameters: list[str],
 ) -> list[dict[str, Any]]:
-    """Return up to 100 nearby sensor locations for the given parameters."""
+    """Return up to 100 nearby sensor locations within radius_m of lat/lon."""
     resp = client.get(
         f"{_OPENAQ_BASE}/locations",
         params={
@@ -190,7 +189,7 @@ def _fetch_openaq(
     records: list[dict[str, Any]] = []
 
     with httpx.Client(timeout=30.0) as client:
-        locations = _fetch_locations(client, api_key, lat, lon, radius_m, parameters)
+        locations = _fetch_locations(client, api_key, lat, lon, radius_m)
         remaining = limit
         for loc in locations:
             if remaining <= 0:

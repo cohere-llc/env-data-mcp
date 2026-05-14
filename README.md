@@ -9,8 +9,8 @@ workflow.  Tools accept a location (point or bounding box) and a date range and 
 structured JSON with the data and a `_meta` block that includes the data licence,
 latency, and enough provenance information to reproduce the query.
 
-**Status:** Phase 2 complete — 6 no-auth sources operational (NASA POWER, SSURGO,
-SoilGrids, GBIF, Sentinel-5P, OpenAQ).
+**Status:** Phase 2 complete — 5 no-auth sources operational (NASA POWER, SSURGO,
+SoilGrids, GBIF, Sentinel-5P) + 1 auth-required source (OpenAQ, free key).
 
 ---
 

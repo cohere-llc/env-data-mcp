@@ -121,6 +121,7 @@ def test_fetch_gbif_returns_records():
     with (
         patch("env_data_mcp.sources.gbif.s3fs.S3FileSystem") as mock_s3_cls,
         patch("env_data_mcp.sources.gbif.pads.dataset") as mock_ds,
+        patch("env_data_mcp.sources.gbif.pafs.S3FileSystem"),
     ):
         mock_fs = MagicMock()
         mock_fs.ls.return_value = [f"{_GBIF_BUCKET}/occurrence/{_PARTITION}"]
@@ -153,6 +154,7 @@ def test_fetch_gbif_row_cap():
     with (
         patch("env_data_mcp.sources.gbif.s3fs.S3FileSystem") as mock_s3_cls,
         patch("env_data_mcp.sources.gbif.pads.dataset", return_value=mock_dataset),
+        patch("env_data_mcp.sources.gbif.pafs.S3FileSystem"),
     ):
         mock_fs = MagicMock()
         mock_fs.ls.return_value = [f"{_GBIF_BUCKET}/occurrence/{_PARTITION}"]
@@ -186,6 +188,7 @@ def test_fetch_gbif_license_aggregation():
     with (
         patch("env_data_mcp.sources.gbif.s3fs.S3FileSystem") as mock_s3_cls,
         patch("env_data_mcp.sources.gbif.pads.dataset") as mock_ds,
+        patch("env_data_mcp.sources.gbif.pafs.S3FileSystem"),
     ):
         mock_fs = MagicMock()
         mock_fs.ls.return_value = [f"{_GBIF_BUCKET}/occurrence/{_PARTITION}"]
@@ -215,6 +218,7 @@ def test_gbif_occurrences_success():
     with (
         patch("env_data_mcp.sources.gbif.s3fs.S3FileSystem") as mock_s3_cls,
         patch("env_data_mcp.sources.gbif.pads.dataset") as mock_ds,
+        patch("env_data_mcp.sources.gbif.pafs.S3FileSystem"),
     ):
         mock_fs = MagicMock()
         mock_fs.ls.return_value = [f"{_GBIF_BUCKET}/occurrence/{_PARTITION}"]
@@ -241,6 +245,7 @@ def test_gbif_occurrences_meta_variable_info():
     with (
         patch("env_data_mcp.sources.gbif.s3fs.S3FileSystem") as mock_s3_cls,
         patch("env_data_mcp.sources.gbif.pads.dataset") as mock_ds,
+        patch("env_data_mcp.sources.gbif.pafs.S3FileSystem"),
     ):
         mock_fs = MagicMock()
         mock_fs.ls.return_value = [f"{_GBIF_BUCKET}/occurrence/{_PARTITION}"]
@@ -266,6 +271,7 @@ def test_gbif_occurrences_meta_license_populated():
     with (
         patch("env_data_mcp.sources.gbif.s3fs.S3FileSystem") as mock_s3_cls,
         patch("env_data_mcp.sources.gbif.pads.dataset") as mock_ds,
+        patch("env_data_mcp.sources.gbif.pafs.S3FileSystem"),
     ):
         mock_fs = MagicMock()
         mock_fs.ls.return_value = [f"{_GBIF_BUCKET}/occurrence/{_PARTITION}"]
@@ -309,6 +315,7 @@ def test_gbif_occurrences_query_params_echoed():
     with (
         patch("env_data_mcp.sources.gbif.s3fs.S3FileSystem") as mock_s3_cls,
         patch("env_data_mcp.sources.gbif.pads.dataset") as mock_ds,
+        patch("env_data_mcp.sources.gbif.pafs.S3FileSystem"),
     ):
         mock_fs = MagicMock()
         mock_fs.ls.return_value = [f"{_GBIF_BUCKET}/occurrence/{_PARTITION}"]
@@ -339,6 +346,7 @@ def test_gbif_bbox_occurrences_success():
     with (
         patch("env_data_mcp.sources.gbif.s3fs.S3FileSystem") as mock_s3_cls,
         patch("env_data_mcp.sources.gbif.pads.dataset") as mock_ds,
+        patch("env_data_mcp.sources.gbif.pafs.S3FileSystem"),
     ):
         mock_fs = MagicMock()
         mock_fs.ls.return_value = [f"{_GBIF_BUCKET}/occurrence/{_PARTITION}"]

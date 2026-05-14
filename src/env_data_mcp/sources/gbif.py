@@ -169,7 +169,6 @@ def _fetch_gbif(
     result_df = table.to_pandas()
 
     total_before_cap = len(result_df)
-    capped = total_before_cap > limit
     result_df = result_df.iloc[:limit]
 
     # Aggregate licenses before renaming columns ("license" is the same in both schemas).
@@ -181,7 +180,7 @@ def _fetch_gbif(
     result_df = result_df.rename(columns=_COLUMN_RENAME)
 
     records: list[dict[str, Any]] = result_df.to_dict(orient="records")  # type: ignore[assignment]
-    return records, total_before_cap if not capped else total_before_cap, partition, unique_licenses
+    return records, total_before_cap, partition, unique_licenses
 
 
 # ---------------------------------------------------------------------------
@@ -238,6 +237,11 @@ def gbif_occurrences(
             "max_lon": longitude + deg,
         }
     )
+    # Echo the resolved (clamped) bbox so the meta block is fully reproducible.
+    query_params["resolved_min_lat"] = bbox["min_lat"]
+    query_params["resolved_max_lat"] = bbox["max_lat"]
+    query_params["resolved_min_lon"] = bbox["min_lon"]
+    query_params["resolved_max_lon"] = bbox["max_lon"]
     try:
         records, total, partition, unique_licenses = _fetch_gbif(
             min_lat=bbox["min_lat"],
@@ -322,6 +326,8 @@ def gbif_bbox_occurrences(
     bbox = clamp_bbox(
         {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     )
+    # Overwrite query_params with the clamped values so the meta block is fully reproducible.
+    query_params.update(bbox)
     try:
         records, total, partition, unique_licenses = _fetch_gbif(
             min_lat=bbox["min_lat"],
