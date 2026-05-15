@@ -9,15 +9,16 @@ workflow.  Tools accept a location (point or bounding box) and a date range and 
 structured JSON with the data and a `_meta` block that includes the data licence,
 latency, and enough provenance information to reproduce the query.
 
-**Status:** Phase 3 complete — 9 sources operational (NASA POWER, SSURGO, SoilGrids,
-GBIF, Sentinel-5P, OCO-2, EMIT, ESS-DIVE, OpenAQ).
+**Status:** Prototype complete — 9 sources operational (NASA POWER, SSURGO, SoilGrids,
+GBIF, Sentinel-5P, OCO-2, EMIT, ESS-DIVE, OpenAQ). CI matrix on Python 3.11/3.12,
+nightly integration tests, schema stability assertions.
 
 ---
 
 ## Quick start
 
 ```bash
-git clone https://github.com/<org>/env-data-mcp.git
+git clone https://github.com/cohere-llc/env-data-mcp.git
 cd env-data-mcp
 uv sync
 
@@ -26,6 +27,103 @@ uv run env-data-mcp
 ```
 
 The server prints no output on start; an MCP client connects via stdio.
+
+### Hello-world example
+
+With the server running, verify it works with this self-contained Python snippet:
+
+```python
+# hello_world.py — run with: uv run python hello_world.py
+import asyncio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    params = StdioServerParameters(
+        command="uv",
+        args=["run", "env-data-mcp"],
+    )
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            result = await session.call_tool(
+                "nasa_power_query",
+                arguments={
+                    "latitude": 46.253,
+                    "longitude": -119.477,
+                    "start_date": "2023-05-01",
+                    "end_date": "2023-05-03",
+                },
+            )
+            print(result)
+
+asyncio.run(main())
+```
+
+Expected output shape:
+
+```json
+{
+  "data": [
+    {"date": "2023-05-01", "T2M": 14.2, "T2M_units": "C", "PRECTOTCORR": 0.0, ...},
+    {"date": "2023-05-02", "T2M": 15.8, "T2M_units": "C", "PRECTOTCORR": 1.3, ...},
+    {"date": "2023-05-03", "T2M": 13.1, "T2M_units": "C", "PRECTOTCORR": 0.0, ...}
+  ],
+  "_meta": {
+    "source": "nasa_power",
+    "rows_returned": 3,
+    "latency_s": 1.4,
+    "auth_required": false,
+    "success": true,
+    "license": "Public domain (NASA/US Government). Citation requested.",
+    "query_params": {"latitude": 46.253, "longitude": -119.477, ...}
+  }
+}
+```
+
+### Register in VS Code (`.mcp.json`)
+
+Add to your VS Code workspace `.mcp.json` to make all tools available to GitHub Copilot:
+
+```json
+{
+  "mcpServers": {
+    "env-data": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/env-data-mcp", "run", "env-data-mcp"],
+      "env": {
+        "EARTHDATA_TOKEN": "${EARTHDATA_TOKEN}",
+        "OPENAQ_API_KEY": "${OPENAQ_API_KEY}",
+        "ESSDIVE_TOKEN": "${ESSDIVE_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Replace `/path/to/env-data-mcp` with the absolute path to your local clone. The `${VAR}` syntax reads from your shell environment (or from a `.env` file if your MCP host supports it).
+
+### Register on JupyterHub / Lakehouse
+
+If the package wheel has been installed into the JupyterHub environment:
+
+```json
+{
+  "mcpServers": {
+    "env-data": {
+      "command": "uvx",
+      "args": ["--from", "env-data-mcp", "env-data-mcp"],
+      "env": {
+        "EARTHDATA_TOKEN": "${EARTHDATA_TOKEN}",
+        "OPENAQ_API_KEY": "${OPENAQ_API_KEY}",
+        "ESSDIVE_TOKEN": "${ESSDIVE_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+See [Credential setup](#environment-variables) for how to obtain each token.
 
 ### Available tools
 
