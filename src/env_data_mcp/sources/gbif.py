@@ -165,8 +165,9 @@ def gbif_occurrences(
         start_date: Inclusive start date, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         taxon_key: Optional GBIF taxon key to restrict results to a single taxon.
-        limit: Maximum number of occurrence records to return.  Pass ``None``
-            (default) to return all matching records.
+        limit: Maximum number of occurrence records to return.  Omit (or
+            pass ``None``) to rely on the ``max_runtime_s`` gate to bound
+            query cost rather than a hard record cap.
         max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:

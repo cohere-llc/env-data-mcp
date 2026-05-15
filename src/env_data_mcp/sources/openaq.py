@@ -253,8 +253,10 @@ def openaq_query(
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         parameters: List of pollutant codes to query (default:
             ``["pm25","pm10","o3","no2","co"]``).
-        limit: Maximum number of measurement records to return.  Pass ``None``
-            (default) to return all matching records.
+        limit: Maximum number of measurement records to return.  Omit (or
+            pass ``None``) to rely on the ``max_runtime_s`` gate to bound
+            query cost — the gate will reject queries estimated to exceed
+            the threshold before any network I/O occurs.
         max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:
@@ -387,8 +389,9 @@ def openaq_bbox_query(
         start_date: Inclusive start date, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         parameters: Pollutant codes (default: pm25, pm10, o3, no2, co).
-        limit: Maximum measurement records to return.  Pass ``None`` (default)
-            to return all matching records.
+        limit: Maximum measurement records to return.  Omit (or pass
+            ``None``) to rely on the ``max_runtime_s`` gate to bound query
+            cost rather than a hard record cap.
         max_runtime_s: Acceptable runtime in seconds; see timing docs.
     """
     if parameters is None:

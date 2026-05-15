@@ -13,7 +13,7 @@ import io
 import os
 import re
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, cast
 
 import h5py
@@ -574,8 +574,18 @@ def oco2_bbox_query(
 
         records: list[dict[str, Any]] = []
         with ThreadPoolExecutor(max_workers=10) as pool:
-            for batch in pool.map(_fetch_bbox, granules):
-                records.extend(batch)
+            futures = [pool.submit(_fetch_bbox, g) for g in granules]
+            try:
+                for fut in as_completed(futures):
+                    records.extend(fut.result())
+                    # Stop collecting as soon as the limit is met so that
+                    # queued (not-yet-started) futures can be cancelled,
+                    # avoiding unnecessary network I/O.
+                    if limit is not None and len(records) >= limit:
+                        break
+            finally:
+                for fut in futures:
+                    fut.cancel()
         records.sort(key=lambda r: r["date"])
         records = records[:limit] if limit is not None else records
         capped = limit is not None and len(records) >= limit

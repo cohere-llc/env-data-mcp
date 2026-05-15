@@ -347,9 +347,30 @@ class TestEstimateRuntime:
         assert t >= 32.84
 
     def test_emit_override_applied(self) -> None:
-        # For a 30-day EMIT query, override = 0.2 + (30//3)*3.5 = 0.2 + 35 = 35.2
+        # For a 30-day EMIT query at a point, override = 0.2 + (30//3)*1.0*3.5 = 35.2
         t = estimate_runtime("emit", n_days=30, area_deg2=0.0)
         assert t >= 35.2
+
+    def test_emit_override_area_aware(self) -> None:
+        # Larger bbox → more granules per 3-day window → higher estimate.
+        t_point = estimate_runtime("emit", n_days=30, area_deg2=0.0)
+        t_bbox = estimate_runtime("emit", n_days=30, area_deg2=100.0)
+        assert t_bbox > t_point
+
+    def test_sentinel5p_override_applied(self) -> None:
+        # 30-day point: n_granules=30*1.0=30; ceil(30/16)=2 batches → 2.0+2*4.5=11.0 s
+        t = estimate_runtime("sentinel5p", n_days=30, area_deg2=0.0)
+        assert t >= 11.0
+
+    def test_openaq_override_applied(self) -> None:
+        # 100-day: override = 1.5 + 0.15*100 = 16.5 s
+        t = estimate_runtime("openaq", n_days=100, area_deg2=0.0)
+        assert t >= 16.5
+
+    def test_gbif_override_more_conservative_than_model(self) -> None:
+        # 365-day 100 deg²: override = 2.0 + 365*0.13 + 100*0.18 = 67.45 s
+        t = estimate_runtime("gbif", n_days=365, area_deg2=100.0)
+        assert t >= 67.45
 
     def test_scales_with_n_days_for_gbif(self) -> None:
         # GBIF beta_n_days > 0 so longer windows → higher estimate.

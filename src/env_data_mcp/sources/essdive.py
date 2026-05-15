@@ -204,8 +204,9 @@ def essdive_query(
         end_date: Latest date of dataset temporal coverage, ISO 8601
             (YYYY-MM-DD).  Datasets starting after this date are excluded.
         text: Optional free-text filter applied across all metadata fields.
-        limit: Maximum number of datasets to return.  Pass ``None`` (default)
-            to return all matching datasets (upstream page size is 100).
+        limit: Maximum number of datasets to return.  Omit (or pass ``None``)
+            to rely on the ``max_runtime_s`` gate to bound query cost rather
+            than a hard record cap.  Upstream page size is 100.
         max_runtime_s: If set, the query is allowed to run up to
             ``max_runtime_s * 1.2`` seconds before a slow-query warning is
             returned instead.  Default threshold is 30 s.
@@ -349,8 +350,9 @@ def essdive_bbox_query(
         start_date: Earliest date of dataset temporal coverage (YYYY-MM-DD).
         end_date: Latest date of dataset temporal coverage (YYYY-MM-DD).
         text: Optional free-text filter across all metadata fields.
-        limit: Maximum number of datasets to return.  Pass ``None`` (default)
-            to return all matching datasets (upstream page size is 100).
+        limit: Maximum number of datasets to return.  Omit (or pass ``None``)
+            to rely on the ``max_runtime_s`` gate to bound query cost rather
+            than a hard record cap.  Upstream page size is 100.
         max_runtime_s: Acceptable runtime in seconds; see ``essdive_query``.
 
     Returns:

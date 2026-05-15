@@ -239,6 +239,21 @@ def _fit_and_write_model() -> None:
             "equation": equation,
         }
 
+    # Merge with the existing timing_model.json so that sources not benchmarked
+    # in the current run retain their previously fitted coefficients and raw data.
+    existing_model: dict[str, Any] = {}
+    existing_raw: dict[str, Any] = {}
+    if _TIMING_MODEL_PATH.exists():
+        try:
+            existing = json.loads(_TIMING_MODEL_PATH.read_text())
+            existing_model = existing.get("model", {})
+            existing_raw = existing.get("raw", {})
+        except (json.JSONDecodeError, OSError):
+            pass  # Corrupt or missing file — start fresh
+
+    merged_model = {**existing_model, **model}
+    merged_raw = {**existing_raw, **_TIMING}
+
     output = {
         "generated_at": datetime.now(UTC).isoformat(),
         "note": (
@@ -251,8 +266,8 @@ def _fit_and_write_model() -> None:
             "Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration"
         ),
         "locations": _LOCATIONS,
-        "model": model,
-        "raw": _TIMING,
+        "model": merged_model,
+        "raw": merged_raw,
     }
     _TIMING_MODEL_PATH.write_text(json.dumps(output, indent=2) + "\n")
 
@@ -477,7 +492,7 @@ def test_ssurgo_point_bbox_consistent():
 
 
 # ===========================================================================
-# GBIF — no auth, S3 Parquet
+# GBIF — no auth, Occurrence Search REST API
 # ===========================================================================
 
 _GBIF_SCENARIOS = _SCENARIOS  # fragment cap bounds latency regardless of date range
@@ -559,7 +574,7 @@ def test_gbif_point_bbox_consistent():
 
 
 # ===========================================================================
-# Sentinel-5P — no auth, S3 HDF5, all scenarios
+# Sentinel-5P — no auth, CDSE COGT, all scenarios
 # ===========================================================================
 
 
@@ -917,7 +932,7 @@ def test_emit_extra_location_timing(loc, _earthdata_token):
         end_date="2023-08-21",
     )
     _assert_or_skip(result, f"emit/{loc['name']}")
-    _record("emit", "1month", 31, result, location=loc["name"])
+    _record("emit", "1week", 7, result, location=loc["name"])  # query window is Aug 15–21 (7 days)
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
 
 
@@ -948,8 +963,8 @@ def _extract_coords(records: list[dict[str, Any]]) -> list[tuple[float, float]]:
     """Return (lat, lon) pairs from records that carry coordinate fields."""
     coords = []
     for rec in records:
-        lat = rec.get("latitude") or rec.get("lat")
-        lon = rec.get("longitude") or rec.get("lon")
+        lat = rec.get("latitude") or rec.get("lat") or rec.get("decimalLatitude")
+        lon = rec.get("longitude") or rec.get("lon") or rec.get("decimalLongitude")
         if lat is not None and lon is not None:
             coords.append((float(lat), float(lon)))
     return coords

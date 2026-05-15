@@ -41,8 +41,9 @@ def estimate_runtime(source: str, n_days: int, area_deg2: float) -> float:
     """Estimate query wall-clock time in seconds using the fitted timing model.
 
     Uses the linear equation ``t ≈ α + β_n·n_days + β_a·area_deg2`` from
-    ``timing_model.json``.  OCO-2 and EMIT use conservative override formulas
-    because the 2D model was fit on short (1–7 day) queries only.
+    ``timing_model.json``, then takes the maximum with a physics-based override
+    formula for sources where the 2D model is unreliable at scale.  Five sources
+    have overrides: OCO-2, EMIT, Sentinel-5P, OpenAQ, and GBIF.
 
     Args:
         source: Short source identifier, e.g. ``"gbif"``.
@@ -56,20 +57,50 @@ def estimate_runtime(source: str, n_days: int, area_deg2: float) -> float:
     if source not in model:
         return 0.0
     m = model[source]
-    alpha: float = m.get("alpha", 0.0)
-    beta_n: float = m.get("beta_n_days", 0.0)
-    beta_a: float = m.get("beta_area_deg2", 0.0)
+    alpha: float = float(m.get("alpha") or 0.0)
+    beta_n: float = float(m.get("beta_n_days") or 0.0)
+    # Clamp negative area slopes — larger bounding boxes must never reduce the
+    # estimate used by the runtime gate (prevents gate bypass for wide bboxes).
+    beta_a: float = max(0.0, float(m.get("beta_area_deg2") or 0.0))
     t_model = alpha + beta_n * n_days + beta_a * area_deg2
 
-    # Source-specific override formulas for sources where the 2D model is
-    # unreliable beyond the 1–7 day benchmark range.
+    # Physics-based overrides for sources where the fitted 2D model is
+    # unreliable (low R², capped benchmark observations, or area effect
+    # zeroed by clamping).  Each formula models the dominant cost driver.
     if source == "oco2":
-        # Parallel batches of 10 workers; each batch ≈ 3 s.
+        # Temporal-only CMR search; 10 parallel workers, each batch ≈ 3 s.
         t_override = 2.84 + math.ceil(n_days / 10) * 3.0
         t_model = max(t_model, t_override)
     elif source == "emit":
-        # ~1 granule every 3 days; each granule needs 2 OPeNDAP round-trips ≈ 3.5 s.
-        t_override = 0.2 + (n_days // 3) * 3.5
+        # ~1 granule per 3 days at any point location; spatially-filtered CMR
+        # returns proportionally more granules for larger bboxes (ISS orbit,
+        # ~2.5× more at max 10°×10°).  Each granule: 2 sequential OPeNDAP
+        # round-trips ≈ 3.5 s total.  Divisor=40 is a middle-ground between
+        # aggressive (25) and conservative (50) orbital track density estimates.
+        granules_per_3days = max(1.0, area_deg2 / 40.0)
+        t_override = 0.2 + (n_days // 3) * granules_per_3days * 3.5
+        t_model = max(t_model, t_override)
+    elif source == "sentinel5p":
+        # 16 GDAL COGT workers in parallel; each batch ≈ 4.5 s (calibrated
+        # against all benchmark observations).  S5P swaths are ~2600 km wide,
+        # so the granule-per-day rate saturates at ~4 deg² (any larger bbox is
+        # covered by the same orbital passes): 1.0 granule/day for point queries,
+        # 1.5 granules/day for bbox ≥ 4 deg².
+        n_granules = n_days * (1.0 + 0.5 * min(1.0, area_deg2 / 4.0))
+        t_override = 2.0 + math.ceil(n_granules / 16) * 4.5
+        t_model = max(t_model, t_override)
+    elif source == "openaq":
+        # Fitted R²=0.07 — model is nearly useless (density varies by location).
+        # Assumes a moderately busy urban station: ~1 page of measurements per
+        # day at 0.4 s/page → 0.15 s/day.  Extreme dense-city outliers remain
+        # a known limitation of location-agnostic estimation.
+        t_override = 1.5 + 0.15 * n_days
+        t_model = max(t_model, t_override)
+    elif source == "gbif":
+        # Benchmark coefficients were fit on 500-record-capped observations.
+        # High-density biodiversity hotspots (Amazonia, SE Asia) can have
+        # 10–50× more records → coefficients ~58% higher than the fitted model.
+        t_override = 2.0 + n_days * 0.13 + area_deg2 * 0.18
         t_model = max(t_model, t_override)
 
     return max(0.0, t_model)
@@ -116,7 +147,16 @@ def check_runtime(
                 f"Estimated runtime {t_est:.1f}s exceeds the {threshold:.1f}s threshold. "
                 f"Pass max_runtime_s={headroom} to allow this query to proceed."
             ),
+            # Standard _meta fields (with safe defaults) so callers get a
+            # uniform schema whether the gate fires or the query completes.
+            "rows_returned": 0,
             "latency_s": 0.0,
+            "query_params": {},
+            "auth_required": False,
+            "auth_present": True,
+            "license": "",
+            "license_url": "",
+            "error": None,
         },
     }
 

@@ -514,8 +514,10 @@ def emit_bbox_query(
         max_lon: Eastern boundary.
         start_date: Inclusive start, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end, ISO 8601 ``YYYY-MM-DD``.
-        limit: Maximum number of records to return (default 500).
-            ``_meta.capped`` is ``True`` when the cap was reached.
+        limit: Maximum number of records to return.  Omit (or pass ``None``)
+            to rely on the ``max_runtime_s`` gate to bound query cost rather
+            than a hard record cap.  ``_meta.capped`` is ``True`` when the
+            cap was reached.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}``
