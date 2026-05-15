@@ -7,9 +7,119 @@ Every source module imports from here. No source module re-implements these.
 from __future__ import annotations
 
 import datetime
+import json
+import math
+import pathlib
 import re
 import warnings
 from typing import Any
+
+# ---------------------------------------------------------------------------
+# Runtime estimation
+# ---------------------------------------------------------------------------
+
+_DEFAULT_RUNTIME_THRESHOLD_S: float = 30.0
+
+# Lazy-loaded timing model (populated on first call to _get_timing_model).
+_TIMING_MODEL: dict[str, Any] = {}
+
+_TIMING_MODEL_PATH = pathlib.Path(__file__).parent / "timing_model.json"
+
+
+def _get_timing_model() -> dict[str, Any]:
+    """Return the per-source timing model coefficients, loading once on first call."""
+    global _TIMING_MODEL
+    if _TIMING_MODEL:
+        return _TIMING_MODEL
+    with _TIMING_MODEL_PATH.open() as fh:
+        data = json.load(fh)
+    _TIMING_MODEL = data.get("model", {})
+    return _TIMING_MODEL
+
+
+def estimate_runtime(source: str, n_days: int, area_deg2: float) -> float:
+    """Estimate query wall-clock time in seconds using the fitted timing model.
+
+    Uses the linear equation ``t ≈ α + β_n·n_days + β_a·area_deg2`` from
+    ``timing_model.json``.  OCO-2 and EMIT use conservative override formulas
+    because the 2D model was fit on short (1–7 day) queries only.
+
+    Args:
+        source: Short source identifier, e.g. ``"gbif"``.
+        n_days: Number of calendar days in the query window.
+        area_deg2: Bounding-box area in square degrees (0 for point queries).
+
+    Returns:
+        Estimated seconds (clamped to ``>= 0``).
+    """
+    model = _get_timing_model()
+    if source not in model:
+        return 0.0
+    m = model[source]
+    alpha: float = m.get("alpha", 0.0)
+    beta_n: float = m.get("beta_n_days", 0.0)
+    beta_a: float = m.get("beta_area_deg2", 0.0)
+    t_model = alpha + beta_n * n_days + beta_a * area_deg2
+
+    # Source-specific override formulas for sources where the 2D model is
+    # unreliable beyond the 1–7 day benchmark range.
+    if source == "oco2":
+        # Parallel batches of 10 workers; each batch ≈ 3 s.
+        t_override = 2.84 + math.ceil(n_days / 10) * 3.0
+        t_model = max(t_model, t_override)
+    elif source == "emit":
+        # ~1 granule every 3 days; each granule needs 2 OPeNDAP round-trips ≈ 3.5 s.
+        t_override = 0.2 + (n_days // 3) * 3.5
+        t_model = max(t_model, t_override)
+
+    return max(0.0, t_model)
+
+
+def check_runtime(
+    source: str,
+    n_days: int,
+    area_deg2: float,
+    max_runtime_s: float | None = None,
+) -> dict[str, Any] | None:
+    """Return a slow-query warning dict if the estimated runtime exceeds the threshold.
+
+    If the estimate is below the threshold, returns ``None`` (caller should proceed).
+
+    Threshold logic:
+    * No ``max_runtime_s`` supplied → threshold is ``_DEFAULT_RUNTIME_THRESHOLD_S`` (30 s).
+    * ``max_runtime_s`` supplied → threshold is ``max_runtime_s * 1.2`` (20 % grace margin).
+
+    Args:
+        source: Short source identifier, e.g. ``"gbif"``.
+        n_days: Number of calendar days in the query window.
+        area_deg2: Bounding-box area in square degrees (0 for point queries).
+        max_runtime_s: User-supplied acceptable runtime in seconds, or ``None``.
+
+    Returns:
+        ``None`` if the estimate is under the threshold, otherwise a response
+        dict with ``data=[]`` and a ``_meta`` block describing the estimate.
+    """
+    t_est = estimate_runtime(source, n_days, area_deg2)
+    threshold = max_runtime_s * 1.2 if max_runtime_s is not None else _DEFAULT_RUNTIME_THRESHOLD_S
+    if t_est < threshold:
+        return None
+    headroom = int(t_est * 1.25) + 1
+    return {
+        "data": [],
+        "_meta": {
+            "source": source,
+            "success": False,
+            "slow_query_warning": True,
+            "estimated_runtime_s": round(t_est, 1),
+            "threshold_s": round(threshold, 1),
+            "message": (
+                f"Estimated runtime {t_est:.1f}s exceeds the {threshold:.1f}s threshold. "
+                f"Pass max_runtime_s={headroom} to allow this query to proceed."
+            ),
+            "latency_s": 0.0,
+        },
+    }
+
 
 # ---------------------------------------------------------------------------
 # Date helpers

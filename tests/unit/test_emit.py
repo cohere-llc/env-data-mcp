@@ -272,6 +272,7 @@ def test_emit_query_no_token(monkeypatch):
         longitude=_LON,
         start_date="2023-10-01",
         end_date="2023-10-31",
+        max_runtime_s=999,
     )
     assert result["_meta"]["success"] is False
     assert result["_meta"]["auth_required"] is True
@@ -303,6 +304,7 @@ def test_emit_query_success(monkeypatch):
             longitude=_LON,
             start_date="2023-10-01",
             end_date="2023-10-31",
+            max_runtime_s=999,
         )
 
     assert result["_meta"]["success"] is True
@@ -333,6 +335,7 @@ def test_emit_query_abundance_threshold(monkeypatch):
             longitude=_LON,
             start_date="2023-10-01",
             end_date="2023-10-31",
+            max_runtime_s=999,
         )
     assert result["_meta"]["success"] is True
     assert result["data"] == []
@@ -346,6 +349,7 @@ def test_emit_query_no_granules(monkeypatch):
             longitude=_LON,
             start_date="2023-10-01",
             end_date="2023-10-31",
+            max_runtime_s=999,
         )
     assert result["_meta"]["success"] is True
     assert result["data"] == []
@@ -369,6 +373,7 @@ def test_emit_query_expired_token_opendap(monkeypatch):
             longitude=_LON,
             start_date="2023-10-01",
             end_date="2023-10-31",
+            max_runtime_s=999,
         )
     assert result["_meta"]["success"] is False
     assert result["_meta"]["auth_present"] is True
@@ -389,6 +394,7 @@ def test_emit_query_meta_fields(monkeypatch):
             longitude=_LON,
             start_date="2023-10-01",
             end_date="2023-10-31",
+            max_runtime_s=999,
         )
     meta = result["_meta"]
     assert meta["license"] == LICENSE_INFO["license"]
@@ -427,6 +433,7 @@ def test_emit_bbox_query_no_token(monkeypatch):
         max_lon=-114.0,
         start_date="2023-10-01",
         end_date="2023-10-31",
+        max_runtime_s=999,
     )
     assert result["_meta"]["auth_present"] is False
 
@@ -449,6 +456,7 @@ def test_emit_bbox_query_success(monkeypatch):
             max_lon=float(_LONS.max()) + 0.5,
             start_date="2023-10-01",
             end_date="2023-10-31",
+            max_runtime_s=999,
         )
     assert result["_meta"]["success"] is True
     # Each pixel yields 2 records (Calcite + Kaolinite above threshold)
@@ -465,6 +473,7 @@ def test_emit_bbox_query_echoes_clamped_bbox(monkeypatch):
             max_lon=-114.0,
             start_date="2023-10-01",
             end_date="2023-10-31",
+            max_runtime_s=999,
         )
     qp = result["_meta"]["query_params"]
     assert "min_lat" in qp
@@ -514,6 +523,7 @@ def test_emit_bbox_query_expired_token(monkeypatch):
             max_lon=-114.0,
             start_date="2023-10-01",
             end_date="2023-10-31",
+            max_runtime_s=999,
         )
     assert result["_meta"]["success"] is False
     assert result["_meta"]["auth_present"] is True

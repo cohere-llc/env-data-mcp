@@ -11,7 +11,6 @@ from unittest.mock import MagicMock, patch
 import httpx
 
 from env_data_mcp.sources.gbif import (
-    _DEFAULT_LIMIT,
     LICENSE_INFO,
     VARIABLE_INFO,
     _fetch_gbif,
@@ -84,7 +83,7 @@ def test_fetch_gbif_returns_records():
             start_date="2019-08-01",
             end_date="2019-08-31",
             taxon_key=None,
-            limit=_DEFAULT_LIMIT,
+            limit=1000,
         )
 
     assert len(records) == 2
@@ -99,7 +98,7 @@ def test_fetch_gbif_row_cap():
     """total_count > limit indicates results were capped at the API level."""
     with patch("env_data_mcp.sources.gbif.httpx.get") as mock_get:
         mock_get.return_value = _make_mock_response(
-            _SAMPLE_API_RECORDS, count=_DEFAULT_LIMIT + 100, end_of_records=True
+            _SAMPLE_API_RECORDS, count=2000, end_of_records=True
         )
 
         records, total_count, _ = _fetch_gbif(
@@ -110,10 +109,10 @@ def test_fetch_gbif_row_cap():
             start_date="2019-08-01",
             end_date="2019-08-31",
             taxon_key=None,
-            limit=_DEFAULT_LIMIT,
+            limit=1000,
         )
 
-    assert total_count > _DEFAULT_LIMIT  # caller uses this to set capped=True
+    assert total_count > 1000  # caller uses this to set capped=True
 
 
 def test_fetch_gbif_paginates_until_limit():
@@ -133,7 +132,7 @@ def test_fetch_gbif_paginates_until_limit():
             start_date="2019-08-01",
             end_date="2019-08-31",
             taxon_key=None,
-            limit=_DEFAULT_LIMIT,
+            limit=1000,
         )
 
     assert mock_get.call_count == 2
@@ -153,7 +152,7 @@ def test_fetch_gbif_license_aggregation():
             start_date="2019-08-01",
             end_date="2019-08-31",
             taxon_key=None,
-            limit=_DEFAULT_LIMIT,
+            limit=1000,
         )
 
     assert len(licenses) == 2
@@ -172,7 +171,7 @@ def test_fetch_gbif_taxon_key_passed():
             start_date="2019-08-01",
             end_date="2019-08-31",
             taxon_key=2881663,
-            limit=_DEFAULT_LIMIT,
+            limit=1000,
         )
 
     call_params = mock_get.call_args.kwargs["params"]
@@ -194,7 +193,7 @@ def test_fetch_gbif_falls_back_to_key_for_gbifid():
             start_date="2019-08-01",
             end_date="2019-08-31",
             taxon_key=None,
-            limit=_DEFAULT_LIMIT,
+            limit=1000,
         )
 
     assert records[0]["gbifID"] == str(record_no_gbifid["key"])
@@ -322,7 +321,7 @@ def test_gbif_bbox_occurrences_success():
 def test_gbif_bbox_occurrences_capped_flag():
     with patch("env_data_mcp.sources.gbif.httpx.get") as mock_get:
         mock_get.return_value = _make_mock_response(
-            _SAMPLE_API_RECORDS, count=_DEFAULT_LIMIT + 1, end_of_records=True
+            _SAMPLE_API_RECORDS, count=1001, end_of_records=True
         )
 
         result = gbif_bbox_occurrences(
@@ -332,10 +331,11 @@ def test_gbif_bbox_occurrences_capped_flag():
             max_lon=-119.2,
             start_date="2019-08-01",
             end_date="2019-08-31",
+            limit=1000,
         )
 
     assert result["_meta"]["capped"] is True
-    assert result["_meta"]["total_count"] > _DEFAULT_LIMIT
+    assert result["_meta"]["total_count"] > 1000
 
 
 def test_gbif_bbox_occurrences_http_error_returns_structured():

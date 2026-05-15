@@ -43,7 +43,7 @@ import rasterio
 from rasterio.env import Env
 from rasterio.windows import from_bounds
 
-from env_data_mcp.helpers import bbox_centroid, build_meta, clamp_bbox, parse_date
+from env_data_mcp.helpers import bbox_centroid, build_meta, check_runtime, clamp_bbox, parse_date
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -328,6 +328,7 @@ def sentinel5p_query(
     start_date: str,
     end_date: str,
     product: str = "CO",
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return Sentinel-5P TROPOMI column values at a point for a date range.
 
@@ -356,13 +357,17 @@ def sentinel5p_query(
         "start_date": start_date,
         "end_date": end_date,
         "product": product,
+        "max_runtime_s": max_runtime_s,
     }
     try:
         product_upper = product.upper()
         if product_upper not in _PRODUCTS:
             raise ValueError(f"Unknown product {product!r}. Choose from: {list(_PRODUCTS)}")
-        parse_date(start_date)
-        parse_date(end_date)
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        if warn := check_runtime("sentinel5p", n_days, 0.0, max_runtime_s):
+            return warn
         granule_names = _cdse_query_granules(
             product_upper, start_date, end_date, lat=latitude, lon=longitude
         )
@@ -418,6 +423,7 @@ def sentinel5p_bbox_query(
     start_date: str,
     end_date: str,
     product: str = "CO",
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return spatially-averaged Sentinel-5P TROPOMI values over a bounding box.
 
@@ -443,16 +449,21 @@ def sentinel5p_bbox_query(
         "start_date": start_date,
         "end_date": end_date,
         "product": product,
+        "max_runtime_s": max_runtime_s,
     }
     try:
         product_upper = product.upper()
         if product_upper not in _PRODUCTS:
             raise ValueError(f"Unknown product {product!r}. Choose from: {list(_PRODUCTS)}")
-        parse_date(start_date)
-        parse_date(end_date)
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
         bbox = clamp_bbox(
             {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
         )
+        area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+        if warn := check_runtime("sentinel5p", n_days, area_deg2, max_runtime_s):
+            return warn
         query_params.update(bbox)
         granule_names = _cdse_query_granules(
             product_upper,

@@ -13,7 +13,7 @@ from typing import Any
 
 import httpx
 
-from env_data_mcp.helpers import build_meta, clamp_bbox
+from env_data_mcp.helpers import build_meta, check_runtime, clamp_bbox, parse_date
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -59,7 +59,6 @@ VARIABLE_INFO: dict[str, dict[str, str]] = {
 }
 
 _GBIF_API_BASE = "https://api.gbif.org/v1/occurrence/search"
-_DEFAULT_LIMIT = 1000
 
 # GBIF's occurrence search API caps each page at 300 records.
 _API_PAGE_SIZE = 300
@@ -78,7 +77,7 @@ def _fetch_gbif(
     start_date: str,
     end_date: str,
     taxon_key: int | None,
-    limit: int,
+    limit: int | None,
 ) -> tuple[list[dict[str, Any]], int, list[str]]:
     """Query the GBIF Occurrence Search REST API.
 
@@ -86,7 +85,8 @@ def _fetch_gbif(
 
     *total_count* is the API-reported total number of matching occurrences
     (may exceed *limit* when results are capped).  At most *limit* records are
-    returned, fetched across multiple pages of up to ``_API_PAGE_SIZE`` each.
+    returned (all records when *limit* is ``None``), fetched across multiple
+    pages of up to ``_API_PAGE_SIZE`` each.
     """
     base_params: dict[str, Any] = {
         "decimalLatitude": f"{min_lat},{max_lat}",
@@ -99,8 +99,11 @@ def _fetch_gbif(
     raw_records: list[dict[str, Any]] = []
     total_count = 0
 
-    while len(raw_records) < limit:
-        page_size = min(limit - len(raw_records), _API_PAGE_SIZE)
+    while limit is None or len(raw_records) < limit:
+        if limit is not None:
+            page_size = min(limit - len(raw_records), _API_PAGE_SIZE)
+        else:
+            page_size = _API_PAGE_SIZE
         r = httpx.get(
             _GBIF_API_BASE,
             params={**base_params, "limit": page_size, "offset": len(raw_records)},
@@ -116,7 +119,7 @@ def _fetch_gbif(
 
     records: list[dict[str, Any]] = []
     unique_licenses: set[str] = set()
-    for rec in raw_records[:limit]:
+    for rec in raw_records[:limit] if limit is not None else raw_records:
         lic = rec.get("license") or ""
         if lic:
             unique_licenses.add(lic)
@@ -148,7 +151,8 @@ def gbif_occurrences(
     start_date: str,
     end_date: str,
     taxon_key: int | None = None,
-    limit: int = _DEFAULT_LIMIT,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return GBIF species occurrence records within *radius_km* of a point.
 
@@ -161,7 +165,9 @@ def gbif_occurrences(
         start_date: Inclusive start date, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         taxon_key: Optional GBIF taxon key to restrict results to a single taxon.
-        limit: Maximum number of occurrence records to return (default 1 000).
+        limit: Maximum number of occurrence records to return.  Pass ``None``
+            (default) to return all matching records.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}`` — each data record contains
@@ -177,6 +183,7 @@ def gbif_occurrences(
         "end_date": end_date,
         "taxon_key": taxon_key,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
     }
     deg = radius_km / 111.0
     bbox = clamp_bbox(
@@ -192,6 +199,12 @@ def gbif_occurrences(
     query_params["resolved_min_lon"] = bbox["min_lon"]
     query_params["resolved_max_lon"] = bbox["max_lon"]
     try:
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        area_deg2 = (2 * deg) ** 2
+        if warn := check_runtime("gbif", n_days, area_deg2, max_runtime_s):
+            return warn
         records, total_count, unique_licenses = _fetch_gbif(
             min_lat=bbox["min_lat"],
             max_lat=bbox["max_lat"],
@@ -203,7 +216,7 @@ def gbif_occurrences(
             limit=limit,
         )
         latency = time.perf_counter() - t0
-        capped = total_count > limit
+        capped = limit is not None and total_count > limit
         license_str = " | ".join(unique_licenses) if unique_licenses else LICENSE_INFO["license"]
         meta = build_meta(
             source="gbif",
@@ -216,6 +229,7 @@ def gbif_occurrences(
         )
         meta["capped"] = capped
         meta["total_count"] = total_count
+        meta["upstream_page_size"] = _API_PAGE_SIZE
         return {"data": records, "_meta": meta}
     except Exception as exc:
         latency = time.perf_counter() - t0
@@ -242,7 +256,8 @@ def gbif_bbox_occurrences(
     start_date: str,
     end_date: str,
     taxon_key: int | None = None,
-    limit: int = _DEFAULT_LIMIT,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return GBIF occurrence records within a bounding box.
 
@@ -257,7 +272,8 @@ def gbif_bbox_occurrences(
         start_date: Inclusive start date, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         taxon_key: Optional GBIF taxon key to restrict results.
-        limit: Maximum records to return (default 1 000).
+        limit: Maximum records to return.  Pass ``None`` (default) to return all.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
     """
     t0 = time.perf_counter()
     query_params: dict[str, Any] = {
@@ -269,12 +285,19 @@ def gbif_bbox_occurrences(
         "end_date": end_date,
         "taxon_key": taxon_key,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
     }
     bbox = clamp_bbox(
         {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     )
     query_params.update(bbox)
     try:
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+        if warn := check_runtime("gbif", n_days, area_deg2, max_runtime_s):
+            return warn
         records, total_count, unique_licenses = _fetch_gbif(
             min_lat=bbox["min_lat"],
             max_lat=bbox["max_lat"],
@@ -286,7 +309,7 @@ def gbif_bbox_occurrences(
             limit=limit,
         )
         latency = time.perf_counter() - t0
-        capped = total_count > limit
+        capped = limit is not None and total_count > limit
         license_str = " | ".join(unique_licenses) if unique_licenses else LICENSE_INFO["license"]
         meta = build_meta(
             source="gbif",
@@ -299,6 +322,7 @@ def gbif_bbox_occurrences(
         )
         meta["capped"] = capped
         meta["total_count"] = total_count
+        meta["upstream_page_size"] = _API_PAGE_SIZE
         return {"data": records, "_meta": meta}
     except Exception as exc:
         latency = time.perf_counter() - t0

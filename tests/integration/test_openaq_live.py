@@ -65,6 +65,7 @@ def test_openaq_query_live_success():
         radius_km=100.0,
         start_date="2019-08-01",
         end_date="2019-08-31",
+        limit=500,
     )
     assert result["_meta"]["success"] is True
     assert result["_meta"]["source"] == "openaq"
@@ -78,6 +79,7 @@ def test_openaq_query_live_meta_fields():
         radius_km=100.0,
         start_date="2019-08-01",
         end_date="2019-08-31",
+        limit=500,
     )
     meta = result["_meta"]
     assert meta["auth_required"] is True
@@ -95,6 +97,7 @@ def test_openaq_query_live_record_schema():
         radius_km=100.0,
         start_date="2019-08-01",
         end_date="2019-08-31",
+        limit=500,
     )
     if result["data"]:
         rec = result["data"][0]

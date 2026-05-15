@@ -17,7 +17,13 @@ from typing import Any
 
 import httpx
 
-from env_data_mcp.helpers import auth_missing_response, build_meta, clamp_bbox
+from env_data_mcp.helpers import (
+    auth_missing_response,
+    build_meta,
+    check_runtime,
+    clamp_bbox,
+    parse_date,
+)
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -45,7 +51,6 @@ VARIABLE_INFO: dict[str, dict[str, str]] = {}
 
 _ESSDIVE_BASE = "https://api.ess-dive.lbl.gov/packages"
 _SOURCE = "essdive"
-_DEFAULT_LIMIT = 25
 _MAX_PAGE_SIZE = 100
 
 
@@ -101,19 +106,13 @@ def _extract_record(result: dict[str, Any]) -> dict[str, Any]:
 
 def _search_packages(
     search_params: dict[str, Any],
-    limit: int,
+    limit: int | None,
     token: str,
 ) -> list[dict[str, Any]]:
-    """Fetch up to *limit* ESS-DIVE packages, following cursor pagination.
+    """Fetch ESS-DIVE packages up to *limit*, following cursor pagination.
 
-    Optimisation
-    ------------
-    * ``isPublic=true`` is always set to avoid authentication failures on
-      private datasets that the token cannot access.
-    * ``pageSize`` is capped at min(limit, 100) so the first page never
-      fetches more than needed.
-    * Cursor pagination means no offset arithmetic and no duplicate results
-      at page boundaries.
+    Pass ``limit=None`` to fetch all matching packages (no cap).  The upstream
+    API caps each page at ``_MAX_PAGE_SIZE`` (100) regardless.
 
     Raises
     ------
@@ -126,16 +125,18 @@ def _search_packages(
     params: dict[str, Any] = {
         **search_params,
         "isPublic": "true",
-        "pageSize": min(limit, _MAX_PAGE_SIZE),
+        "pageSize": _MAX_PAGE_SIZE if limit is None else min(limit, _MAX_PAGE_SIZE),
     }
 
     records: list[dict[str, Any]] = []
     cursor: str | None = None
 
     with httpx.Client(timeout=30.0) as client:
-        while len(records) < limit:
+        while limit is None or len(records) < limit:
             req_params = dict(params)
-            req_params["pageSize"] = min(limit - len(records), _MAX_PAGE_SIZE)
+            req_params["pageSize"] = (
+                _MAX_PAGE_SIZE if limit is None else min(limit - len(records), _MAX_PAGE_SIZE)
+            )
             if cursor:
                 req_params["cursor"] = cursor
 
@@ -160,7 +161,7 @@ def _search_packages(
             if not cursor or not batch:
                 break
 
-    return records[:limit]
+    return records if limit is None else records[:limit]
 
 
 def _aggregate_licenses(records: list[dict[str, Any]]) -> str:
@@ -184,7 +185,8 @@ def essdive_query(
     start_date: str | None = None,
     end_date: str | None = None,
     text: str | None = None,
-    limit: int = _DEFAULT_LIMIT,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Search ESS-DIVE for environmental datasets near a point location.
 
@@ -202,7 +204,11 @@ def essdive_query(
         end_date: Latest date of dataset temporal coverage, ISO 8601
             (YYYY-MM-DD).  Datasets starting after this date are excluded.
         text: Optional free-text filter applied across all metadata fields.
-        limit: Maximum number of datasets to return (default 25, max 100).
+        limit: Maximum number of datasets to return.  Pass ``None`` (default)
+            to return all matching datasets (upstream page size is 100).
+        max_runtime_s: If set, the query is allowed to run up to
+            ``max_runtime_s * 1.2`` seconds before a slow-query warning is
+            returned instead.  Default threshold is 30 s.
 
     Returns:
         {"data": [list of dataset records], "_meta": {...}}
@@ -216,7 +222,18 @@ def essdive_query(
         "end_date": end_date,
         "text": text,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
     }
+    try:
+        _sd = parse_date(start_date) if start_date else None
+        _ed = parse_date(end_date) if end_date else None
+        n_days = (_ed - _sd).days + 1 if (_sd and _ed) else 0
+        deg = radius_km / 111.0
+        area_deg2 = (2 * deg) ** 2
+        if warn := check_runtime("essdive", n_days, area_deg2, max_runtime_s):
+            return warn
+    except ValueError:
+        pass  # invalid dates will surface below
 
     token = os.environ.get("ESSDIVE_TOKEN")
     if not token:
@@ -246,7 +263,7 @@ def essdive_query(
 
         records = _search_packages(search_params, limit=limit, token=token)
         latency = time.perf_counter() - t0
-        capped = len(records) >= limit
+        capped = limit is not None and len(records) >= limit
         agg_license = _aggregate_licenses(records)
         lic = dict(LICENSE_INFO)
         lic["license"] = agg_license
@@ -261,6 +278,7 @@ def essdive_query(
             success=True,
         )
         meta["capped"] = capped
+        meta["upstream_page_size"] = _MAX_PAGE_SIZE
         return {
             "data": records,
             "_meta": meta,
@@ -314,7 +332,8 @@ def essdive_bbox_query(
     start_date: str | None = None,
     end_date: str | None = None,
     text: str | None = None,
-    limit: int = _DEFAULT_LIMIT,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Search ESS-DIVE for environmental datasets within a bounding box.
 
@@ -330,7 +349,9 @@ def essdive_bbox_query(
         start_date: Earliest date of dataset temporal coverage (YYYY-MM-DD).
         end_date: Latest date of dataset temporal coverage (YYYY-MM-DD).
         text: Optional free-text filter across all metadata fields.
-        limit: Maximum number of datasets to return (default 25, max 100).
+        limit: Maximum number of datasets to return.  Pass ``None`` (default)
+            to return all matching datasets (upstream page size is 100).
+        max_runtime_s: Acceptable runtime in seconds; see ``essdive_query``.
 
     Returns:
         {"data": [list of dataset records], "_meta": {...}}
@@ -345,7 +366,18 @@ def essdive_bbox_query(
         "end_date": end_date,
         "text": text,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
     }
+
+    try:
+        _sd = parse_date(start_date) if start_date else None
+        _ed = parse_date(end_date) if end_date else None
+        n_days = (_ed - _sd).days + 1 if (_sd and _ed) else 0
+        area_deg2 = (max_lat - min_lat) * (max_lon - min_lon)
+        if warn := check_runtime("essdive", n_days, area_deg2, max_runtime_s):
+            return warn
+    except ValueError:
+        pass  # invalid dates will surface below
 
     token = os.environ.get("ESSDIVE_TOKEN")
     if not token:
@@ -377,7 +409,7 @@ def essdive_bbox_query(
 
         records = _search_packages(search_params, limit=limit, token=token)
         latency = time.perf_counter() - t0
-        capped = len(records) >= limit
+        capped = limit is not None and len(records) >= limit
         agg_license = _aggregate_licenses(records)
         lic = dict(LICENSE_INFO)
         lic["license"] = agg_license
@@ -392,6 +424,7 @@ def essdive_bbox_query(
             success=True,
         )
         meta["capped"] = capped
+        meta["upstream_page_size"] = _MAX_PAGE_SIZE
         return {
             "data": records,
             "_meta": meta,

@@ -22,7 +22,12 @@ from typing import Any
 
 import httpx
 
-from env_data_mcp.helpers import build_meta, clamp_bbox
+from env_data_mcp.helpers import (
+    build_meta,
+    check_runtime,
+    clamp_bbox,
+    parse_date,
+)
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -41,7 +46,8 @@ LICENSE_INFO: dict[str, str] = {
 
 _OPENAQ_BASE = "https://api.openaq.org/v3"
 _DEFAULT_PARAMETERS = ["pm25", "pm10", "o3", "no2", "co"]
-_DEFAULT_LIMIT = 500
+# Sentinel value used when limit=None to keep _fetch_measurements signature as int.
+_UNLIMITED = 10_000_000
 
 VARIABLE_INFO: dict[str, dict[str, str]] = {
     "pm25": {
@@ -171,7 +177,7 @@ def _fetch_openaq(
     start_date: str,
     end_date: str,
     parameters: list[str],
-    limit: int,
+    limit: int | None,
     api_key: str,
 ) -> list[dict[str, Any]]:
     """Fetch OpenAQ measurements near (lat, lon) within radius_km.
@@ -187,13 +193,16 @@ def _fetch_openaq(
       loop exits as soon as the caller-supplied ``limit`` is satisfied,
       preventing unnecessary downstream HTTP calls.
 
+    Pass ``limit=None`` to return all matching records (no cap).
+
     Returns a flat list of measurement records capped at *limit* rows.
     """
+    effective_limit = _UNLIMITED if limit is None else limit
     records: list[dict[str, Any]] = []
 
     with httpx.Client(timeout=30.0) as client:
         locations = _fetch_locations(client, api_key, lat, lon, radius_km)
-        remaining = limit
+        remaining = effective_limit
         for loc in locations:
             if remaining <= 0:
                 break
@@ -228,7 +237,8 @@ def openaq_query(
     start_date: str,
     end_date: str,
     parameters: list[str] | None = None,
-    limit: int = _DEFAULT_LIMIT,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return OpenAQ air quality measurements near a point for a date range.
 
@@ -243,7 +253,9 @@ def openaq_query(
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         parameters: List of pollutant codes to query (default:
             ``["pm25","pm10","o3","no2","co"]``).
-        limit: Maximum number of measurement records to return (default 500).
+        limit: Maximum number of measurement records to return.  Pass ``None``
+            (default) to return all matching records.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}`` — each data record contains
@@ -261,7 +273,19 @@ def openaq_query(
         "end_date": end_date,
         "parameters": parameters,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
     }
+
+    try:
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        radius_deg_lat = radius_km / 111.0
+        area_deg2 = (2 * radius_deg_lat) ** 2
+        if warn := check_runtime("openaq", n_days, area_deg2, max_runtime_s):
+            return warn
+    except ValueError:
+        pass  # invalid dates surface in the main try block
 
     api_key = os.environ.get("OPENAQ_API_KEY", "")
     if not api_key:
@@ -296,7 +320,7 @@ def openaq_query(
             api_key=api_key,
         )
         latency = time.perf_counter() - t0
-        capped = len(records) >= limit
+        capped = limit is not None and len(records) >= limit
         req_params_set = set(parameters)
         info = {k: v for k, v in VARIABLE_INFO.items() if k in req_params_set}
         meta = build_meta(
@@ -318,6 +342,7 @@ def openaq_query(
             ),
         )
         meta["capped"] = capped
+        meta["upstream_page_size"] = 100
         return {"data": records, "_meta": meta}
     except Exception as exc:
         latency = time.perf_counter() - t0
@@ -346,7 +371,8 @@ def openaq_bbox_query(
     start_date: str,
     end_date: str,
     parameters: list[str] | None = None,
-    limit: int = _DEFAULT_LIMIT,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return OpenAQ air quality measurements within a bounding box.
 
@@ -361,7 +387,9 @@ def openaq_bbox_query(
         start_date: Inclusive start date, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         parameters: Pollutant codes (default: pm25, pm10, o3, no2, co).
-        limit: Maximum measurement records to return (default 500).
+        limit: Maximum measurement records to return.  Pass ``None`` (default)
+            to return all matching records.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
     """
     if parameters is None:
         parameters = _DEFAULT_PARAMETERS
@@ -382,4 +410,5 @@ def openaq_bbox_query(
         end_date=end_date,
         parameters=parameters,
         limit=limit,
+        max_runtime_s=max_runtime_s,
     )

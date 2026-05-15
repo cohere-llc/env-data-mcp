@@ -38,7 +38,9 @@ def _require_token():
 @pytest.mark.integration
 def test_emit_query_returns_successfully():
     """Query completes without exception; success flag is True."""
-    result = emit_query(latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END)
+    result = emit_query(
+        latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END, max_runtime_s=9999
+    )
     meta = result["_meta"]
 
     if not meta.get("success") and not meta.get("auth_present"):
@@ -50,7 +52,9 @@ def test_emit_query_returns_successfully():
 @pytest.mark.integration
 def test_emit_query_record_schema():
     """If data is returned, each record must have required fields."""
-    result = emit_query(latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END)
+    result = emit_query(
+        latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END, max_runtime_s=9999
+    )
     meta = result["_meta"]
 
     if not meta.get("success") and not meta.get("auth_present"):
@@ -76,7 +80,9 @@ def test_emit_query_record_schema():
 
 @pytest.mark.integration
 def test_emit_query_meta_fields():
-    result = emit_query(latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END)
+    result = emit_query(
+        latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END, max_runtime_s=9999
+    )
     meta = result["_meta"]
 
     if not meta.get("success") and not meta.get("auth_present"):

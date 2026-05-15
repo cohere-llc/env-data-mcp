@@ -190,6 +190,7 @@ def _fetch_ssurgo(lat: float, lon: float) -> tuple[list[dict[str, Any]], float]:
 def ssurgo_query(
     latitude: float,
     longitude: float,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil data for a point location.
 
@@ -245,6 +246,7 @@ def ssurgo_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil data for a bounding-box area.
 

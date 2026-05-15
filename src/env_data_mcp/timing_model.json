@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-14T23:21:34.890346+00:00",
+  "generated_at": "2026-05-15T00:16:40.954606+00:00",
   "note": "Phase 3 \u2014 multiple locations (Yakima WA, Manaus BR, Frankfurt DE), point + bbox queries. Model: t_est(n_days, area_deg2) = alpha + beta_n_days\u00b7n_days + beta_area_deg2\u00b7area_deg2 (seconds). Fit uses only observations with n_records > 0. Centroid-based sources (nasa_power, soilgrids, ssurgo) have beta_area_deg2 clamped to 0. Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration",
   "locations": [
     {
@@ -23,67 +23,67 @@
   ],
   "model": {
     "emit": {
-      "alpha": 0.254,
-      "beta_n_days": -0.0016,
-      "beta_area_deg2": -0.0078,
-      "r2": 0.199,
-      "equation": "t \u2248 0.25 + -0.002\u00b7n_days + -0.0078\u00b7area_deg2"
+      "alpha": 0.211,
+      "beta_n_days": 0.0028,
+      "beta_area_deg2": 0.1121,
+      "r2": 0.5359,
+      "equation": "t \u2248 0.21 + 0.003\u00b7n_days + 0.1121\u00b7area_deg2"
     },
     "essdive": {
-      "alpha": 1.303,
-      "beta_n_days": -0.0121,
-      "beta_area_deg2": -0.1504,
-      "r2": 0.3195,
-      "equation": "t \u2248 1.30 + -0.012\u00b7n_days + -0.1504\u00b7area_deg2"
+      "alpha": 1.051,
+      "beta_n_days": -0.007,
+      "beta_area_deg2": -0.0797,
+      "r2": 0.2858,
+      "equation": "t \u2248 1.05 + -0.007\u00b7n_days + -0.0797\u00b7area_deg2"
     },
     "gbif": {
-      "alpha": 1.29,
-      "beta_n_days": 0.2597,
-      "beta_area_deg2": 1.1667,
-      "r2": 0.3329,
-      "equation": "t \u2248 1.29 + 0.260\u00b7n_days + 1.1667\u00b7area_deg2"
+      "alpha": 2.253,
+      "beta_n_days": 0.0823,
+      "beta_area_deg2": 0.1164,
+      "r2": 0.6248,
+      "equation": "t \u2248 2.25 + 0.082\u00b7n_days + 0.1164\u00b7area_deg2"
     },
     "nasa_power": {
-      "alpha": 0.414,
-      "beta_n_days": -0.0047,
+      "alpha": 0.442,
+      "beta_n_days": -0.0044,
       "beta_area_deg2": 0.0,
-      "r2": 0.1689,
-      "equation": "t \u2248 0.41 + -0.005\u00b7n_days + 0.0000\u00b7area_deg2"
+      "r2": 0.1672,
+      "equation": "t \u2248 0.44 + -0.004\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "oco2": {
-      "alpha": 2.716,
-      "beta_n_days": 0.0446,
-      "beta_area_deg2": -0.0175,
-      "r2": 0.4477,
-      "equation": "t \u2248 2.72 + 0.045\u00b7n_days + -0.0175\u00b7area_deg2"
+      "alpha": 2.905,
+      "beta_n_days": 0.0859,
+      "beta_area_deg2": -0.1155,
+      "r2": 0.5851,
+      "equation": "t \u2248 2.91 + 0.086\u00b7n_days + -0.1155\u00b7area_deg2"
     },
     "openaq": {
-      "alpha": 1.109,
-      "beta_n_days": 0.0119,
-      "beta_area_deg2": -0.0612,
-      "r2": 0.2546,
-      "equation": "t \u2248 1.11 + 0.012\u00b7n_days + -0.0612\u00b7area_deg2"
+      "alpha": 1.488,
+      "beta_n_days": 0.0034,
+      "beta_area_deg2": -0.0793,
+      "r2": 0.0733,
+      "equation": "t \u2248 1.49 + 0.003\u00b7n_days + -0.0793\u00b7area_deg2"
     },
     "sentinel5p": {
-      "alpha": 4.772,
-      "beta_n_days": 0.5816,
-      "beta_area_deg2": -1.9566,
-      "r2": 0.6646,
-      "equation": "t \u2248 4.77 + 0.582\u00b7n_days + -1.9566\u00b7area_deg2"
+      "alpha": 3.851,
+      "beta_n_days": 0.1066,
+      "beta_area_deg2": -0.4612,
+      "r2": 0.6521,
+      "equation": "t \u2248 3.85 + 0.107\u00b7n_days + -0.4612\u00b7area_deg2"
     },
     "soilgrids": {
-      "alpha": 1.076,
+      "alpha": 1.233,
       "beta_n_days": 0.0,
       "beta_area_deg2": 0.0,
-      "r2": 0.3521,
-      "equation": "t \u2248 1.08 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
+      "r2": 0.0796,
+      "equation": "t \u2248 1.23 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "ssurgo": {
-      "alpha": 0.505,
+      "alpha": 0.526,
       "beta_n_days": 0.0,
       "beta_area_deg2": 0.0,
-      "r2": 0.3437,
-      "equation": "t \u2248 0.50 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
+      "r2": 0.7625,
+      "equation": "t \u2248 0.53 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
     }
   },
   "raw": {
@@ -93,7 +93,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.085,
+        "latency_s": 1.116,
         "success": true,
         "n_records": 1
       },
@@ -102,7 +102,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.429,
+        "latency_s": 0.507,
         "success": true,
         "n_records": 7
       },
@@ -111,7 +111,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.975,
+        "latency_s": 1.106,
         "success": true,
         "n_records": 31
       },
@@ -120,7 +120,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.003,
+        "latency_s": 0.002,
         "success": true,
         "n_records": 1
       },
@@ -174,7 +174,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 0.011,
+        "latency_s": 0.012,
         "success": true,
         "n_records": 31
       },
@@ -183,7 +183,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 0.011,
+        "latency_s": 0.012,
         "success": true,
         "n_records": 31
       }
@@ -194,7 +194,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.119,
+        "latency_s": 1.175,
         "success": true,
         "n_records": 12
       },
@@ -203,7 +203,7 @@
         "n_days": 0,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.031,
+        "latency_s": 1.187,
         "success": true,
         "n_records": 12
       },
@@ -212,7 +212,7 @@
         "n_days": 0,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.952,
+        "latency_s": 1.111,
         "success": true,
         "n_records": 12
       },
@@ -221,7 +221,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 1.171,
+        "latency_s": 1.025,
         "success": true,
         "n_records": 12
       },
@@ -230,7 +230,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 0.973,
+        "latency_s": 1.535,
         "success": true,
         "n_records": 12
       }
@@ -241,7 +241,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.588,
+        "latency_s": 0.65,
         "success": true,
         "n_records": 2
       },
@@ -250,7 +250,7 @@
         "n_days": 0,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.409,
+        "latency_s": 0.42,
         "success": true,
         "n_records": 2
       },
@@ -259,7 +259,7 @@
         "n_days": 0,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.399,
+        "latency_s": 0.944,
         "success": true,
         "n_records": 2
       },
@@ -268,7 +268,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 0.38,
+        "latency_s": 0.466,
         "success": true,
         "n_records": 0
       },
@@ -277,7 +277,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 0.401,
+        "latency_s": 0.4,
         "success": true,
         "n_records": 0
       }
@@ -288,7 +288,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 3.699,
+        "latency_s": 1.927,
         "success": true,
         "n_records": 101
       },
@@ -297,7 +297,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 11.661,
+        "latency_s": 4.64,
         "success": true,
         "n_records": 500
       },
@@ -306,7 +306,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 16.077,
+        "latency_s": 4.388,
         "success": true,
         "n_records": 500
       },
@@ -315,7 +315,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.095,
+        "latency_s": 1.2,
         "success": true,
         "n_records": 36
       },
@@ -324,7 +324,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 2.094,
+        "latency_s": 2.466,
         "success": true,
         "n_records": 299
       },
@@ -333,7 +333,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 2.209,
+        "latency_s": 2.198,
         "success": true,
         "n_records": 260
       },
@@ -342,7 +342,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 3.814,
+        "latency_s": 4.526,
         "success": true,
         "n_records": 500
       },
@@ -351,7 +351,7 @@
         "n_days": 31,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 4.061,
+        "latency_s": 5.408,
         "success": true,
         "n_records": 500
       },
@@ -360,7 +360,7 @@
         "n_days": 31,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 22.56,
+        "latency_s": 4.45,
         "success": true,
         "n_records": 500
       },
@@ -369,7 +369,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 3.788,
+        "latency_s": 4.756,
         "success": true,
         "n_records": 500
       },
@@ -378,7 +378,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 4.492,
+        "latency_s": 5.035,
         "success": true,
         "n_records": 500
       }
@@ -389,7 +389,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 3.457,
+        "latency_s": 5.442,
         "success": true,
         "n_records": 1
       },
@@ -398,7 +398,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 7.127,
+        "latency_s": 5.29,
         "success": true,
         "n_records": 7
       },
@@ -407,7 +407,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 14.352,
+        "latency_s": 8.742,
         "success": true,
         "n_records": 31
       },
@@ -416,7 +416,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 3.173,
+        "latency_s": 2.898,
         "success": true,
         "n_records": 1
       },
@@ -425,7 +425,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 4.452,
+        "latency_s": 3.271,
         "success": true,
         "n_records": 1
       },
@@ -434,7 +434,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 5.831,
+        "latency_s": 3.346,
         "success": true,
         "n_records": 9
       },
@@ -443,7 +443,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 1.084,
+        "latency_s": 1.07,
         "success": true,
         "n_records": 9
       },
@@ -452,7 +452,7 @@
         "n_days": 31,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 33.111,
+        "latency_s": 5.655,
         "success": true,
         "n_records": 45
       },
@@ -461,7 +461,7 @@
         "n_days": 31,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 7.571,
+        "latency_s": 6.051,
         "success": true,
         "n_records": 46
       },
@@ -470,7 +470,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 34.027,
+        "latency_s": 5.447,
         "success": true,
         "n_records": 20
       },
@@ -479,7 +479,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 17.465,
+        "latency_s": 8.349,
         "success": true,
         "n_records": 28
       }
@@ -490,7 +490,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.194,
+        "latency_s": 1.782,
         "success": true,
         "n_records": 200
       },
@@ -499,7 +499,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.195,
+        "latency_s": 1.182,
         "success": true,
         "n_records": 200
       },
@@ -508,7 +508,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.083,
+        "latency_s": 1.187,
         "success": true,
         "n_records": 200
       },
@@ -517,7 +517,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.274,
+        "latency_s": 1.389,
         "success": true,
         "n_records": 200
       },
@@ -526,7 +526,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.96,
+        "latency_s": 1.278,
         "success": true,
         "n_records": 200
       },
@@ -535,7 +535,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.741,
+        "latency_s": 1.322,
         "success": true,
         "n_records": 200
       },
@@ -544,7 +544,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.975,
+        "latency_s": 1.304,
         "success": true,
         "n_records": 200
       },
@@ -553,7 +553,7 @@
         "n_days": 31,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.056,
+        "latency_s": 0.79,
         "success": true,
         "n_records": 200
       },
@@ -562,7 +562,7 @@
         "n_days": 31,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 1.165,
+        "latency_s": 1.128,
         "success": true,
         "n_records": 200
       },
@@ -571,7 +571,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 2.393,
+        "latency_s": 3.073,
         "success": true,
         "n_records": 200
       },
@@ -580,7 +580,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 1.519,
+        "latency_s": 1.532,
         "success": true,
         "n_records": 200
       }
@@ -591,7 +591,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 2.008,
+        "latency_s": 1.398,
         "success": true,
         "n_records": 10
       },
@@ -600,7 +600,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.637,
+        "latency_s": 0.838,
         "success": true,
         "n_records": 10
       },
@@ -609,7 +609,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.361,
+        "latency_s": 0.621,
         "success": true,
         "n_records": 10
       },
@@ -618,7 +618,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.754,
+        "latency_s": 1.227,
         "success": true,
         "n_records": 10
       },
@@ -627,7 +627,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.563,
+        "latency_s": 0.785,
         "success": true,
         "n_records": 10
       },
@@ -636,7 +636,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.752,
+        "latency_s": 0.522,
         "success": true,
         "n_records": 10
       },
@@ -645,7 +645,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.513,
+        "latency_s": 0.535,
         "success": true,
         "n_records": 10
       },
@@ -654,7 +654,7 @@
         "n_days": 31,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.638,
+        "latency_s": 1.221,
         "success": true,
         "n_records": 10
       },
@@ -663,7 +663,7 @@
         "n_days": 31,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.568,
+        "latency_s": 0.595,
         "success": true,
         "n_records": 10
       },
@@ -672,7 +672,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 1.526,
+        "latency_s": 0.494,
         "success": true,
         "n_records": 0
       },
@@ -681,7 +681,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 0.53,
+        "latency_s": 0.719,
         "success": true,
         "n_records": 1
       }
@@ -692,7 +692,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 2.768,
+        "latency_s": 2.972,
         "success": true,
         "n_records": 1
       },
@@ -701,7 +701,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 3.371,
+        "latency_s": 4.16,
         "success": true,
         "n_records": 7
       },
@@ -710,7 +710,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 2.754,
+        "latency_s": 2.935,
         "success": true,
         "n_records": 1
       },
@@ -719,7 +719,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 2.684,
+        "latency_s": 2.575,
         "success": true,
         "n_records": 12
       },
@@ -728,7 +728,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 2.928,
+        "latency_s": 3.237,
         "success": true,
         "n_records": 7
       },
@@ -737,7 +737,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 2.97,
+        "latency_s": 3.015,
         "success": true,
         "n_records": 84
       },
@@ -746,7 +746,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 2.784,
+        "latency_s": 3.092,
         "success": true,
         "n_records": 7
       },
@@ -755,7 +755,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 3.012,
+        "latency_s": 3.538,
         "success": true,
         "n_records": 7
       }
@@ -766,7 +766,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.232,
+        "latency_s": 0.251,
         "success": true,
         "n_records": 0
       },
@@ -775,7 +775,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.208,
+        "latency_s": 0.322,
         "success": true,
         "n_records": 0
       },
@@ -784,7 +784,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.337,
+        "latency_s": 0.204,
         "success": true,
         "n_records": 0
       },
@@ -793,7 +793,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.204,
+        "latency_s": 0.337,
         "success": true,
         "n_records": 0
       },
@@ -802,7 +802,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.203,
+        "latency_s": 0.245,
         "success": true,
         "n_records": 0
       },
@@ -811,7 +811,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.227,
+        "latency_s": 1.007,
         "success": true,
         "n_records": 0
       },
@@ -820,7 +820,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 0.219,
+        "latency_s": 0.259,
         "success": true,
         "n_records": 0
       },
@@ -829,7 +829,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 0.205,
+        "latency_s": 0.252,
         "success": true,
         "n_records": 0
       }

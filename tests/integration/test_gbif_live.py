@@ -46,6 +46,8 @@ def test_gbif_occurrences_live_returns_success():
         radius_km=50.0,
         start_date="2010-01-01",
         end_date="2021-12-31",
+        limit=1000,
+        max_runtime_s=9999,
     )
     assert result["_meta"]["success"] is True
     assert result["_meta"]["source"] == "gbif"
@@ -59,6 +61,8 @@ def test_gbif_occurrences_live_meta_fields():
         radius_km=50.0,
         start_date="2010-01-01",
         end_date="2021-12-31",
+        limit=1000,
+        max_runtime_s=9999,
     )
     meta = result["_meta"]
     assert meta["auth_required"] is False
@@ -75,6 +79,8 @@ def test_gbif_occurrences_live_license_populated():
         radius_km=50.0,
         start_date="2010-01-01",
         end_date="2021-12-31",
+        limit=1000,
+        max_runtime_s=9999,
     )
     # License must be non-empty whether records exist or not.
     assert result["_meta"]["license"] != ""
@@ -88,6 +94,8 @@ def test_gbif_occurrences_live_record_schema():
         radius_km=50.0,
         start_date="2010-01-01",
         end_date="2021-12-31",
+        limit=1000,
+        max_runtime_s=9999,
     )
     if result["data"]:
         rec = result["data"][0]

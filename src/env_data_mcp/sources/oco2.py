@@ -23,6 +23,7 @@ import numpy as np
 from env_data_mcp.helpers import (
     auth_missing_response,
     build_meta,
+    check_runtime,
     clamp_bbox,
     parse_date,
 )
@@ -399,6 +400,7 @@ def oco2_query(
     longitude: float,
     start_date: str,
     end_date: str,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return OCO-2 daily XCO2 values at a point for a date range.
 
@@ -411,6 +413,7 @@ def oco2_query(
         longitude: WGS84 decimal longitude.
         start_date: Inclusive start, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end, ISO 8601 ``YYYY-MM-DD``.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}`` — each record has ``date``,
@@ -418,13 +421,17 @@ def oco2_query(
         ``longitude``, ``granule_id``.
     """
     t0 = time.perf_counter()
-    parse_date(start_date)
-    parse_date(end_date)
+    _sd = parse_date(start_date)
+    _ed = parse_date(end_date)
+    n_days = (_ed - _sd).days + 1
+    if warn := check_runtime("oco2", n_days, 0.0, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
         "start_date": start_date,
         "end_date": end_date,
+        "max_runtime_s": max_runtime_s,
     }
     token = os.environ.get("EARTHDATA_TOKEN", "")
     if not token:
@@ -499,7 +506,8 @@ def oco2_bbox_query(
     max_lon: float,
     start_date: str,
     end_date: str,
-    limit: int = 500,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return OCO-2 daily XCO2 values within a bounding box for a date range.
 
@@ -510,22 +518,29 @@ def oco2_bbox_query(
         max_lon: Eastern boundary.
         start_date: Inclusive start, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end, ISO 8601 ``YYYY-MM-DD``.
-        limit: Maximum number of records to return (default 500).
-            ``_meta.capped`` is ``True`` when the cap was reached.
+        limit: Maximum number of records to return.  Pass ``None`` (default)
+            to return all records.  ``_meta.capped`` is ``True`` when the cap
+            was reached.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}``
     """
     t0 = time.perf_counter()
-    parse_date(start_date)
-    parse_date(end_date)
+    _sd = parse_date(start_date)
+    _ed = parse_date(end_date)
     bbox = clamp_bbox(
         {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     )
+    n_days = (_ed - _sd).days + 1
+    area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+    if warn := check_runtime("oco2", n_days, area_deg2, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "start_date": start_date,
         "end_date": end_date,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
         **bbox,
     }
     token = os.environ.get("EARTHDATA_TOKEN", "")
@@ -562,8 +577,8 @@ def oco2_bbox_query(
             for batch in pool.map(_fetch_bbox, granules):
                 records.extend(batch)
         records.sort(key=lambda r: r["date"])
-        records = records[:limit]
-        capped = len(records) >= limit
+        records = records[:limit] if limit is not None else records
+        capped = limit is not None and len(records) >= limit
         latency = time.perf_counter() - t0
         meta = build_meta(
             source="oco2",

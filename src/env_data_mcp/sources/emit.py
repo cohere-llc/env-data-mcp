@@ -37,6 +37,7 @@ import numpy as np
 from env_data_mcp.helpers import (
     auth_missing_response,
     build_meta,
+    check_runtime,
     clamp_bbox,
     parse_date,
 )
@@ -72,7 +73,6 @@ VARIABLE_INFO: dict[str, dict[str, str]] = {
 _CMR_GRANULES = "https://cmr.earthdata.nasa.gov/search/granules.json"
 _SHORT_NAME = "EMITL2BMIN"
 _VERSION = "001"
-_MAX_GRANULES = 5
 _ABUNDANCE_THRESHOLD = 0.005  # ignore trace abundances below 0.5 %
 
 # OPeNDAP base — the CMR-provided OPeNDAP link already contains this prefix,
@@ -116,7 +116,7 @@ def _cmr_search(
             "version": _VERSION,
             "bounding_box": f"{min_lon},{min_lat},{max_lon},{max_lat}",
             "temporal[]": f"{start_date}T00:00:00Z,{end_date}T23:59:59Z",
-            "page_size": _MAX_GRANULES,
+            "page_size": 200,
             "sort_key": "start_date",
         },
         headers=_auth_headers(token),
@@ -124,7 +124,7 @@ def _cmr_search(
         follow_redirects=True,
     )
     resp.raise_for_status()
-    return resp.json().get("feed", {}).get("entry", [])[:_MAX_GRANULES]
+    return resp.json().get("feed", {}).get("entry", [])
 
 
 def _granule_id(granule: dict[str, Any]) -> str:
@@ -386,6 +386,7 @@ def emit_query(
     longitude: float,
     start_date: str,
     end_date: str,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return EMIT L2B mineral spectral-abundance values at a point.
 
@@ -408,13 +409,17 @@ def emit_query(
         ``latitude``, ``longitude``, ``acquisition_date``, ``granule_id``.
     """
     t0 = time.perf_counter()
-    parse_date(start_date)
-    parse_date(end_date)
+    _sd = parse_date(start_date)
+    _ed = parse_date(end_date)
+    n_days = (_ed - _sd).days + 1
+    if warn := check_runtime("emit", n_days, 0.0, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
         "start_date": start_date,
         "end_date": end_date,
+        "max_runtime_s": max_runtime_s,
     }
     token = os.environ.get("EARTHDATA_TOKEN", "")
     if not token:
@@ -497,7 +502,8 @@ def emit_bbox_query(
     max_lon: float,
     start_date: str,
     end_date: str,
-    limit: int = 500,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return EMIT L2B mineral spectral-abundance values within a bounding box.
 
@@ -515,15 +521,20 @@ def emit_bbox_query(
         ``{"data": list[dict], "_meta": dict}``
     """
     t0 = time.perf_counter()
-    parse_date(start_date)
-    parse_date(end_date)
+    _sd = parse_date(start_date)
+    _ed = parse_date(end_date)
     bbox = clamp_bbox(
         {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     )
+    n_days = (_ed - _sd).days + 1
+    area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+    if warn := check_runtime("emit", n_days, area_deg2, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "start_date": start_date,
         "end_date": end_date,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
         **bbox,
     }
 
@@ -551,7 +562,7 @@ def emit_bbox_query(
         records: list[dict[str, Any]] = []
         capped = False
         for g in granules:
-            if len(records) >= limit:
+            if limit is not None and len(records) >= limit:
                 capped = True
                 break
             url = _get_opendap_url(g)
@@ -568,9 +579,10 @@ def emit_bbox_query(
                 token,
             )
             records.extend(batch)
-        records = records[:limit]
+        if limit is not None:
+            records = records[:limit]
         if not capped:
-            capped = len(records) >= limit
+            capped = limit is not None and len(records) >= limit
         latency = time.perf_counter() - t0
         meta = build_meta(
             source="emit",

@@ -126,6 +126,7 @@ def _fetch_soilgrids(lat: float, lon: float) -> tuple[dict[str, Any], float]:
 def soilgrids_query(
     latitude: float,
     longitude: float,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Query ISRIC SoilGrids v2.0 soil properties for a point location.
 
@@ -189,6 +190,7 @@ def soilgrids_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Query ISRIC SoilGrids v2.0 soil properties for a bounding-box area.
 
