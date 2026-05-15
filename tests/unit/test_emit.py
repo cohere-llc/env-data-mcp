@@ -20,6 +20,7 @@ import pytest
 
 from env_data_mcp.sources.emit import (
     LICENSE_INFO,
+    _cmr_search,
     _decode_mineral_names,
     _extract_pixels_in_bbox,
     _fetch_opendap_nc4,
@@ -528,3 +529,78 @@ def test_emit_bbox_query_expired_token(monkeypatch):
     assert result["_meta"]["success"] is False
     assert result["_meta"]["auth_present"] is True
     assert "HTTP 401" in result["_meta"]["error"]
+
+
+# ---------------------------------------------------------------------------
+# _cmr_search — CMR-Search-After pagination
+# ---------------------------------------------------------------------------
+
+
+def test_cmr_search_paginates_through_all_results():
+    """_cmr_search follows CMR-Search-After across multiple pages."""
+    from unittest.mock import MagicMock
+
+    page1_granule = _make_cmr_granule(gid="g001")
+    page2_granule = _make_cmr_granule(gid="g002")
+
+    call_count = 0
+
+    def _mock_get(url, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        resp = MagicMock()
+        resp.raise_for_status = lambda: None
+        if "CMR-Search-After" not in kwargs.get("headers", {}):
+            # First page: full page of results + cursor in response headers
+            resp.json.return_value = {"feed": {"entry": [page1_granule]}}
+            resp.headers = {"CMR-Search-After": '["token", 1, 2]'}
+        else:
+            # Second page: fewer results than page_size → last page
+            resp.json.return_value = {"feed": {"entry": [page2_granule]}}
+            resp.headers = {}
+        return resp
+
+    with patch("env_data_mcp.sources.emit.httpx.get", side_effect=_mock_get):
+        results = _cmr_search(
+            min_lon=-116.0,
+            min_lat=35.0,
+            max_lon=-114.0,
+            max_lat=37.0,
+            start_date="2020-01-01",
+            end_date="2023-12-31",
+            token="test-token",
+            page_size=1,  # force pagination at 1 result per page
+        )
+
+    assert len(results) == 2
+    assert results[0]["producer_granule_id"] == "g001"
+    assert results[1]["producer_granule_id"] == "g002"
+    assert call_count == 2
+
+
+def test_cmr_search_single_page_no_cursor():
+    """_cmr_search stops after one request when CMR-Search-After header is absent."""
+    from unittest.mock import MagicMock
+
+    granule = _make_cmr_granule()
+
+    def _mock_get(url, **kwargs):
+        resp = MagicMock()
+        resp.raise_for_status = lambda: None
+        resp.json.return_value = {"feed": {"entry": [granule]}}
+        resp.headers = {}  # no cursor → single page
+        return resp
+
+    with patch("env_data_mcp.sources.emit.httpx.get", side_effect=_mock_get) as mock_get:
+        results = _cmr_search(
+            min_lon=-116.0,
+            min_lat=35.0,
+            max_lon=-114.0,
+            max_lat=37.0,
+            start_date="2023-01-01",
+            end_date="2023-12-31",
+            token="test-token",
+        )
+
+    assert len(results) == 1
+    assert mock_get.call_count == 1

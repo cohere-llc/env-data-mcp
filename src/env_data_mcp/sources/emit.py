@@ -107,24 +107,47 @@ def _cmr_search(
     start_date: str,
     end_date: str,
     token: str,
+    *,
+    page_size: int = 200,
 ) -> list[dict[str, Any]]:
-    """Return EMIT L2B granules whose spatial footprint overlaps the bbox."""
-    resp = httpx.get(
-        _CMR_GRANULES,
-        params={
-            "short_name": _SHORT_NAME,
-            "version": _VERSION,
-            "bounding_box": f"{min_lon},{min_lat},{max_lon},{max_lat}",
-            "temporal[]": f"{start_date}T00:00:00Z,{end_date}T23:59:59Z",
-            "page_size": 200,
-            "sort_key": "start_date",
-        },
-        headers=_auth_headers(token),
-        timeout=30.0,
-        follow_redirects=True,
-    )
-    resp.raise_for_status()
-    return resp.json().get("feed", {}).get("entry", [])
+    """Return ALL EMIT L2B granules whose spatial footprint overlaps the bbox.
+
+    Uses the CMR ``CMR-Search-After`` stateless cursor to page through results,
+    so queries spanning more than 200 granules (~600 days) return complete data.
+    """
+    params = {
+        "short_name": _SHORT_NAME,
+        "version": _VERSION,
+        "bounding_box": f"{min_lon},{min_lat},{max_lon},{max_lat}",
+        "temporal[]": f"{start_date}T00:00:00Z,{end_date}T23:59:59Z",
+        "page_size": page_size,
+        "sort_key": "start_date",
+    }
+    base_headers = _auth_headers(token)
+    all_entries: list[dict[str, Any]] = []
+    search_after: str | None = None
+
+    while True:
+        req_headers = dict(base_headers)
+        if search_after is not None:
+            req_headers["CMR-Search-After"] = search_after
+
+        resp = httpx.get(
+            _CMR_GRANULES,
+            params=params,
+            headers=req_headers,
+            timeout=30.0,
+            follow_redirects=True,
+        )
+        resp.raise_for_status()
+        entries = resp.json().get("feed", {}).get("entry", [])
+        all_entries.extend(entries)
+
+        search_after = resp.headers.get("CMR-Search-After")
+        if not search_after or len(entries) < page_size:
+            break  # last page: no cursor returned, or fewer results than requested
+
+    return all_entries
 
 
 def _granule_id(granule: dict[str, Any]) -> str:
