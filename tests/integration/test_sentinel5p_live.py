@@ -44,29 +44,27 @@ _DATE = "2019-08-19"
 _PRODUCT = "CO"
 
 
-@pytest.mark.integration
-def test_sentinel5p_query_live_returns_success():
-    result = sentinel5p_query(
+@pytest.fixture(scope="module")
+def _s5p_result():
+    """Run the standard CO query once per module; all tests below share it."""
+    return sentinel5p_query(
         latitude=_LAT,
         longitude=_LON,
         start_date=_DATE,
         end_date=_DATE,
         product=_PRODUCT,
     )
-    assert result["_meta"]["success"] is True
-    assert result["_meta"]["source"] == "sentinel5p"
 
 
 @pytest.mark.integration
-def test_sentinel5p_query_live_meta_fields():
-    result = sentinel5p_query(
-        latitude=_LAT,
-        longitude=_LON,
-        start_date=_DATE,
-        end_date=_DATE,
-        product=_PRODUCT,
-    )
-    meta = result["_meta"]
+def test_sentinel5p_query_live_returns_success(_s5p_result):
+    assert _s5p_result["_meta"]["success"] is True
+    assert _s5p_result["_meta"]["source"] == "sentinel5p"
+
+
+@pytest.mark.integration
+def test_sentinel5p_query_live_meta_fields(_s5p_result):
+    meta = _s5p_result["_meta"]
     assert meta["auth_required"] is False
     assert meta["latency_s"] > 0
     assert meta["license"] != ""
@@ -74,17 +72,10 @@ def test_sentinel5p_query_live_meta_fields():
 
 
 @pytest.mark.integration
-def test_sentinel5p_query_live_record_schema():
+def test_sentinel5p_query_live_record_schema(_s5p_result):
     """If any granule covers the point, the record schema must be correct."""
-    result = sentinel5p_query(
-        latitude=_LAT,
-        longitude=_LON,
-        start_date=_DATE,
-        end_date=_DATE,
-        product=_PRODUCT,
-    )
-    if result["data"]:
-        rec = result["data"][0]
+    if _s5p_result["data"]:
+        rec = _s5p_result["data"][0]
         assert "date" in rec
         assert "granule_id" in rec
         assert _PRODUCT in rec
@@ -112,16 +103,9 @@ def test_sentinel5p_query_live_invalid_product_graceful():
 
 
 @pytest.mark.integration
-def test_sentinel5p_schema_co_physical_range():
+def test_sentinel5p_schema_co_physical_range(_s5p_result):
     """CO column density over land is typically 0.01–0.1 mol m⁻²."""
-    result = sentinel5p_query(
-        latitude=_LAT,
-        longitude=_LON,
-        start_date=_DATE,
-        end_date=_DATE,
-        product=_PRODUCT,
-    )
-    for rec in result["data"]:
+    for rec in _s5p_result["data"]:
         val = rec.get(_PRODUCT)
         if val is not None:
             assert 0.0 < val < 2.0, (
@@ -130,15 +114,8 @@ def test_sentinel5p_schema_co_physical_range():
 
 
 @pytest.mark.integration
-def test_sentinel5p_schema_variable_info_present():
-    result = sentinel5p_query(
-        latitude=_LAT,
-        longitude=_LON,
-        start_date=_DATE,
-        end_date=_DATE,
-        product=_PRODUCT,
-    )
-    meta = result["_meta"]
+def test_sentinel5p_schema_variable_info_present(_s5p_result):
+    meta = _s5p_result["_meta"]
     assert "variable_info" in meta, "Sentinel-5P: _meta.variable_info missing"
     vi = meta["variable_info"]
     assert _PRODUCT in vi, f"Sentinel-5P: variable_info missing {_PRODUCT} entry"
@@ -149,23 +126,17 @@ def test_sentinel5p_schema_variable_info_present():
 
 
 @pytest.mark.integration
-def test_sentinel5p_schema_license_present():
-    result = sentinel5p_query(
-        latitude=_LAT, longitude=_LON, start_date=_DATE, end_date=_DATE, product=_PRODUCT
-    )
-    meta = result["_meta"]
+def test_sentinel5p_schema_license_present(_s5p_result):
+    meta = _s5p_result["_meta"]
     assert meta["license"] != "", "Sentinel-5P: _meta.license is empty"
     assert meta["license_url"] != "", "Sentinel-5P: _meta.license_url is empty"
     assert "latitude" in meta["query_params"], "Sentinel-5P: query_params missing latitude"
 
 
 @pytest.mark.integration
-def test_sentinel5p_schema_record_units_field():
+def test_sentinel5p_schema_record_units_field(_s5p_result):
     """Each record must include a *_units field matching the product name."""
-    result = sentinel5p_query(
-        latitude=_LAT, longitude=_LON, start_date=_DATE, end_date=_DATE, product=_PRODUCT
-    )
-    for rec in result["data"]:
+    for rec in _s5p_result["data"]:
         units_key = f"{_PRODUCT}_units"
         assert units_key in rec, (
             f"Sentinel-5P: record missing '{units_key}' — upstream may have dropped units field"

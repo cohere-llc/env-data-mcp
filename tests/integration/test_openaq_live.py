@@ -118,6 +118,9 @@ def test_openaq_query_live_no_key_returns_auth_error(monkeypatch):
         end_date="2019-08-19",
     )
     assert result["_meta"]["success"] is False
+    meta = result["_meta"]
+    assert meta["auth_required"] is True
+    assert meta["auth_present"] is False
 
 
 # ---------------------------------------------------------------------------
