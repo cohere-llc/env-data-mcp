@@ -959,21 +959,54 @@ ESSDIVE_TOKEN=
 # GEE_PROJECT=
 ```
 
-**Step 5.3 — BERIL `.mcp.json` and SKILL.md**
+**Step 5.3 — BERIL integration prompt document**
 
-Update BERIL's `.mcp.json` to register `env-data` (see [Running Locally for BERIL Integration](#running-locally-for-beril-integration)).
+Rather than directly editing the BERIL repo, produce a self-contained prompt document at
+`beril-env-data-prompt.md` (in this repo, sibling to this file) that can be dropped into a fresh
+Copilot session with the BERIL repo loaded. The document should be fully self-contained — the
+Copilot session reading it will have no access to this session's history.
 
-Create `.claude/skills/env-data/SKILL.md` in the BERIL repo following the plan in `env-data-prompt.md`:
-- Instructions for loading GROW data (on-cluster: Spark SQL; off-cluster: `grow_locations.txt`)
-- Instructions for writing `_meta` to `kbase_ops.env_query_log` (on-cluster) or `~/.beril/env_query_log.jsonl` (off-cluster)
-- Instructions for checking `refdata_env_*` Lakehouse tables first and falling back to MCP tools
+The prompt document must cover:
 
-**Step 5.4 — PyPI publishing (optional)**
+1. **What `env-data-mcp` is** — one paragraph summary, entry-point command, response schema
+   (`data` + `_meta`), and a pointer to the published README for full tool reference.
 
-Once the package is stable, publish to PyPI to enable `uvx env-data-mcp` without a local clone:
-- `uv build` → `uv publish`
-- Update BERIL `.mcp.json` to use `"args": ["env-data-mcp"]` (no `--from` needed)
-- Add a GitHub Actions `publish.yml` triggered on version tag push
+2. **`.mcp.json` registration** — concrete JSON blocks for two environments:
+   - *Local dev* (VS Code + `uv`): `"command": "uv"`, `"args": ["--directory", "<path>", "run", "env-data-mcp"]`
+   - *Lakehouse / JupyterHub*: `uvx --from <wheel-or-git-url> env-data-mcp` variant, with the env
+     block for `EARTHDATA_TOKEN`, `OPENAQ_API_KEY`, `ESSDIVE_TOKEN`
+
+3. **BERIL skill (`SKILL.md`)** — instructions for creating
+   `.claude/skills/env-data/SKILL.md` in the BERIL repo, covering:
+   - When to invoke `env-data-mcp` tools vs. GeoTap vs. Lakehouse `refdata_env_*` tables (check
+     Lakehouse first; fall back to MCP)
+   - How to load GROW sample locations (on-cluster: Spark SQL `SELECT * FROM grow.samples`;
+     off-cluster: read `grow_locations.txt`)
+   - How to write `_meta` to the usage log (`kbase_ops.env_query_log` on-cluster, or
+     `~/.beril/env_query_log.jsonl` off-cluster as a JSONL fallback)
+   - Example agentic workflow: for each GROW sample, call `nasa_power_query` + `soilgrids_query`,
+     merge results, write log row, return enriched DataFrame
+
+4. **Local testing options** — step-by-step for verifying the integration *without* Lakehouse access:
+   - Start the server with `uv run env-data-mcp` (stdio) and run the hello-world snippet from the
+     `env-data-mcp` README against it
+   - Use VS Code MCP inspector (`Cmd+Shift+P → MCP: List Tools`) to browse and call tools manually
+   - Run the BERIL skill against `grow_locations.txt` (off-cluster path) and inspect
+     `~/.beril/env_query_log.jsonl` to verify log rows are written
+
+5. **Lakehouse testing options** — step-by-step for verifying the full on-cluster path:
+   - Deploy server to JupyterHub via `uvx` (exact command + env vars)
+   - Run a single GROW sample enrichment query via the skill and confirm a row appears in
+     `kbase_ops.env_query_log`
+   - Run the demo notebook (reference the notebook path in the BERIL repo once created)
+
+6. **Documentation to add in the BERIL repo**:
+   - Update the top-level `README.md` "External data sources" section to list the MCP tools
+   - Add `env-data-mcp` to whatever dependency/setup docs exist for onboarding new contributors
+
+**Step 5.4 — PyPI publishing** *(deferred — out of scope for now)*
+
+~~Once the package is stable, publish to PyPI to enable `uvx env-data-mcp` without a local clone~~
 
 ---
 
