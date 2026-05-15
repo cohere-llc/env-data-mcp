@@ -16,7 +16,9 @@ from env_data_mcp.helpers import (
     bbox_centroid,
     bbox_to_wkt_polygon,
     build_meta,
+    check_runtime,
     clamp_bbox,
+    estimate_runtime,
     parse_date,
 )
 
@@ -318,6 +320,147 @@ class TestClampBbox:
         }
         result = clamp_bbox(bbox)
         assert result == bbox
+
+
+# ---------------------------------------------------------------------------
+# estimate_runtime
+# ---------------------------------------------------------------------------
+
+
+class TestEstimateRuntime:
+    def test_known_source_returns_positive(self) -> None:
+        t = estimate_runtime("gbif", n_days=7, area_deg2=1.0)
+        assert t > 0.0
+
+    def test_unknown_source_returns_zero(self) -> None:
+        assert estimate_runtime("nonexistent_source_xyz", n_days=7, area_deg2=1.0) == 0.0
+
+    def test_result_is_clamped_non_negative(self) -> None:
+        # A source with large negative coefficients and 0 n_days/area should still be >= 0.
+        t = estimate_runtime("emit", n_days=0, area_deg2=0.0)
+        assert t >= 0.0
+
+    def test_oco2_override_applied(self) -> None:
+        # For a 100-day OCO-2 query, the override formula dominates.
+        # override = 2.84 + ceil(100/10) * 3.0 = 2.84 + 30 = 32.84
+        t = estimate_runtime("oco2", n_days=100, area_deg2=0.0)
+        assert t >= 32.84
+
+    def test_emit_override_applied(self) -> None:
+        # For a 30-day EMIT query at a point, override = 0.2 + (30//3)*1.0*3.5 = 35.2
+        t = estimate_runtime("emit", n_days=30, area_deg2=0.0)
+        assert t >= 35.2
+
+    def test_emit_override_area_aware(self) -> None:
+        # Larger bbox → more granules per 3-day window → higher estimate.
+        t_point = estimate_runtime("emit", n_days=30, area_deg2=0.0)
+        t_bbox = estimate_runtime("emit", n_days=30, area_deg2=100.0)
+        assert t_bbox > t_point
+
+    def test_sentinel5p_override_applied(self) -> None:
+        # 30-day point: n_granules=30*1.0=30; ceil(30/16)=2 batches → 2.0+2*4.5=11.0 s
+        t = estimate_runtime("sentinel5p", n_days=30, area_deg2=0.0)
+        assert t >= 11.0
+
+    def test_openaq_override_applied(self) -> None:
+        # 100-day: override = 1.5 + 0.15*100 = 16.5 s
+        t = estimate_runtime("openaq", n_days=100, area_deg2=0.0)
+        assert t >= 16.5
+
+    def test_gbif_override_more_conservative_than_model(self) -> None:
+        # 365-day 100 deg²: override = 2.0 + 365*0.13 + 100*0.18 = 67.45 s
+        t = estimate_runtime("gbif", n_days=365, area_deg2=100.0)
+        assert t >= 67.45
+
+    def test_scales_with_n_days_for_gbif(self) -> None:
+        # GBIF beta_n_days > 0 so longer windows → higher estimate.
+        t_short = estimate_runtime("gbif", n_days=1, area_deg2=1.0)
+        t_long = estimate_runtime("gbif", n_days=365, area_deg2=1.0)
+        assert t_long > t_short
+
+    def test_scales_with_area_for_gbif(self) -> None:
+        # GBIF beta_area_deg2 > 0.
+        t_small = estimate_runtime("gbif", n_days=7, area_deg2=0.0)
+        t_large = estimate_runtime("gbif", n_days=7, area_deg2=100.0)
+        assert t_large > t_small
+
+    def test_all_9_sources_parseable(self) -> None:
+        sources = [
+            "emit",
+            "essdive",
+            "gbif",
+            "nasa_power",
+            "oco2",
+            "openaq",
+            "sentinel5p",
+            "soilgrids",
+            "ssurgo",
+        ]
+        for src in sources:
+            t = estimate_runtime(src, n_days=7, area_deg2=1.0)
+            assert isinstance(t, float), f"{src} should return a float"
+            assert t >= 0.0, f"{src} should return a non-negative estimate"
+
+
+# ---------------------------------------------------------------------------
+# check_runtime
+# ---------------------------------------------------------------------------
+
+
+class TestCheckRuntime:
+    def test_returns_none_when_under_default_threshold(self) -> None:
+        # A tiny GBIF query (1 day, 0 area) should be well under 30 s.
+        result = check_runtime("gbif", n_days=1, area_deg2=0.0, max_runtime_s=None)
+        assert result is None
+
+    def test_returns_warning_dict_when_over_default_threshold(self) -> None:
+        # A 365-day GBIF query in a large area should clearly exceed 30 s.
+        result = check_runtime("gbif", n_days=365, area_deg2=200.0, max_runtime_s=None)
+        assert result is not None
+        assert result["data"] == []
+        meta = result["_meta"]
+        assert meta["success"] is False
+        assert meta["slow_query_warning"] is True
+        assert "estimated_runtime_s" in meta
+        assert "threshold_s" in meta
+        assert "message" in meta
+        assert "max_runtime_s=" in meta["message"]
+
+    def test_max_runtime_s_gate_allows_query(self) -> None:
+        # Passing a large max_runtime_s means the 20% grace puts threshold at 12 s.
+        # A 7-day GBIF query should be well under 12 s threshold.
+        result = check_runtime("gbif", n_days=1, area_deg2=0.0, max_runtime_s=100.0)
+        assert result is None
+
+    def test_max_runtime_s_gate_blocks_slow_query(self) -> None:
+        # Passing max_runtime_s=0.0 means threshold = 0.0 * 1.2 = 0.0 s.
+        # Any source with alpha > 0 should trigger the warning.
+        result = check_runtime("gbif", n_days=1, area_deg2=0.0, max_runtime_s=0.0)
+        assert result is not None
+        assert result["_meta"]["slow_query_warning"] is True
+
+    def test_threshold_is_max_runtime_times_1p2(self) -> None:
+        # check that the threshold in the returned meta = max_runtime_s * 1.2
+        result = check_runtime("gbif", n_days=365, area_deg2=200.0, max_runtime_s=1.0)
+        assert result is not None
+        assert result["_meta"]["threshold_s"] == pytest.approx(1.2, abs=0.01)
+
+    def test_unknown_source_never_blocks(self) -> None:
+        # estimate_runtime returns 0.0 for unknown sources → always passes.
+        result = check_runtime("no_such_source", n_days=9999, area_deg2=9999.0)
+        assert result is None
+
+    def test_latency_s_is_zero(self) -> None:
+        result = check_runtime("gbif", n_days=365, area_deg2=200.0)
+        assert result is not None
+        assert result["_meta"]["latency_s"] == 0.0
+
+    def test_headroom_suggestion_in_message(self) -> None:
+        result = check_runtime("gbif", n_days=365, area_deg2=200.0)
+        assert result is not None
+        msg = result["_meta"]["message"]
+        # Should suggest a specific max_runtime_s value.
+        assert "max_runtime_s=" in msg
 
     def test_clamp_near_north_pole_stays_within_valid_range(self) -> None:
         # Centroid = 90, naive clamp to 10° would give max_lat = 95.

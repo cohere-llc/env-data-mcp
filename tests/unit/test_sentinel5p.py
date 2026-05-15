@@ -1,6 +1,6 @@
-"""Unit tests for the Sentinel-5P source adapter.
+"""Unit tests for the Sentinel-5P CDSE + COGT adapter.
 
-All S3 / h5py calls are mocked; no network access required.
+All HTTP / rasterio calls are mocked; no network access required.
 """
 
 from __future__ import annotations
@@ -8,204 +8,199 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import numpy as np
-import pytest
+import rasterio.transform
 
 from env_data_mcp.sources.sentinel5p import (
     _PRODUCTS,
-    _QA_THRESHOLD,
     LICENSE_INFO,
     VARIABLE_INFO,
-    _extract_mean_bbox,
-    _extract_pixel_point,
-    _granule_path_prefix,
-    _iter_dates,
+    _cdse_query_granules,
+    _cogt_url,
+    _read_cogt_point,
     sentinel5p_bbox_query,
     sentinel5p_query,
 )
 
 # ---------------------------------------------------------------------------
-# _granule_path_prefix
-# ---------------------------------------------------------------------------
-
-
-def test_granule_path_prefix_co():
-    path = _granule_path_prefix("CO", "2019-08-19")
-    assert path == "meeo-s5p/OFFL/L2__CO____/2019/08/19/"
-
-
-def test_granule_path_prefix_no2():
-    path = _granule_path_prefix("NO2", "2020-01-05")
-    assert "L2__NO2___" in path
-    assert "/2020/01/05/" in path
-
-
-def test_granule_path_prefix_ch4():
-    path = _granule_path_prefix("CH4", "2021-12-31")
-    assert "L2__CH4___" in path
-    assert "/2021/12/31/" in path
-
-
-def test_granule_path_prefix_invalid_date_raises():
-    with pytest.raises(ValueError, match="Invalid date"):
-        _granule_path_prefix("CO", "not-a-date")
-
-
-# ---------------------------------------------------------------------------
-# _iter_dates
-# ---------------------------------------------------------------------------
-
-
-def test_iter_dates_single_day():
-    dates = _iter_dates("2019-08-19", "2019-08-19")
-    assert dates == ["2019-08-19"]
-
-
-def test_iter_dates_range():
-    dates = _iter_dates("2019-08-19", "2019-08-21")
-    assert dates == ["2019-08-19", "2019-08-20", "2019-08-21"]
-
-
-def test_iter_dates_invalid_start():
-    with pytest.raises(ValueError):
-        _iter_dates("2019/08/19", "2019-08-21")
-
-
-# ---------------------------------------------------------------------------
-# Synthetic Dataset helper
+# Constants
 # ---------------------------------------------------------------------------
 
 _YAKIMA_LAT = 46.25
 _YAKIMA_LON = -119.47
 
+# A realistic granule name; date part "20190819" is at chars 20-27.
+_FAKE_GRANULE = (
+    "S5P_OFFL_L2__CO_____20190819T013442_20190819T031611_09572_01_010302_20190822T090800.nc"
+)
 
-def _make_arrays(
-    lat_val: float,
-    lon_val: float,
-    co_val: float,
-    qa_val: float = 0.75,
-    variable: str = "carbonmonoxide_total_column",
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Return (lat_f, lon_f, qa_f, val_f) 1-D numpy arrays mimicking a TROPOMI swath patch."""
-    lat = np.array([[[lat_val, lat_val + 0.01], [lat_val - 0.01, lat_val]]])
-    lon = np.array([[[lon_val, lon_val + 0.01], [lon_val - 0.01, lon_val]]])
-    qa = np.full_like(lat, qa_val)
-    val = np.full_like(lat, co_val)
-    return lat.ravel(), lon.ravel(), qa.ravel(), val.ravel()
+# A real Affine transform covering the whole globe at ~0.037°/pixel.
+_WORLD_TRANSFORM = rasterio.transform.from_bounds(-180, -90, 180, 90, 9610, 4972)
 
 
-def _make_h5_mock(
-    lat_val: float,
-    lon_val: float,
-    co_val: float,
-    qa_val: float = 0.75,
-    variable: str = "carbonmonoxide_total_column",
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _cdse_mock(granule_names: list[str]) -> MagicMock:
+    """Return a mock httpx response carrying the given granule names."""
+    resp = MagicMock()
+    resp.json.return_value = {"value": [{"Name": n} for n in granule_names]}
+    return resp
+
+
+def _point_ds(sample_val: float, nodata: float = -9999.0) -> MagicMock:
+    """Return a mock rasterio dataset for ``ds.sample()`` calls."""
+    ds = MagicMock()
+    ds.nodata = nodata
+    ds.sample.return_value = [[sample_val]]
+    ds.__enter__ = MagicMock(return_value=ds)
+    ds.__exit__ = MagicMock(return_value=False)
+    return ds
+
+
+def _bbox_ds(
+    data_val: float,
+    nodata: float = -9999.0,
+    shape: tuple[int, int] = (4, 4),
 ) -> MagicMock:
-    """Return a MagicMock that behaves like an h5py.File context manager."""
-    lat = np.array([[[lat_val, lat_val + 0.01], [lat_val - 0.01, lat_val]]])
-    lon = np.array([[[lon_val, lon_val + 0.01], [lon_val - 0.01, lon_val]]])
-    qa = np.full_like(lat, qa_val)
-    val = np.full_like(lat, co_val)
-
-    datasets: dict[str, np.ndarray] = {
-        "PRODUCT/latitude": lat,
-        "PRODUCT/longitude": lon,
-        "PRODUCT/qa_value": qa,
-        f"PRODUCT/{variable}": val,
-    }
-
-    mock_hf = MagicMock()
-    mock_hf.__getitem__ = MagicMock(side_effect=lambda key: datasets[key])
-
-    mock_file = MagicMock()
-    mock_file.__enter__ = MagicMock(return_value=mock_hf)
-    mock_file.__exit__ = MagicMock(return_value=False)
-    return mock_file
+    """Return a mock rasterio dataset for ``ds.read(window=...)`` calls."""
+    ds = MagicMock()
+    ds.nodata = nodata
+    ds.transform = _WORLD_TRANSFORM
+    ds.read.return_value = np.full(shape, data_val, dtype=np.float32)
+    ds.__enter__ = MagicMock(return_value=ds)
+    ds.__exit__ = MagicMock(return_value=False)
+    return ds
 
 
 # ---------------------------------------------------------------------------
-# _extract_pixel_point
+# _cogt_url
 # ---------------------------------------------------------------------------
 
 
-def test_extract_pixel_point_finds_nearest():
-    lat_f, lon_f, qa_f, val_f = _make_arrays(_YAKIMA_LAT, _YAKIMA_LON, co_val=0.035)
-    val = _extract_pixel_point(lat_f, lon_f, qa_f, val_f, _YAKIMA_LAT, _YAKIMA_LON)
-    assert val is not None
-    assert abs(val - 0.035) < 1e-6
+def test_cogt_url_co_variable():
+    url = _cogt_url(_FAKE_GRANULE, "CO", "carbonmonoxide_total_column")
+    assert "COGT/OFFL/L2__CO____/2019/08/19/" in url
+    assert "_PRODUCT_carbonmonoxide_total_column_4326.tif" in url
+    assert url.startswith("/vsicurl/https://meeo-s5p.s3.amazonaws.com/")
 
 
-def test_extract_pixel_point_outside_swath_returns_none():
-    # Granule centred on the equator (0, 0) — far from Yakima.
-    lat_f, lon_f, qa_f, val_f = _make_arrays(0.0, 0.0, co_val=0.02)
-    val = _extract_pixel_point(lat_f, lon_f, qa_f, val_f, _YAKIMA_LAT, _YAKIMA_LON)
-    assert val is None
+def test_cogt_url_qa_value():
+    url = _cogt_url(_FAKE_GRANULE, "CO", "qa_value")
+    assert "_PRODUCT_qa_value_4326.tif" in url
 
 
-def test_extract_pixel_point_low_qa_returns_none():
-    lat_f, lon_f, qa_f, val_f = _make_arrays(
-        _YAKIMA_LAT, _YAKIMA_LON, co_val=0.035, qa_val=_QA_THRESHOLD - 0.1
+def test_cogt_url_no2():
+    no2_granule = (
+        "S5P_OFFL_L2__NO2____20200105T120000_20200105T134130_01234_01_010302_20200110T000000.nc"
     )
-    val = _extract_pixel_point(lat_f, lon_f, qa_f, val_f, _YAKIMA_LAT, _YAKIMA_LON)
-    assert val is None
-
-
-def test_extract_pixel_point_fill_value_returns_none():
-    lat_f, lon_f, qa_f, val_f = _make_arrays(_YAKIMA_LAT, _YAKIMA_LON, co_val=-9.999e20)
-    val = _extract_pixel_point(lat_f, lon_f, qa_f, val_f, _YAKIMA_LAT, _YAKIMA_LON)
-    assert val is None
+    url = _cogt_url(no2_granule, "NO2", "nitrogendioxide_tropospheric_column")
+    assert "COGT/OFFL/L2__NO2___/2020/01/05/" in url
 
 
 # ---------------------------------------------------------------------------
-# _extract_mean_bbox
+# _cdse_query_granules
 # ---------------------------------------------------------------------------
 
 
-def test_extract_mean_bbox_returns_mean():
-    lat_f, lon_f, qa_f, val_f = _make_arrays(_YAKIMA_LAT, _YAKIMA_LON, co_val=0.04)
-    val = _extract_mean_bbox(
-        lat_f,
-        lon_f,
-        qa_f,
-        val_f,
-        min_lat=_YAKIMA_LAT - 0.1,
-        max_lat=_YAKIMA_LAT + 0.1,
-        min_lon=_YAKIMA_LON - 0.2,
-        max_lon=_YAKIMA_LON + 0.2,
-    )
-    assert val is not None
-    assert abs(val - 0.04) < 1e-6
+def test_cdse_query_granules_point_returns_names():
+    mock_resp = _cdse_mock([_FAKE_GRANULE])
+    with patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp):
+        names = _cdse_query_granules(
+            "CO", "2019-08-19", "2019-08-19", lat=_YAKIMA_LAT, lon=_YAKIMA_LON
+        )
+    assert names == [_FAKE_GRANULE]
 
 
-def test_extract_mean_bbox_no_pixels_returns_none():
-    lat_f, lon_f, qa_f, val_f = _make_arrays(0.0, 0.0, co_val=0.04)
-    val = _extract_mean_bbox(
-        lat_f,
-        lon_f,
-        qa_f,
-        val_f,
-        min_lat=_YAKIMA_LAT - 0.1,
-        max_lat=_YAKIMA_LAT + 0.1,
-        min_lon=_YAKIMA_LON - 0.2,
-        max_lon=_YAKIMA_LON + 0.2,
-    )
-    assert val is None
+def test_cdse_query_granules_empty_returns_empty_list():
+    mock_resp = _cdse_mock([])
+    with patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp):
+        names = _cdse_query_granules(
+            "CO", "2019-08-19", "2019-08-19", lat=_YAKIMA_LAT, lon=_YAKIMA_LON
+        )
+    assert names == []
+
+
+def test_cdse_query_granules_bbox():
+    mock_resp = _cdse_mock([_FAKE_GRANULE])
+    with patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp) as mock_get:
+        _cdse_query_granules(
+            "CO",
+            "2019-08-19",
+            "2019-08-19",
+            min_lat=46.0,
+            max_lat=46.5,
+            min_lon=-120.0,
+            max_lon=-119.0,
+        )
+    call_kwargs = mock_get.call_args[1]
+    assert "POLYGON" in call_kwargs["params"]["$filter"]
+
+
+# ---------------------------------------------------------------------------
+# _read_cogt_point
+# ---------------------------------------------------------------------------
+
+
+def test_read_cogt_point_valid_pixel():
+    co_ds = _point_ds(0.035)
+    qa_ds = _point_ds(75.0, nodata=255.0)
+    with patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]):
+        rec = _read_cogt_point(_FAKE_GRANULE, "CO", _YAKIMA_LAT, _YAKIMA_LON)
+    assert rec is not None
+    assert abs(rec["CO"] - 0.035) < 1e-9
+    assert rec["date"] == "2019-08-19"
+    assert rec["CO_units"] == _PRODUCTS["CO"]["units"]
+
+
+def test_read_cogt_point_co_nodata_returns_none():
+    co_ds = _point_ds(-9999.0, nodata=-9999.0)
+    qa_ds = _point_ds(75.0, nodata=255.0)
+    with patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]):
+        rec = _read_cogt_point(_FAKE_GRANULE, "CO", _YAKIMA_LAT, _YAKIMA_LON)
+    assert rec is None
+
+
+def test_read_cogt_point_qa_nodata_returns_none():
+    co_ds = _point_ds(0.035)
+    qa_ds = _point_ds(255.0, nodata=255.0)
+    with patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]):
+        rec = _read_cogt_point(_FAKE_GRANULE, "CO", _YAKIMA_LAT, _YAKIMA_LON)
+    assert rec is None
+
+
+def test_read_cogt_point_low_qa_returns_none():
+    # QA = 40 → 0.40 normalised < 0.5 threshold
+    co_ds = _point_ds(0.035)
+    qa_ds = _point_ds(40.0, nodata=255.0)
+    with patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]):
+        rec = _read_cogt_point(_FAKE_GRANULE, "CO", _YAKIMA_LAT, _YAKIMA_LON)
+    assert rec is None
+
+
+def test_read_cogt_point_rasterio_error_returns_none():
+    with patch(
+        "env_data_mcp.sources.sentinel5p.rasterio.open",
+        side_effect=RuntimeError("GDAL error"),
+    ):
+        rec = _read_cogt_point(_FAKE_GRANULE, "CO", _YAKIMA_LAT, _YAKIMA_LON)
+    assert rec is None
 
 
 # ---------------------------------------------------------------------------
 # sentinel5p_query MCP tool
 # ---------------------------------------------------------------------------
 
-_FAKE_GRANULE = "meeo-s5p/OFFL/L2__CO____/2019/08/19/S5P_OFFL_L2__CO_____20190819T013442.nc"
-
 
 def test_sentinel5p_query_success():
-    mock_fs = MagicMock()
-    mock_fs.ls.return_value = [_FAKE_GRANULE]
-    mock_file = _make_h5_mock(_YAKIMA_LAT, _YAKIMA_LON, co_val=0.035)
+    mock_resp = _cdse_mock([_FAKE_GRANULE])
+    co_ds = _point_ds(0.035)
+    qa_ds = _point_ds(75.0, nodata=255.0)
 
     with (
-        patch("env_data_mcp.sources.sentinel5p.s3fs.S3FileSystem", return_value=mock_fs),
-        patch("env_data_mcp.sources.sentinel5p.h5py.File", return_value=mock_file),
+        patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp),
+        patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]),
     ):
         result = sentinel5p_query(
             latitude=_YAKIMA_LAT,
@@ -223,13 +218,13 @@ def test_sentinel5p_query_success():
 
 
 def test_sentinel5p_query_meta_variable_info():
-    mock_fs = MagicMock()
-    mock_fs.ls.return_value = [_FAKE_GRANULE]
-    mock_file = _make_h5_mock(_YAKIMA_LAT, _YAKIMA_LON, co_val=0.035)
+    mock_resp = _cdse_mock([_FAKE_GRANULE])
+    co_ds = _point_ds(0.035)
+    qa_ds = _point_ds(75.0, nodata=255.0)
 
     with (
-        patch("env_data_mcp.sources.sentinel5p.s3fs.S3FileSystem", return_value=mock_fs),
-        patch("env_data_mcp.sources.sentinel5p.h5py.File", return_value=mock_file),
+        patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp),
+        patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]),
     ):
         result = sentinel5p_query(
             latitude=_YAKIMA_LAT,
@@ -244,10 +239,8 @@ def test_sentinel5p_query_meta_variable_info():
 
 
 def test_sentinel5p_query_no_granules():
-    mock_fs = MagicMock()
-    mock_fs.ls.return_value = []  # No granules on this date.
-
-    with patch("env_data_mcp.sources.sentinel5p.s3fs.S3FileSystem", return_value=mock_fs):
+    mock_resp = _cdse_mock([])
+    with patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp):
         result = sentinel5p_query(
             latitude=_YAKIMA_LAT,
             longitude=_YAKIMA_LON,
@@ -261,15 +254,15 @@ def test_sentinel5p_query_no_granules():
     assert result["_meta"]["error"] is not None
 
 
-def test_sentinel5p_query_no_match_in_swath():
-    """Granule exists but swath doesn't cover target — no records returned."""
-    mock_fs = MagicMock()
-    mock_fs.ls.return_value = [_FAKE_GRANULE]
-    mock_file = _make_h5_mock(0.0, 0.0, co_val=0.02)  # Centred on equator.
+def test_sentinel5p_query_nodata_pixel_returns_empty():
+    """CDSE returns a granule but the pixel is nodata — no records returned."""
+    mock_resp = _cdse_mock([_FAKE_GRANULE])
+    co_ds = _point_ds(-9999.0, nodata=-9999.0)
+    qa_ds = _point_ds(75.0, nodata=255.0)
 
     with (
-        patch("env_data_mcp.sources.sentinel5p.s3fs.S3FileSystem", return_value=mock_fs),
-        patch("env_data_mcp.sources.sentinel5p.h5py.File", return_value=mock_file),
+        patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp),
+        patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]),
     ):
         result = sentinel5p_query(
             latitude=_YAKIMA_LAT,
@@ -289,7 +282,7 @@ def test_sentinel5p_query_invalid_product():
         longitude=_YAKIMA_LON,
         start_date="2019-08-19",
         end_date="2019-08-19",
-        product="SOX",  # Invalid.
+        product="SOX",
     )
     assert result["_meta"]["success"] is False
     assert "SOX" in result["_meta"]["error"]
@@ -307,10 +300,8 @@ def test_sentinel5p_query_invalid_date():
 
 
 def test_sentinel5p_query_license_populated():
-    mock_fs = MagicMock()
-    mock_fs.ls.return_value = []
-
-    with patch("env_data_mcp.sources.sentinel5p.s3fs.S3FileSystem", return_value=mock_fs):
+    mock_resp = _cdse_mock([])
+    with patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp):
         result = sentinel5p_query(
             latitude=_YAKIMA_LAT,
             longitude=_YAKIMA_LON,
@@ -323,9 +314,9 @@ def test_sentinel5p_query_license_populated():
     assert result["_meta"]["auth_required"] is False
 
 
-def test_sentinel5p_query_s3_error_returns_structured():
+def test_sentinel5p_query_http_error_returns_structured():
     with patch(
-        "env_data_mcp.sources.sentinel5p.s3fs.S3FileSystem",
+        "env_data_mcp.sources.sentinel5p.httpx.get",
         side_effect=ConnectionError("no route"),
     ):
         result = sentinel5p_query(
@@ -346,13 +337,13 @@ def test_sentinel5p_query_s3_error_returns_structured():
 
 
 def test_sentinel5p_bbox_query_success():
-    mock_fs = MagicMock()
-    mock_fs.ls.return_value = [_FAKE_GRANULE]
-    mock_file = _make_h5_mock(_YAKIMA_LAT, _YAKIMA_LON, co_val=0.035)
+    mock_resp = _cdse_mock([_FAKE_GRANULE])
+    co_ds = _bbox_ds(0.035)
+    qa_ds = _bbox_ds(75.0, nodata=255.0)
 
     with (
-        patch("env_data_mcp.sources.sentinel5p.s3fs.S3FileSystem", return_value=mock_fs),
-        patch("env_data_mcp.sources.sentinel5p.h5py.File", return_value=mock_file),
+        patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp),
+        patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]),
     ):
         result = sentinel5p_bbox_query(
             min_lat=46.0,
@@ -370,13 +361,13 @@ def test_sentinel5p_bbox_query_success():
 
 
 def test_sentinel5p_bbox_query_records_have_mean_key():
-    mock_fs = MagicMock()
-    mock_fs.ls.return_value = [_FAKE_GRANULE]
-    mock_file = _make_h5_mock(_YAKIMA_LAT, _YAKIMA_LON, co_val=0.035)
+    mock_resp = _cdse_mock([_FAKE_GRANULE])
+    co_ds = _bbox_ds(0.035)
+    qa_ds = _bbox_ds(75.0, nodata=255.0)
 
     with (
-        patch("env_data_mcp.sources.sentinel5p.s3fs.S3FileSystem", return_value=mock_fs),
-        patch("env_data_mcp.sources.sentinel5p.h5py.File", return_value=mock_file),
+        patch("env_data_mcp.sources.sentinel5p.httpx.get", return_value=mock_resp),
+        patch("env_data_mcp.sources.sentinel5p.rasterio.open", side_effect=[co_ds, qa_ds]),
     ):
         result = sentinel5p_bbox_query(
             min_lat=46.0,

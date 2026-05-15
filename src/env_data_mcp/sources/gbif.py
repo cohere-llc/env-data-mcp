@@ -1,8 +1,8 @@
-"""GBIF occurrence data adapter — anonymous S3 Parquet reader.
+"""GBIF occurrence data adapter — GBIF Occurrence Search REST API.
 
-Data source: ``s3://gbif-open-data-us-east-1/occurrence/``
-Coverage: Global, 1800s–present (monthly Parquet snapshots)
-Auth required: No (anonymous S3 access)
+Data source: ``https://api.gbif.org/v1/occurrence/search``
+Coverage: Global, 1800s–present
+Auth required: No (public API)
 License: Mixed — CC0 1.0, CC BY 4.0, CC BY-NC 4.0 per record
 """
 
@@ -11,15 +11,9 @@ from __future__ import annotations
 import time
 from typing import Any
 
-import dask.dataframe as dd  # noqa: F401 – kept for backward compatibility; no longer used in _fetch_gbif
-import pandas as pd
-import pyarrow as pa
-import pyarrow.compute as pc
-import pyarrow.dataset as pads
-import pyarrow.fs as pafs
-import s3fs
+import httpx
 
-from env_data_mcp.helpers import build_meta, clamp_bbox
+from env_data_mcp.helpers import build_meta, check_runtime, clamp_bbox, parse_date
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -30,15 +24,12 @@ LICENSE_INFO: dict[str, str] = {
     "license": "Mixed: CC0 1.0, CC BY 4.0, CC BY-NC 4.0 (per occurrence record)",
     "license_url": "https://www.gbif.org/terms",
     "citation": (
-        "GBIF.org occurrence snapshot. Accessed via AWS Open Data Registry: "
-        "s3://gbif-open-data-us-east-1/occurrence/. "
+        "GBIF.org. Accessed via GBIF Occurrence Search API: "
+        "https://api.gbif.org/v1/occurrence/search. "
         "Cite individual records using the GBIF data publisher DOI."
     ),
 }
 
-# Field-level descriptions for the occurrence record schema.
-# GBIF records are taxonomic occurrences rather than numeric measurements, so
-# units/valid_range entries use "dimensionless" / "N/A" where not applicable.
 VARIABLE_INFO: dict[str, dict[str, str]] = {
     "species": {
         "description": "Accepted scientific species name (binomial nomenclature)",
@@ -67,43 +58,10 @@ VARIABLE_INFO: dict[str, dict[str, str]] = {
     },
 }
 
-_GBIF_BUCKET = "gbif-open-data-us-east-1"
-_DEFAULT_LIMIT = 1000
+_GBIF_API_BASE = "https://api.gbif.org/v1/occurrence/search"
 
-# The GBIF Open Data S3 Parquet snapshot stores all column names in lowercase
-# (e.g. ``decimallatitude`` rather than ``decimalLatitude``). We rename them to
-# the DwC camelCase standard before returning records so the output schema is
-# stable regardless of S3-side formatting changes.
-_COLUMN_RENAME: dict[str, str] = {
-    "decimallatitude": "decimalLatitude",
-    "decimallongitude": "decimalLongitude",
-    "eventdate": "eventDate",
-    "taxonkey": "taxonKey",
-    "gbifid": "gbifID",
-}
-
-# ---------------------------------------------------------------------------
-# S3 helpers
-# ---------------------------------------------------------------------------
-
-# Module-level cache for the most-recent partition date.
-# S3 listing across the full bucket is a round-trip; caching avoids repeating it
-# on every call within the same process lifetime.
-_cached_latest_partition: str | None = None
-
-
-def _discover_latest_partition(fs: s3fs.S3FileSystem) -> str:
-    """Return the most recent partition date string (YYYY-MM-DD) from S3."""
-    global _cached_latest_partition
-    if _cached_latest_partition is not None:
-        return _cached_latest_partition
-    folders: list[str] = fs.ls(f"{_GBIF_BUCKET}/occurrence/", detail=False)
-    # Each entry looks like "gbif-open-data-us-east-1/occurrence/2024-01-01"
-    dates = [f.split("/")[-1] for f in folders if f.split("/")[-1].count("-") == 2]
-    if not dates:
-        raise RuntimeError("No GBIF partition folders found in S3 bucket")
-    _cached_latest_partition = sorted(dates)[-1]
-    return _cached_latest_partition
+# GBIF's occurrence search API caps each page at 300 records.
+_API_PAGE_SIZE = 300
 
 
 # ---------------------------------------------------------------------------
@@ -119,68 +77,65 @@ def _fetch_gbif(
     start_date: str,
     end_date: str,
     taxon_key: int | None,
-    limit: int,
-) -> tuple[list[dict[str, Any]], int, str, list[str]]:
-    """Read and filter GBIF occurrence Parquet on S3.
+    limit: int | None,
+) -> tuple[list[dict[str, Any]], int, list[str]]:
+    """Query the GBIF Occurrence Search REST API.
 
-    Returns ``(records, total_before_cap, partition_date, unique_licenses)``.
+    Returns ``(records, total_count, unique_licenses)``.
 
-    The data are spatial + temporal filtered, optionally filtered by taxon,
-    and capped at *limit* rows. Columns returned per record:
-    ``species``, ``decimalLatitude``, ``decimalLongitude``, ``eventDate``,
-    ``taxonKey``, ``license``, ``gbifID``.
+    *total_count* is the API-reported total number of matching occurrences
+    (may exceed *limit* when results are capped).  At most *limit* records are
+    returned (all records when *limit* is ``None``), fetched across multiple
+    pages of up to ``_API_PAGE_SIZE`` each.
     """
-    fs = s3fs.S3FileSystem(anon=True)
-    partition = _discover_latest_partition(fs)
-
-    # PyArrow dataset API is used instead of Dask because the GBIF Parquet
-    # snapshot contains ~8 000 partitions; Dask requires listing every file
-    # before filtering, which takes >120 s. PyArrow's scanner applies row-group
-    # statistics pushdown and stops as soon as `limit + 1` rows are found,
-    # completing in ~10 s for typical point/bbox queries.
-    s3 = pafs.S3FileSystem(anonymous=True, region="us-east-1")  # pyright: ignore[reportPrivateImportUsage]
-    path = f"{_GBIF_BUCKET}/occurrence/{partition}/occurrence.parquet"
-    dataset = pads.dataset(path, filesystem=s3, format="parquet")
-
-    start_ts = pd.Timestamp(start_date, tz="UTC")
-    end_ts = pd.Timestamp(end_date + " 23:59:59", tz="UTC")
-
-    filt = (
-        (pc.field("decimallatitude") >= min_lat)
-        & (pc.field("decimallatitude") <= max_lat)
-        & (pc.field("decimallongitude") >= min_lon)
-        & (pc.field("decimallongitude") <= max_lon)
-        & (pc.field("eventdate") >= pa.scalar(start_ts))
-        & (pc.field("eventdate") <= pa.scalar(end_ts))
-    )
+    base_params: dict[str, Any] = {
+        "decimalLatitude": f"{min_lat},{max_lat}",
+        "decimalLongitude": f"{min_lon},{max_lon}",
+        "eventDate": f"{start_date},{end_date}",
+    }
     if taxon_key is not None:
-        filt = filt & (pc.field("taxonkey") == taxon_key)
+        base_params["taxonKey"] = taxon_key
 
-    cols = [
-        "species",
-        "decimallatitude",
-        "decimallongitude",
-        "eventdate",
-        "taxonkey",
-        "license",
-        "gbifid",
-    ]
-    table = dataset.scanner(columns=cols, filter=filt).head(limit + 1)
-    result_df = table.to_pandas()
+    raw_records: list[dict[str, Any]] = []
+    total_count = 0
 
-    total_before_cap = len(result_df)
-    result_df = result_df.iloc[:limit]
+    while limit is None or len(raw_records) < limit:
+        if limit is not None:
+            page_size = min(limit - len(raw_records), _API_PAGE_SIZE)
+        else:
+            page_size = _API_PAGE_SIZE
+        r = httpx.get(
+            _GBIF_API_BASE,
+            params={**base_params, "limit": page_size, "offset": len(raw_records)},
+            timeout=30,
+        )
+        r.raise_for_status()
+        body = r.json()
+        total_count = body.get("count", 0)
+        page = body.get("results", [])
+        raw_records.extend(page)
+        if body.get("endOfRecords", True) or not page:
+            break
 
-    # Aggregate licenses before renaming columns ("license" is the same in both schemas).
-    unique_licenses: list[str] = (
-        result_df["license"].dropna().unique().tolist() if "license" in result_df.columns else []
-    )
+    records: list[dict[str, Any]] = []
+    unique_licenses: set[str] = set()
+    for rec in raw_records[:limit] if limit is not None else raw_records:
+        lic = rec.get("license") or ""
+        if lic:
+            unique_licenses.add(lic)
+        records.append(
+            {
+                "species": rec.get("species") or rec.get("scientificName"),
+                "decimalLatitude": rec.get("decimalLatitude"),
+                "decimalLongitude": rec.get("decimalLongitude"),
+                "eventDate": rec.get("eventDate"),
+                "taxonKey": rec.get("taxonKey"),
+                "license": lic,
+                "gbifID": rec.get("gbifID") or str(rec.get("key", "")),
+            }
+        )
 
-    # Rename lowercase S3 column names to the DwC camelCase standard.
-    result_df = result_df.rename(columns=_COLUMN_RENAME)
-
-    records: list[dict[str, Any]] = result_df.to_dict(orient="records")  # type: ignore[assignment]
-    return records, total_before_cap, partition, unique_licenses
+    return records, total_count, sorted(unique_licenses)
 
 
 # ---------------------------------------------------------------------------
@@ -196,12 +151,12 @@ def gbif_occurrences(
     start_date: str,
     end_date: str,
     taxon_key: int | None = None,
-    limit: int = _DEFAULT_LIMIT,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return GBIF species occurrence records within *radius_km* of a point.
 
-    Data are read from the most recent monthly GBIF Parquet snapshot on the
-    AWS Open Data Registry (``s3://gbif-open-data-us-east-1``).
+    Queries the GBIF Occurrence Search REST API (``api.gbif.org``).
 
     Args:
         latitude: WGS84 decimal latitude of the query centre.
@@ -210,7 +165,10 @@ def gbif_occurrences(
         start_date: Inclusive start date, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         taxon_key: Optional GBIF taxon key to restrict results to a single taxon.
-        limit: Maximum number of occurrence records to return (default 1 000).
+        limit: Maximum number of occurrence records to return.  Omit (or
+            pass ``None``) to rely on the ``max_runtime_s`` gate to bound
+            query cost rather than a hard record cap.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}`` — each data record contains
@@ -226,8 +184,8 @@ def gbif_occurrences(
         "end_date": end_date,
         "taxon_key": taxon_key,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
     }
-    # Convert radius_km to a rough bbox (1° ≈ 111 km).
     deg = radius_km / 111.0
     bbox = clamp_bbox(
         {
@@ -237,13 +195,18 @@ def gbif_occurrences(
             "max_lon": longitude + deg,
         }
     )
-    # Echo the resolved (clamped) bbox so the meta block is fully reproducible.
     query_params["resolved_min_lat"] = bbox["min_lat"]
     query_params["resolved_max_lat"] = bbox["max_lat"]
     query_params["resolved_min_lon"] = bbox["min_lon"]
     query_params["resolved_max_lon"] = bbox["max_lon"]
     try:
-        records, total, partition, unique_licenses = _fetch_gbif(
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        area_deg2 = (2 * deg) ** 2
+        if warn := check_runtime("gbif", n_days, area_deg2, max_runtime_s):
+            return warn
+        records, total_count, unique_licenses = _fetch_gbif(
             min_lat=bbox["min_lat"],
             max_lat=bbox["max_lat"],
             min_lon=bbox["min_lon"],
@@ -254,10 +217,8 @@ def gbif_occurrences(
             limit=limit,
         )
         latency = time.perf_counter() - t0
-        capped = total > limit
-        license_str = (
-            " | ".join(sorted(set(unique_licenses))) if unique_licenses else LICENSE_INFO["license"]
-        )
+        capped = limit is not None and total_count > limit
+        license_str = " | ".join(unique_licenses) if unique_licenses else LICENSE_INFO["license"]
         meta = build_meta(
             source="gbif",
             query_params=query_params,
@@ -268,7 +229,8 @@ def gbif_occurrences(
             success=True,
         )
         meta["capped"] = capped
-        meta["partition_date"] = partition
+        meta["total_count"] = total_count
+        meta["upstream_page_size"] = _API_PAGE_SIZE
         return {"data": records, "_meta": meta}
     except Exception as exc:
         latency = time.perf_counter() - t0
@@ -295,7 +257,8 @@ def gbif_bbox_occurrences(
     start_date: str,
     end_date: str,
     taxon_key: int | None = None,
-    limit: int = _DEFAULT_LIMIT,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return GBIF occurrence records within a bounding box.
 
@@ -310,7 +273,8 @@ def gbif_bbox_occurrences(
         start_date: Inclusive start date, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end date, ISO 8601 ``YYYY-MM-DD``.
         taxon_key: Optional GBIF taxon key to restrict results.
-        limit: Maximum records to return (default 1 000).
+        limit: Maximum records to return.  Pass ``None`` (default) to return all.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
     """
     t0 = time.perf_counter()
     query_params: dict[str, Any] = {
@@ -322,14 +286,20 @@ def gbif_bbox_occurrences(
         "end_date": end_date,
         "taxon_key": taxon_key,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
     }
     bbox = clamp_bbox(
         {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     )
-    # Overwrite query_params with the clamped values so the meta block is fully reproducible.
     query_params.update(bbox)
     try:
-        records, total, partition, unique_licenses = _fetch_gbif(
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+        if warn := check_runtime("gbif", n_days, area_deg2, max_runtime_s):
+            return warn
+        records, total_count, unique_licenses = _fetch_gbif(
             min_lat=bbox["min_lat"],
             max_lat=bbox["max_lat"],
             min_lon=bbox["min_lon"],
@@ -340,10 +310,8 @@ def gbif_bbox_occurrences(
             limit=limit,
         )
         latency = time.perf_counter() - t0
-        capped = total > limit
-        license_str = (
-            " | ".join(sorted(set(unique_licenses))) if unique_licenses else LICENSE_INFO["license"]
-        )
+        capped = limit is not None and total_count > limit
+        license_str = " | ".join(unique_licenses) if unique_licenses else LICENSE_INFO["license"]
         meta = build_meta(
             source="gbif",
             query_params=query_params,
@@ -354,7 +322,8 @@ def gbif_bbox_occurrences(
             success=True,
         )
         meta["capped"] = capped
-        meta["partition_date"] = partition
+        meta["total_count"] = total_count
+        meta["upstream_page_size"] = _API_PAGE_SIZE
         return {"data": records, "_meta": meta}
     except Exception as exc:
         latency = time.perf_counter() - t0

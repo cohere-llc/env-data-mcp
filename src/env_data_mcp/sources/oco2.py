@@ -13,6 +13,7 @@ import io
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, cast
 
 import h5py
@@ -22,6 +23,7 @@ import numpy as np
 from env_data_mcp.helpers import (
     auth_missing_response,
     build_meta,
+    check_runtime,
     clamp_bbox,
     parse_date,
 )
@@ -398,6 +400,7 @@ def oco2_query(
     longitude: float,
     start_date: str,
     end_date: str,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return OCO-2 daily XCO2 values at a point for a date range.
 
@@ -410,6 +413,7 @@ def oco2_query(
         longitude: WGS84 decimal longitude.
         start_date: Inclusive start, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end, ISO 8601 ``YYYY-MM-DD``.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}`` — each record has ``date``,
@@ -417,13 +421,17 @@ def oco2_query(
         ``longitude``, ``granule_id``.
     """
     t0 = time.perf_counter()
-    parse_date(start_date)
-    parse_date(end_date)
+    _sd = parse_date(start_date)
+    _ed = parse_date(end_date)
+    n_days = (_ed - _sd).days + 1
+    if warn := check_runtime("oco2", n_days, 0.0, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
         "start_date": start_date,
         "end_date": end_date,
+        "max_runtime_s": max_runtime_s,
     }
     token = os.environ.get("EARTHDATA_TOKEN", "")
     if not token:
@@ -439,14 +447,19 @@ def oco2_query(
     try:
         granules = _cmr_search(start_date, end_date, token)
         records: list[dict[str, Any]] = []
-        for g in granules:
+
+        def _fetch_point(g: dict[str, Any]) -> dict[str, Any] | None:
             url = _get_download_url(g)
             if not url:
-                continue
+                return None
             content = _fetch_granule_bytes(url, token)
-            rec = _parse_xco2_point(content, latitude, longitude, _granule_date(g), _granule_id(g))
-            if rec is not None:
-                records.append(rec)
+            return _parse_xco2_point(content, latitude, longitude, _granule_date(g), _granule_id(g))
+
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            for rec in pool.map(_fetch_point, granules):
+                if rec is not None:
+                    records.append(rec)
+        records.sort(key=lambda r: r["date"])
         latency = time.perf_counter() - t0
         return {
             "data": records,
@@ -493,7 +506,8 @@ def oco2_bbox_query(
     max_lon: float,
     start_date: str,
     end_date: str,
-    limit: int = 500,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return OCO-2 daily XCO2 values within a bounding box for a date range.
 
@@ -504,22 +518,29 @@ def oco2_bbox_query(
         max_lon: Eastern boundary.
         start_date: Inclusive start, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end, ISO 8601 ``YYYY-MM-DD``.
-        limit: Maximum number of records to return (default 500).
-            ``_meta.capped`` is ``True`` when the cap was reached.
+        limit: Maximum number of records to return.  Pass ``None`` (default)
+            to return all records.  ``_meta.capped`` is ``True`` when the cap
+            was reached.
+        max_runtime_s: Acceptable runtime in seconds; see timing docs.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}``
     """
     t0 = time.perf_counter()
-    parse_date(start_date)
-    parse_date(end_date)
+    _sd = parse_date(start_date)
+    _ed = parse_date(end_date)
     bbox = clamp_bbox(
         {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     )
+    n_days = (_ed - _sd).days + 1
+    area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+    if warn := check_runtime("oco2", n_days, area_deg2, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "start_date": start_date,
         "end_date": end_date,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
         **bbox,
     }
     token = os.environ.get("EARTHDATA_TOKEN", "")
@@ -535,17 +556,13 @@ def oco2_bbox_query(
 
     try:
         granules = _cmr_search(start_date, end_date, token)
-        records: list[dict[str, Any]] = []
-        capped = False
-        for g in granules:
-            if len(records) >= limit:
-                capped = True
-                break
+
+        def _fetch_bbox(g: dict[str, Any]) -> list[dict[str, Any]]:
             url = _get_download_url(g)
             if not url:
-                continue
+                return []
             content = _fetch_granule_bytes(url, token)
-            batch = _parse_xco2_bbox(
+            return _parse_xco2_bbox(
                 content,
                 bbox["min_lat"],
                 bbox["max_lat"],
@@ -554,10 +571,24 @@ def oco2_bbox_query(
                 _granule_date(g),
                 _granule_id(g),
             )
-            records.extend(batch)
-        records = records[:limit]
-        if not capped:
-            capped = len(records) >= limit
+
+        records: list[dict[str, Any]] = []
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            futures = [pool.submit(_fetch_bbox, g) for g in granules]
+            try:
+                for fut in as_completed(futures):
+                    records.extend(fut.result())
+                    # Stop collecting as soon as the limit is met so that
+                    # queued (not-yet-started) futures can be cancelled,
+                    # avoiding unnecessary network I/O.
+                    if limit is not None and len(records) >= limit:
+                        break
+            finally:
+                for fut in futures:
+                    fut.cancel()
+        records.sort(key=lambda r: r["date"])
+        records = records[:limit] if limit is not None else records
+        capped = limit is not None and len(records) >= limit
         latency = time.perf_counter() - t0
         meta = build_meta(
             source="oco2",

@@ -37,6 +37,7 @@ import numpy as np
 from env_data_mcp.helpers import (
     auth_missing_response,
     build_meta,
+    check_runtime,
     clamp_bbox,
     parse_date,
 )
@@ -72,7 +73,6 @@ VARIABLE_INFO: dict[str, dict[str, str]] = {
 _CMR_GRANULES = "https://cmr.earthdata.nasa.gov/search/granules.json"
 _SHORT_NAME = "EMITL2BMIN"
 _VERSION = "001"
-_MAX_GRANULES = 5
 _ABUNDANCE_THRESHOLD = 0.005  # ignore trace abundances below 0.5 %
 
 # OPeNDAP base — the CMR-provided OPeNDAP link already contains this prefix,
@@ -107,24 +107,47 @@ def _cmr_search(
     start_date: str,
     end_date: str,
     token: str,
+    *,
+    page_size: int = 200,
 ) -> list[dict[str, Any]]:
-    """Return EMIT L2B granules whose spatial footprint overlaps the bbox."""
-    resp = httpx.get(
-        _CMR_GRANULES,
-        params={
-            "short_name": _SHORT_NAME,
-            "version": _VERSION,
-            "bounding_box": f"{min_lon},{min_lat},{max_lon},{max_lat}",
-            "temporal[]": f"{start_date}T00:00:00Z,{end_date}T23:59:59Z",
-            "page_size": _MAX_GRANULES,
-            "sort_key": "start_date",
-        },
-        headers=_auth_headers(token),
-        timeout=30.0,
-        follow_redirects=True,
-    )
-    resp.raise_for_status()
-    return resp.json().get("feed", {}).get("entry", [])[:_MAX_GRANULES]
+    """Return ALL EMIT L2B granules whose spatial footprint overlaps the bbox.
+
+    Uses the CMR ``CMR-Search-After`` stateless cursor to page through results,
+    so queries spanning more than 200 granules (~600 days) return complete data.
+    """
+    params = {
+        "short_name": _SHORT_NAME,
+        "version": _VERSION,
+        "bounding_box": f"{min_lon},{min_lat},{max_lon},{max_lat}",
+        "temporal[]": f"{start_date}T00:00:00Z,{end_date}T23:59:59Z",
+        "page_size": page_size,
+        "sort_key": "start_date",
+    }
+    base_headers = _auth_headers(token)
+    all_entries: list[dict[str, Any]] = []
+    search_after: str | None = None
+
+    while True:
+        req_headers = dict(base_headers)
+        if search_after is not None:
+            req_headers["CMR-Search-After"] = search_after
+
+        resp = httpx.get(
+            _CMR_GRANULES,
+            params=params,
+            headers=req_headers,
+            timeout=30.0,
+            follow_redirects=True,
+        )
+        resp.raise_for_status()
+        entries = resp.json().get("feed", {}).get("entry", [])
+        all_entries.extend(entries)
+
+        search_after = resp.headers.get("CMR-Search-After")
+        if not search_after or len(entries) < page_size:
+            break  # last page: no cursor returned, or fewer results than requested
+
+    return all_entries
 
 
 def _granule_id(granule: dict[str, Any]) -> str:
@@ -386,6 +409,7 @@ def emit_query(
     longitude: float,
     start_date: str,
     end_date: str,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return EMIT L2B mineral spectral-abundance values at a point.
 
@@ -408,13 +432,17 @@ def emit_query(
         ``latitude``, ``longitude``, ``acquisition_date``, ``granule_id``.
     """
     t0 = time.perf_counter()
-    parse_date(start_date)
-    parse_date(end_date)
+    _sd = parse_date(start_date)
+    _ed = parse_date(end_date)
+    n_days = (_ed - _sd).days + 1
+    if warn := check_runtime("emit", n_days, 0.0, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
         "start_date": start_date,
         "end_date": end_date,
+        "max_runtime_s": max_runtime_s,
     }
     token = os.environ.get("EARTHDATA_TOKEN", "")
     if not token:
@@ -497,7 +525,8 @@ def emit_bbox_query(
     max_lon: float,
     start_date: str,
     end_date: str,
-    limit: int = 500,
+    limit: int | None = None,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Return EMIT L2B mineral spectral-abundance values within a bounding box.
 
@@ -508,22 +537,29 @@ def emit_bbox_query(
         max_lon: Eastern boundary.
         start_date: Inclusive start, ISO 8601 ``YYYY-MM-DD``.
         end_date: Inclusive end, ISO 8601 ``YYYY-MM-DD``.
-        limit: Maximum number of records to return (default 500).
-            ``_meta.capped`` is ``True`` when the cap was reached.
+        limit: Maximum number of records to return.  Omit (or pass ``None``)
+            to rely on the ``max_runtime_s`` gate to bound query cost rather
+            than a hard record cap.  ``_meta.capped`` is ``True`` when the
+            cap was reached.
 
     Returns:
         ``{"data": list[dict], "_meta": dict}``
     """
     t0 = time.perf_counter()
-    parse_date(start_date)
-    parse_date(end_date)
+    _sd = parse_date(start_date)
+    _ed = parse_date(end_date)
     bbox = clamp_bbox(
         {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     )
+    n_days = (_ed - _sd).days + 1
+    area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+    if warn := check_runtime("emit", n_days, area_deg2, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "start_date": start_date,
         "end_date": end_date,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
         **bbox,
     }
 
@@ -551,7 +587,7 @@ def emit_bbox_query(
         records: list[dict[str, Any]] = []
         capped = False
         for g in granules:
-            if len(records) >= limit:
+            if limit is not None and len(records) >= limit:
                 capped = True
                 break
             url = _get_opendap_url(g)
@@ -568,9 +604,10 @@ def emit_bbox_query(
                 token,
             )
             records.extend(batch)
-        records = records[:limit]
+        if limit is not None:
+            records = records[:limit]
         if not capped:
-            capped = len(records) >= limit
+            capped = limit is not None and len(records) >= limit
         latency = time.perf_counter() - t0
         meta = build_meta(
             source="emit",

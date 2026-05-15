@@ -13,7 +13,7 @@ from typing import Any
 
 import httpx
 
-from env_data_mcp.helpers import bbox_centroid, build_meta, clamp_bbox
+from env_data_mcp.helpers import bbox_centroid, build_meta, check_runtime, clamp_bbox
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -126,6 +126,7 @@ def _fetch_soilgrids(lat: float, lon: float) -> tuple[dict[str, Any], float]:
 def soilgrids_query(
     latitude: float,
     longitude: float,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Query ISRIC SoilGrids v2.0 soil properties for a point location.
 
@@ -138,9 +139,12 @@ def soilgrids_query(
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
     """
+    if warn := check_runtime("soilgrids", 0, 0.0, max_runtime_s):
+        return warn
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
+        "max_runtime_s": max_runtime_s,
         "depth": _DEPTH,
         "properties": _PROPERTIES,
     }
@@ -189,6 +193,7 @@ def soilgrids_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Query ISRIC SoilGrids v2.0 soil properties for a bounding-box area.
 
@@ -209,12 +214,16 @@ def soilgrids_bbox_query(
     }
     bbox = clamp_bbox(bbox)
     clat, clon = bbox_centroid(bbox)
+    area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+    if warn := check_runtime("soilgrids", 0, area_deg2, max_runtime_s):
+        return warn
 
     query_params: dict[str, Any] = {
         "min_lat": min_lat,
         "max_lat": max_lat,
         "min_lon": min_lon,
         "max_lon": max_lon,
+        "max_runtime_s": max_runtime_s,
         "centroid_lat": clat,
         "centroid_lon": clon,
         "depth": _DEPTH,

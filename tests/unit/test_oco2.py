@@ -483,6 +483,7 @@ def test_oco2_bbox_query_echoes_clamped_bbox(monkeypatch):
             max_lon=-115.0,
             start_date="2019-08-01",
             end_date="2019-08-31",
+            max_runtime_s=999,
         )
     qp = result["_meta"]["query_params"]
     assert "min_lat" in qp

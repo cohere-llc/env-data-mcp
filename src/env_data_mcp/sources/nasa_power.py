@@ -15,7 +15,7 @@ import pandas as pd
 import zarr
 from zarr.storage import FsspecStore
 
-from env_data_mcp.helpers import bbox_centroid, build_meta, clamp_bbox, parse_date
+from env_data_mcp.helpers import bbox_centroid, build_meta, check_runtime, clamp_bbox, parse_date
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -237,6 +237,7 @@ def nasa_power_query(
     end_date: str,
     variables: list[str] | None = None,
     temporal_resolution: str = "daily",
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Query NASA POWER MERRA-2 climate data for a point location.
 
@@ -263,13 +264,17 @@ def nasa_power_query(
         "end_date": end_date,
         "variables": variables,
         "temporal_resolution": temporal_resolution,
+        "max_runtime_s": max_runtime_s,
     }
 
     var_info = {k: VARIABLE_INFO[k] for k in variables if k in VARIABLE_INFO}
     t0 = time.perf_counter()
     try:
-        parse_date(start_date)
-        parse_date(end_date)
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        if warn := check_runtime("nasa_power", n_days, 0.0, max_runtime_s):
+            return warn
         records, unavailable = _query_point(latitude, longitude, start_date, end_date, variables)
         latency = time.perf_counter() - t0
         return {
@@ -313,6 +318,7 @@ def nasa_power_bbox_query(
     end_date: str,
     variables: list[str] | None = None,
     temporal_resolution: str = "daily",
+    max_runtime_s: float | None = None,
 ) -> dict[str, Any]:
     """Query NASA POWER MERRA-2 climate data for a bounding-box area.
 
@@ -352,13 +358,17 @@ def nasa_power_bbox_query(
         "end_date": end_date,
         "variables": variables,
         "temporal_resolution": temporal_resolution,
+        "max_runtime_s": max_runtime_s,
     }
 
     var_info = {k: VARIABLE_INFO[k] for k in variables if k in VARIABLE_INFO}
     t0 = time.perf_counter()
     try:
-        parse_date(start_date)
-        parse_date(end_date)
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        if warn := check_runtime("nasa_power", n_days, 0.0, max_runtime_s):
+            return warn
         records, unavailable = _query_point(clat, clon, start_date, end_date, variables)
         latency = time.perf_counter() - t0
         return {
