@@ -99,6 +99,72 @@ def test_gbif_occurrences_live_record_schema():
     )
     if result["data"]:
         rec = result["data"][0]
-        assert "decimalLatitude" in rec
-        assert "decimalLongitude" in rec
-        assert "eventDate" in rec
+        assert "decimalLatitude" in rec, "GBIF Parquet: decimalLatitude column renamed or removed"
+        assert "decimalLongitude" in rec, "GBIF Parquet: decimalLongitude column renamed or removed"
+        assert "eventDate" in rec, "GBIF Parquet: eventDate column renamed or removed"
+        assert "species" in rec or "scientificName" in rec, (
+            "GBIF Parquet: neither 'species' nor 'scientificName' present — schema may have changed"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Schema stability assertions (Step 4.4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_gbif_schema_lat_lon_physical_range():
+    result = gbif_occurrences(
+        latitude=_LAT,
+        longitude=_LON,
+        radius_km=50.0,
+        start_date="2010-01-01",
+        end_date="2021-12-31",
+        limit=100,
+        max_runtime_s=9999,
+    )
+    for rec in result["data"]:
+        lat = rec.get("decimalLatitude")
+        lon = rec.get("decimalLongitude")
+        if lat is not None:
+            assert -90.0 <= lat <= 90.0, (
+                f"GBIF: decimalLatitude={lat} outside physical range — fill value or unit change?"
+            )
+        if lon is not None:
+            assert -180.0 <= lon <= 180.0, f"GBIF: decimalLongitude={lon} outside physical range"
+
+
+@pytest.mark.integration
+def test_gbif_schema_variable_info_present():
+    result = gbif_occurrences(
+        latitude=_LAT,
+        longitude=_LON,
+        radius_km=50.0,
+        start_date="2010-01-01",
+        end_date="2021-12-31",
+        limit=100,
+        max_runtime_s=9999,
+    )
+    meta = result["_meta"]
+    assert "variable_info" in meta, "GBIF: _meta.variable_info missing"
+    vi = meta["variable_info"]
+    assert "decimalLatitude" in vi, "GBIF: variable_info missing decimalLatitude entry"
+    assert "units" in vi["decimalLatitude"], (
+        "GBIF: variable_info['decimalLatitude'] missing 'units'"
+    )
+
+
+@pytest.mark.integration
+def test_gbif_schema_license_present():
+    result = gbif_occurrences(
+        latitude=_LAT,
+        longitude=_LON,
+        radius_km=50.0,
+        start_date="2010-01-01",
+        end_date="2021-12-31",
+        limit=100,
+        max_runtime_s=9999,
+    )
+    meta = result["_meta"]
+    assert meta["license_url"] != "", "GBIF: _meta.license_url is empty"
+    assert "latitude" in meta["query_params"], "GBIF: query_params missing latitude"

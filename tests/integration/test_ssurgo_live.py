@@ -61,3 +61,49 @@ def test_ssurgo_query_live_meta_fields():
     assert meta["source"] == "ssurgo"
     assert meta["auth_required"] is False
     assert meta["latency_s"] > 0
+
+
+# ---------------------------------------------------------------------------
+# Schema stability assertions (Step 4.4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_ssurgo_schema_expected_columns():
+    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    if not result["data"]:
+        pytest.skip("No SSURGO data returned for this point")
+    row = result["data"][0]
+    expected = ("mukey", "muname", "compname", "hzdepb_r", "sandtotal_r")
+    for col in expected:
+        assert col in row, f"SSURGO: column '{col}' missing — SDA schema may have changed"
+
+
+@pytest.mark.integration
+def test_ssurgo_schema_depth_physical_range():
+    """Horizon bottom depth must be positive and < 500 cm."""
+    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    for row in result["data"]:
+        depth = row.get("hzdepb_r")
+        if depth is not None:
+            assert 0.0 < float(depth) < 500.0, (
+                f"SSURGO: hzdepb_r={depth} outside physical range — fill value or unit change?"
+            )
+
+
+@pytest.mark.integration
+def test_ssurgo_schema_variable_info_present():
+    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    meta = result["_meta"]
+    assert "variable_info" in meta, "SSURGO: _meta.variable_info missing"
+    vi = meta["variable_info"]
+    assert "sandtotal_r" in vi, "SSURGO: variable_info missing 'sandtotal_r' entry"
+
+
+@pytest.mark.integration
+def test_ssurgo_schema_license_present():
+    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    meta = result["_meta"]
+    assert meta["license"] != "", "SSURGO: _meta.license is empty"
+    assert meta["license_url"] != "", "SSURGO: _meta.license_url is empty"
+    assert "latitude" in meta["query_params"], "SSURGO: query_params missing latitude"

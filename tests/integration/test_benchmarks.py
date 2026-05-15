@@ -323,6 +323,9 @@ def _assert_or_skip(result: dict[str, Any], source: str) -> None:
     meta = result["_meta"]
     if not meta.get("auth_present", True):
         pytest.skip(f"{source}: auth token rejected or expired — {meta.get('error')}")
+    error = meta.get("error") or ""
+    if not meta.get("success") and ("Server error" in error or "server error" in error):
+        pytest.skip(f"{source}: transient upstream server error — {error}")
     assert meta["success"] is True, f"{source} query failed: {meta.get('error')}"
 
 

@@ -93,3 +93,70 @@ def test_emit_query_meta_fields():
     assert meta["auth_present"] is True
     assert meta["latency_s"] > 0
     assert meta["license"] != ""
+
+
+# ---------------------------------------------------------------------------
+# Schema stability assertions (Step 4.4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_emit_schema_record_fields():
+    result = emit_query(
+        latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END, max_runtime_s=9999
+    )
+    meta = result["_meta"]
+    if not meta.get("success") and not meta.get("auth_present"):
+        pytest.skip(f"EarthData token rejected or expired: {meta.get('error')}")
+    if not result["data"]:
+        pytest.skip("No EMIT granules cover this location+period")
+
+    required = {
+        "mineral_name",
+        "abundance",
+        "units",
+        "latitude",
+        "longitude",
+        "acquisition_date",
+        "granule_id",
+    }
+    for rec in result["data"]:
+        missing = required - set(rec.keys())
+        assert not missing, f"EMIT: record missing fields: {missing} — upstream schema change?"
+        assert 0.0 < rec["abundance"] <= 1.0, (
+            f"EMIT: abundance={rec['abundance']} outside range (0, 1] — fill value or unit change?"
+        )
+        assert rec["units"] == "fractional (0\u20131)", (
+            f"EMIT: units={rec['units']!r} — expected 'fractional (0\u20131)'"
+        )
+
+
+@pytest.mark.integration
+def test_emit_schema_variable_info_present():
+    result = emit_query(
+        latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END, max_runtime_s=9999
+    )
+    meta = result["_meta"]
+    if not meta.get("success") and not meta.get("auth_present"):
+        pytest.skip(f"EarthData token rejected or expired: {meta.get('error')}")
+
+    assert "variable_info" in meta, "EMIT: _meta.variable_info missing"
+    vi = meta["variable_info"]
+    assert "spectral_abundance" in vi, "EMIT: variable_info missing 'spectral_abundance' entry"
+    assert "units" in vi["spectral_abundance"], (
+        "EMIT: variable_info['spectral_abundance'] missing 'units' key"
+    )
+
+
+@pytest.mark.integration
+def test_emit_schema_license_present():
+    result = emit_query(
+        latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END, max_runtime_s=9999
+    )
+    meta = result["_meta"]
+    if not meta.get("success") and not meta.get("auth_present"):
+        pytest.skip(f"EarthData token rejected or expired: {meta.get('error')}")
+
+    assert meta["license"] != "", "EMIT: _meta.license is empty"
+    assert meta["license_url"] != "", "EMIT: _meta.license_url is empty"
+    assert "latitude" in meta["query_params"], "EMIT: query_params missing latitude"
