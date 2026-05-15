@@ -78,3 +78,62 @@ def test_oco2_query_meta_fields():
     assert meta["auth_present"] is True
     assert meta["latency_s"] > 0
     assert meta["license"] != ""
+
+
+# ---------------------------------------------------------------------------
+# Schema stability assertions (Step 4.4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_oco2_schema_xco2_field_present():
+    result = oco2_query(latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END)
+    meta = result["_meta"]
+    if not meta.get("success") and not meta.get("auth_present"):
+        pytest.skip(f"EarthData token rejected or expired: {meta.get('error')}")
+    if not result["data"]:
+        pytest.skip("No OCO-2 records returned — sparse coverage expected")
+
+    rec = result["data"][0]
+    assert "xco2" in rec, "OCO-2: 'xco2' field missing — upstream may have renamed it"
+    assert "units" in rec, "OCO-2: 'units' field missing"
+    assert "date" in rec, "OCO-2: 'date' field missing"
+    assert "granule_id" in rec, "OCO-2: 'granule_id' field missing"
+
+
+@pytest.mark.integration
+def test_oco2_schema_xco2_units_ppm():
+    result = oco2_query(latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END)
+    meta = result["_meta"]
+    if not meta.get("success") and not meta.get("auth_present"):
+        pytest.skip(f"EarthData token rejected or expired: {meta.get('error')}")
+    if not result["data"]:
+        pytest.skip("No OCO-2 records returned")
+
+    rec = result["data"][0]
+    assert rec["units"] == "ppm", f"OCO-2: units changed to {rec['units']!r} — expected 'ppm'"
+
+
+@pytest.mark.integration
+def test_oco2_schema_variable_info_present():
+    result = oco2_query(latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END)
+    meta = result["_meta"]
+    if not meta.get("success") and not meta.get("auth_present"):
+        pytest.skip(f"EarthData token rejected or expired: {meta.get('error')}")
+
+    assert "variable_info" in meta, "OCO-2: _meta.variable_info missing"
+    vi = meta["variable_info"]
+    assert "xco2" in vi, "OCO-2: variable_info missing 'xco2' entry"
+    assert "units" in vi["xco2"], "OCO-2: variable_info['xco2'] missing 'units' key"
+
+
+@pytest.mark.integration
+def test_oco2_schema_license_present():
+    result = oco2_query(latitude=_LAT, longitude=_LON, start_date=_START, end_date=_END)
+    meta = result["_meta"]
+    if not meta.get("success") and not meta.get("auth_present"):
+        pytest.skip(f"EarthData token rejected or expired: {meta.get('error')}")
+
+    assert meta["license"] != "", "OCO-2: _meta.license is empty"
+    assert meta["license_url"] != "", "OCO-2: _meta.license_url is empty"
+    assert "latitude" in meta["query_params"], "OCO-2: query_params missing latitude"

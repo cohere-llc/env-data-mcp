@@ -104,3 +104,69 @@ def test_sentinel5p_query_live_invalid_product_graceful():
     )
     assert result["_meta"]["success"] is False
     assert result["data"] == []
+
+
+# ---------------------------------------------------------------------------
+# Schema stability assertions (Step 4.4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_sentinel5p_schema_co_physical_range():
+    """CO column density over land is typically 0.01–0.1 mol m⁻²."""
+    result = sentinel5p_query(
+        latitude=_LAT,
+        longitude=_LON,
+        start_date=_DATE,
+        end_date=_DATE,
+        product=_PRODUCT,
+    )
+    for rec in result["data"]:
+        val = rec.get(_PRODUCT)
+        if val is not None:
+            assert 0.0 < val < 2.0, (
+                f"Sentinel-5P CO={val} outside expected range — fill value leaked or unit changed?"
+            )
+
+
+@pytest.mark.integration
+def test_sentinel5p_schema_variable_info_present():
+    result = sentinel5p_query(
+        latitude=_LAT,
+        longitude=_LON,
+        start_date=_DATE,
+        end_date=_DATE,
+        product=_PRODUCT,
+    )
+    meta = result["_meta"]
+    assert "variable_info" in meta, "Sentinel-5P: _meta.variable_info missing"
+    vi = meta["variable_info"]
+    assert _PRODUCT in vi, f"Sentinel-5P: variable_info missing {_PRODUCT} entry"
+    assert "units" in vi[_PRODUCT], f"Sentinel-5P: variable_info[{_PRODUCT!r}] missing 'units'"
+    assert "description" in vi[_PRODUCT], (
+        f"Sentinel-5P: variable_info[{_PRODUCT!r}] missing 'description'"
+    )
+
+
+@pytest.mark.integration
+def test_sentinel5p_schema_license_present():
+    result = sentinel5p_query(
+        latitude=_LAT, longitude=_LON, start_date=_DATE, end_date=_DATE, product=_PRODUCT
+    )
+    meta = result["_meta"]
+    assert meta["license"] != "", "Sentinel-5P: _meta.license is empty"
+    assert meta["license_url"] != "", "Sentinel-5P: _meta.license_url is empty"
+    assert "latitude" in meta["query_params"], "Sentinel-5P: query_params missing latitude"
+
+
+@pytest.mark.integration
+def test_sentinel5p_schema_record_units_field():
+    """Each record must include a *_units field matching the product name."""
+    result = sentinel5p_query(
+        latitude=_LAT, longitude=_LON, start_date=_DATE, end_date=_DATE, product=_PRODUCT
+    )
+    for rec in result["data"]:
+        units_key = f"{_PRODUCT}_units"
+        assert units_key in rec, (
+            f"Sentinel-5P: record missing '{units_key}' — upstream may have dropped units field"
+        )

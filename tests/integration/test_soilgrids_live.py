@@ -91,3 +91,50 @@ def test_soilgrids_query_live_meta_fields():
     assert meta["auth_required"] is False
     assert meta["latency_s"] > 0
     assert meta["rows_returned"] == len(_PROPERTIES)
+
+
+# ---------------------------------------------------------------------------
+# Schema stability assertions (Step 4.4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_soilgrids_schema_unit_fields_present():
+    """Each property must have a matching *_unit field."""
+    result = soilgrids_query(latitude=_LAT, longitude=_LON)
+    data = result["data"]
+    for prop in _PROPERTIES:
+        assert prop in data, f"SoilGrids: property '{prop}' missing — upstream renamed it?"
+        assert f"{prop}_unit" in data, (
+            f"SoilGrids: '{prop}_unit' field missing — units no longer echoed"
+        )
+
+
+@pytest.mark.integration
+def test_soilgrids_schema_soc_physical_range():
+    """Soil organic carbon (0–5 cm) should be 0–1000 g/kg."""
+    result = soilgrids_query(latitude=_LAT, longitude=_LON)
+    soc = result["data"].get("soc")
+    if soc is not None:
+        assert 0.0 <= soc <= 1000.0, (
+            f"SoilGrids: soc={soc} outside physical range — fill value or unit change?"
+        )
+
+
+@pytest.mark.integration
+def test_soilgrids_schema_variable_info_present():
+    result = soilgrids_query(latitude=_LAT, longitude=_LON)
+    meta = result["_meta"]
+    assert "variable_info" in meta, "SoilGrids: _meta.variable_info missing"
+    vi = meta["variable_info"]
+    assert "sand" in vi, "SoilGrids: variable_info missing 'sand' entry"
+    assert "units" in vi["sand"], "SoilGrids: variable_info['sand'] missing 'units' key"
+
+
+@pytest.mark.integration
+def test_soilgrids_schema_license_present():
+    result = soilgrids_query(latitude=_LAT, longitude=_LON)
+    meta = result["_meta"]
+    assert meta["license"] != "", "SoilGrids: _meta.license is empty"
+    assert meta["license_url"] != "", "SoilGrids: _meta.license_url is empty"
+    assert "latitude" in meta["query_params"], "SoilGrids: query_params missing latitude"

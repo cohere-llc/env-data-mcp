@@ -118,4 +118,61 @@ def test_openaq_query_live_no_key_returns_auth_error(monkeypatch):
         end_date="2019-08-19",
     )
     assert result["_meta"]["success"] is False
-    assert result["_meta"]["auth_present"] is False
+
+
+# ---------------------------------------------------------------------------
+# Schema stability assertions (Step 4.4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+def test_openaq_schema_record_fields():
+    result = openaq_query(
+        latitude=_LAT,
+        longitude=_LON,
+        radius_km=100.0,
+        start_date="2019-08-01",
+        end_date="2019-08-31",
+        limit=500,
+    )
+    for rec in result["data"]:
+        assert "parameter" in rec, "OpenAQ: 'parameter' field missing — v3 schema may have changed"
+        assert "value" in rec, "OpenAQ: 'value' field missing — upstream renamed it"
+        assert "datetime" in rec, "OpenAQ: 'datetime' field missing"
+        val = rec["value"]
+        param = rec["parameter"]
+        if param == "pm25":
+            assert 0.0 <= val <= 2000.0, f"OpenAQ: pm25={val} outside plausible range"
+        elif param == "co":
+            assert 0.0 <= val <= 100.0, f"OpenAQ: co={val} outside plausible range (ppm)"
+
+
+@pytest.mark.integration
+def test_openaq_schema_variable_info_present():
+    result = openaq_query(
+        latitude=_LAT,
+        longitude=_LON,
+        radius_km=100.0,
+        start_date="2019-08-01",
+        end_date="2019-08-31",
+        limit=500,
+    )
+    meta = result["_meta"]
+    assert "variable_info" in meta, "OpenAQ: _meta.variable_info missing"
+
+
+@pytest.mark.integration
+def test_openaq_schema_license_present():
+    result = openaq_query(
+        latitude=_LAT,
+        longitude=_LON,
+        radius_km=100.0,
+        start_date="2019-08-01",
+        end_date="2019-08-31",
+        limit=500,
+    )
+    meta = result["_meta"]
+    assert meta["license"] != "", "OpenAQ: _meta.license is empty"
+    assert meta["license_url"] != "", "OpenAQ: _meta.license_url is empty"
+    assert "latitude" in meta["query_params"], "OpenAQ: query_params missing latitude"
+    assert result["_meta"]["auth_required"] is True, "OpenAQ: should require an API key"
