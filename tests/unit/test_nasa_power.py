@@ -15,15 +15,13 @@ from pydantic import ValidationError
 
 import env_data_mcp.sources.nasa_power as _nasa_power_mod
 from env_data_mcp.sources.nasa_power import (
+    _CLIM_EPOCH,
     DEFAULT_MERRA2_VARIABLES,
     DEFAULT_SYN1DEG_VARIABLES,
-    DatasetType,
-    MERRA2_INFO,
     SOURCE_INFO,
-    SYN1DEG_INFO,
+    DatasetType,
     TemporalResolution,
     ZarrStoreCache,
-    _CLIM_EPOCH,
     _clim_date_label,
     _clim_time_mask,
     _get_coordinates,
@@ -197,8 +195,13 @@ def test_get_variable_info_syn1deg():
 def test_query_point_returns_correct_date():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         records, _ = _query_point(
-            _LAT, _LON, "2019-08-19", "2019-08-19",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _LAT,
+            _LON,
+            "2019-08-19",
+            "2019-08-19",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     assert len(records) == 1
     assert records[0]["date"] == "2019-08-19"
@@ -207,8 +210,13 @@ def test_query_point_returns_correct_date():
 def test_query_point_multi_day_range():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         records, _ = _query_point(
-            _LAT, _LON, "2019-08-17", "2019-08-21",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _LAT,
+            _LON,
+            "2019-08-17",
+            "2019-08-21",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     assert len(records) == 5
 
@@ -216,8 +224,13 @@ def test_query_point_multi_day_range():
 def test_query_point_variable_values():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         records, _ = _query_point(
-            _LAT, _LON, "2019-08-19", "2019-08-19",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M", "PRECTOTCORR"],
+            _LAT,
+            _LON,
+            "2019-08-19",
+            "2019-08-19",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M", "PRECTOTCORR"],
         )
     assert pytest.approx(records[0]["T2M"], abs=1e-3) == 20.0
     assert pytest.approx(records[0]["PRECTOTCORR"], abs=1e-3) == 1.5
@@ -226,8 +239,13 @@ def test_query_point_variable_values():
 def test_query_point_units_present():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         records, _ = _query_point(
-            _LAT, _LON, "2019-08-19", "2019-08-19",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M", "PRECTOTCORR"],
+            _LAT,
+            _LON,
+            "2019-08-19",
+            "2019-08-19",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M", "PRECTOTCORR"],
         )
     assert records[0]["T2M_units"] == "C"
     assert records[0]["PRECTOTCORR_units"] == "mm/day"
@@ -237,8 +255,13 @@ def test_query_point_unavailable_variable():
     """Variables absent from the store appear in unavailable_variables, not in records."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         records, unavailable = _query_point(
-            _LAT, _LON, "2019-08-19", "2019-08-19",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M", "NONEXISTENT"],
+            _LAT,
+            _LON,
+            "2019-08-19",
+            "2019-08-19",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M", "NONEXISTENT"],
         )
     assert "T2M" in records[0]
     assert "NONEXISTENT" not in records[0]
@@ -248,8 +271,13 @@ def test_query_point_unavailable_variable():
 def test_query_point_out_of_range_returns_empty():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         records, _ = _query_point(
-            _LAT, _LON, "1960-01-01", "1960-01-03",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _LAT,
+            _LON,
+            "1960-01-01",
+            "1960-01-03",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     assert records == []
 
@@ -257,8 +285,13 @@ def test_query_point_out_of_range_returns_empty():
 def test_query_point_syn1deg_variable():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         records, _ = _query_point(
-            _LAT, _LON, "2019-08-19", "2019-08-19",
-            DatasetType.SYN1DEG, TemporalResolution.DAILY, ["ALLSKY_SFC_SW_DWN"],
+            _LAT,
+            _LON,
+            "2019-08-19",
+            "2019-08-19",
+            DatasetType.SYN1DEG,
+            TemporalResolution.DAILY,
+            ["ALLSKY_SFC_SW_DWN"],
         )
     assert pytest.approx(records[0]["ALLSKY_SFC_SW_DWN"], abs=0.1) == 210.0
 
@@ -275,9 +308,15 @@ def test_query_point_syn1deg_variable():
 def test_query_bbox_returns_all_grid_points():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         results, _ = _query_bbox(
-            _BBOX_MIN_LAT, _BBOX_MAX_LAT, _BBOX_MIN_LON, _BBOX_MAX_LON,
-            "2019-08-17", "2019-08-21",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _BBOX_MIN_LAT,
+            _BBOX_MAX_LAT,
+            _BBOX_MIN_LON,
+            _BBOX_MAX_LON,
+            "2019-08-17",
+            "2019-08-21",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     assert len(results) == 9
 
@@ -286,9 +325,15 @@ def test_query_bbox_result_structure():
     """Each grid-point dict must have latitude, longitude, in_bbox, and records."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         results, _ = _query_bbox(
-            _BBOX_MIN_LAT, _BBOX_MAX_LAT, _BBOX_MIN_LON, _BBOX_MAX_LON,
-            "2019-08-17", "2019-08-17",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _BBOX_MIN_LAT,
+            _BBOX_MAX_LAT,
+            _BBOX_MIN_LON,
+            _BBOX_MAX_LON,
+            "2019-08-17",
+            "2019-08-17",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     for pt in results:
         assert "latitude" in pt
@@ -301,9 +346,15 @@ def test_query_bbox_in_bbox_flag():
     """Only the centre cell (46.25, -119.25) should have in_bbox=True."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         results, _ = _query_bbox(
-            _BBOX_MIN_LAT, _BBOX_MAX_LAT, _BBOX_MIN_LON, _BBOX_MAX_LON,
-            "2019-08-17", "2019-08-17",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _BBOX_MIN_LAT,
+            _BBOX_MAX_LAT,
+            _BBOX_MIN_LON,
+            _BBOX_MAX_LON,
+            "2019-08-17",
+            "2019-08-17",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     interior = [pt for pt in results if pt["in_bbox"]]
     buffer_pts = [pt for pt in results if not pt["in_bbox"]]
@@ -317,9 +368,15 @@ def test_query_bbox_records_per_grid_point():
     """Each grid-point dict contains one record per day in the date range."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         results, _ = _query_bbox(
-            _BBOX_MIN_LAT, _BBOX_MAX_LAT, _BBOX_MIN_LON, _BBOX_MAX_LON,
-            "2019-08-17", "2019-08-21",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _BBOX_MIN_LAT,
+            _BBOX_MAX_LAT,
+            _BBOX_MIN_LON,
+            _BBOX_MAX_LON,
+            "2019-08-17",
+            "2019-08-21",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     for pt in results:
         assert len(pt["records"]) == 5
@@ -329,9 +386,15 @@ def test_query_bbox_record_fields():
     """Each record has date, variable value, and units."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         results, _ = _query_bbox(
-            _BBOX_MIN_LAT, _BBOX_MAX_LAT, _BBOX_MIN_LON, _BBOX_MAX_LON,
-            "2019-08-17", "2019-08-17",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _BBOX_MIN_LAT,
+            _BBOX_MAX_LAT,
+            _BBOX_MIN_LON,
+            _BBOX_MAX_LON,
+            "2019-08-17",
+            "2019-08-17",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     rec = results[0]["records"][0]
     assert rec["date"] == "2019-08-17"
@@ -342,9 +405,15 @@ def test_query_bbox_record_fields():
 def test_query_bbox_unavailable_variable():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         results, unavailable = _query_bbox(
-            _BBOX_MIN_LAT, _BBOX_MAX_LAT, _BBOX_MIN_LON, _BBOX_MAX_LON,
-            "2019-08-17", "2019-08-17",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M", "NONEXISTENT"],
+            _BBOX_MIN_LAT,
+            _BBOX_MAX_LAT,
+            _BBOX_MIN_LON,
+            _BBOX_MAX_LON,
+            "2019-08-17",
+            "2019-08-17",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M", "NONEXISTENT"],
         )
     assert "NONEXISTENT" in unavailable
     for pt in results:
@@ -354,9 +423,15 @@ def test_query_bbox_unavailable_variable():
 def test_query_bbox_out_of_range_returns_empty():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         results, _ = _query_bbox(
-            _BBOX_MIN_LAT, _BBOX_MAX_LAT, _BBOX_MIN_LON, _BBOX_MAX_LON,
-            "1960-01-01", "1960-01-03",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            _BBOX_MIN_LAT,
+            _BBOX_MAX_LAT,
+            _BBOX_MIN_LON,
+            _BBOX_MAX_LON,
+            "1960-01-01",
+            "1960-01-03",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     assert results == []
 
@@ -365,9 +440,15 @@ def test_query_bbox_all_cells_interior_when_bbox_covers_full_grid():
     """When the bbox exactly covers the full mock grid, all 9 cells are in_bbox."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         results, _ = _query_bbox(
-            45.75, 46.75, -119.75, -118.75,
-            "2019-08-17", "2019-08-17",
-            DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+            45.75,
+            46.75,
+            -119.75,
+            -118.75,
+            "2019-08-17",
+            "2019-08-17",
+            DatasetType.MERRA2,
+            TemporalResolution.DAILY,
+            ["T2M"],
         )
     assert len(results) == 9
     assert all(pt["in_bbox"] for pt in results)
@@ -381,8 +462,10 @@ def test_query_bbox_all_cells_interior_when_bbox_covers_full_grid():
 def test_merra2_query_success_structure():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -395,8 +478,10 @@ def test_merra2_query_success_structure():
 def test_merra2_query_meta_fields():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -412,8 +497,10 @@ def test_merra2_query_meta_fields():
 def test_merra2_query_echoes_query_params():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-21",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-21",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -428,8 +515,10 @@ def test_merra2_query_echoes_query_params():
 def test_merra2_query_default_variables():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
         )
     assert result["_meta"]["variables"] == DEFAULT_MERRA2_VARIABLES
@@ -438,8 +527,10 @@ def test_merra2_query_default_variables():
 def test_merra2_query_invalid_date_returns_error():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="not-a-date", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="not-a-date",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
         )
     assert result["_meta"]["success"] is False
@@ -449,8 +540,10 @@ def test_merra2_query_invalid_date_returns_error():
 def test_merra2_query_empty_date_range():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2000-01-01", end_date="2000-01-01",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2000-01-01",
+            end_date="2000-01-01",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -463,8 +556,10 @@ def test_merra2_query_variable_info_in_meta():
     """variable_info is populated from Zarr array attrs for each requested variable."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M", "PRECTOTCORR"],
         )
@@ -478,8 +573,10 @@ def test_merra2_query_variable_info_in_meta():
 def test_merra2_query_variable_info_only_requested_vars():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -491,8 +588,10 @@ def test_merra2_query_variable_info_only_requested_vars():
 def test_merra2_query_unavailable_variable_reported():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M", "NONEXISTENT"],
         )
@@ -502,8 +601,10 @@ def test_merra2_query_unavailable_variable_reported():
 def test_merra2_query_t2m_physical_range():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -514,8 +615,10 @@ def test_merra2_query_t2m_physical_range():
 def test_merra2_query_precipitation_nonnegative():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-17", end_date="2019-08-21",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-21",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["PRECTOTCORR"],
         )
@@ -531,8 +634,10 @@ def test_merra2_query_precipitation_nonnegative():
 def test_syn1deg_query_success_structure():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -544,8 +649,10 @@ def test_syn1deg_query_success_structure():
 def test_syn1deg_query_meta_license():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -555,8 +662,10 @@ def test_syn1deg_query_meta_license():
 def test_syn1deg_query_default_variables():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
         )
     assert result["_meta"]["variables"] == DEFAULT_SYN1DEG_VARIABLES
@@ -566,8 +675,10 @@ def test_syn1deg_query_temporal_resolution_serialised():
     """temporal_resolution must appear as a plain string in query_params."""
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.MONTHLY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -577,8 +688,10 @@ def test_syn1deg_query_temporal_resolution_serialised():
 def test_syn1deg_query_variable_values():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -588,8 +701,10 @@ def test_syn1deg_query_variable_values():
 def test_syn1deg_query_variable_info_in_meta():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_query(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -606,9 +721,12 @@ def test_syn1deg_query_variable_info_in_meta():
 def test_merra2_bbox_query_returns_grid_points():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_bbox_query(
-            min_lat=_BBOX_MIN_LAT, max_lat=_BBOX_MAX_LAT,
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-21",
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-21",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -619,9 +737,12 @@ def test_merra2_bbox_query_returns_grid_points():
 def test_merra2_bbox_query_grid_point_structure():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_bbox_query(
-            min_lat=_BBOX_MIN_LAT, max_lat=_BBOX_MAX_LAT,
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-17",
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-17",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -635,9 +756,12 @@ def test_merra2_bbox_query_grid_point_structure():
 def test_merra2_bbox_query_in_bbox_flag():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_bbox_query(
-            min_lat=_BBOX_MIN_LAT, max_lat=_BBOX_MAX_LAT,
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-17",
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-17",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -650,9 +774,12 @@ def test_merra2_bbox_query_in_bbox_flag():
 def test_merra2_bbox_query_echoes_query_params():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_bbox_query(
-            min_lat=_BBOX_MIN_LAT, max_lat=_BBOX_MAX_LAT,
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-17",
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-17",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["T2M"],
         )
@@ -666,9 +793,12 @@ def test_merra2_bbox_query_invalid_bbox_raises():
     """Swapped min/max lat triggers BboxInput validation before any data access."""
     with pytest.raises(ValidationError):
         nasa_power_merra2_bbox_query(
-            min_lat=47.0, max_lat=45.0,  # swapped — must fail
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-17",
+            min_lat=47.0,
+            max_lat=45.0,  # swapped — must fail
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-17",
             temporal_resolution=TemporalResolution.DAILY,
         )
 
@@ -681,9 +811,12 @@ def test_merra2_bbox_query_invalid_bbox_raises():
 def test_syn1deg_bbox_query_returns_grid_points():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_bbox_query(
-            min_lat=_BBOX_MIN_LAT, max_lat=_BBOX_MAX_LAT,
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-21",
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-21",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -694,9 +827,12 @@ def test_syn1deg_bbox_query_returns_grid_points():
 def test_syn1deg_bbox_query_in_bbox_and_buffer():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_bbox_query(
-            min_lat=_BBOX_MIN_LAT, max_lat=_BBOX_MAX_LAT,
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-17",
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-17",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -709,9 +845,12 @@ def test_syn1deg_bbox_query_in_bbox_and_buffer():
 def test_syn1deg_bbox_query_variable_info():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_bbox_query(
-            min_lat=_BBOX_MIN_LAT, max_lat=_BBOX_MAX_LAT,
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-17",
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-17",
             temporal_resolution=TemporalResolution.DAILY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -721,9 +860,12 @@ def test_syn1deg_bbox_query_variable_info():
 def test_syn1deg_bbox_query_echoes_temporal_resolution():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_bbox_query(
-            min_lat=_BBOX_MIN_LAT, max_lat=_BBOX_MAX_LAT,
-            min_lon=_BBOX_MIN_LON, max_lon=_BBOX_MAX_LON,
-            start_date="2019-08-17", end_date="2019-08-17",
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-17",
             temporal_resolution=TemporalResolution.MONTHLY,
             variables=["ALLSKY_SFC_SW_DWN"],
         )
@@ -760,7 +902,7 @@ _HOURLY_DATE = "2019-08-19"
 _HOURS_SINCE_EPOCH = int((pd.Timestamp(_HOURLY_DATE) - _EPOCH).total_seconds() // 3600)
 # = 435024 for 2019-08-19 00:00 UTC
 _HOURLY_VALS_H = list(range(_HOURS_SINCE_EPOCH, _HOURS_SINCE_EPOCH + 24))  # 24 integers
-_HOURLY_VALS_D = [_HOURS_SINCE_EPOCH / 24 + h / 24 for h in range(24)]     # 24 fractional days
+_HOURLY_VALS_D = [_HOURS_SINCE_EPOCH / 24 + h / 24 for h in range(24)]  # 24 fractional days
 
 
 def _make_hourly_group(time_vals, units: str) -> zarr.Group:
@@ -777,8 +919,8 @@ def _make_hourly_group(time_vals, units: str) -> zarr.Group:
     return g
 
 
-_MOCK_HOURLY_H_GROUP = _make_hourly_group(_HOURLY_VALS_H, f"hours since 1970-01-01")
-_MOCK_HOURLY_D_GROUP = _make_hourly_group(_HOURLY_VALS_D, f"days since 1970-01-01")
+_MOCK_HOURLY_H_GROUP = _make_hourly_group(_HOURLY_VALS_H, "hours since 1970-01-01")
+_MOCK_HOURLY_D_GROUP = _make_hourly_group(_HOURLY_VALS_D, "days since 1970-01-01")
 _MOCK_HOURLY_H_STORE = ZarrStoreCache(_MOCK_HOURLY_H_GROUP)
 _MOCK_HOURLY_D_STORE = ZarrStoreCache(_MOCK_HOURLY_D_GROUP)
 
@@ -824,30 +966,48 @@ class TestHourlyQueryPoint:
     """_query_point must return 24 records for a single-day hourly query."""
 
     def test_single_day_returns_24_records(self):
-        with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE):
+        with patch(
+            "env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE
+        ):
             records, _ = _query_point(
-                46.25, -119.25,
-                _HOURLY_DATE, _HOURLY_DATE,
-                DatasetType.MERRA2, TemporalResolution.HOURLY, ["T2M"],
+                46.25,
+                -119.25,
+                _HOURLY_DATE,
+                _HOURLY_DATE,
+                DatasetType.MERRA2,
+                TemporalResolution.HOURLY,
+                ["T2M"],
             )
         assert len(records) == 24
 
     def test_single_day_dates_are_distinct(self):
-        with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE):
+        with patch(
+            "env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE
+        ):
             records, _ = _query_point(
-                46.25, -119.25,
-                _HOURLY_DATE, _HOURLY_DATE,
-                DatasetType.MERRA2, TemporalResolution.HOURLY, ["T2M"],
+                46.25,
+                -119.25,
+                _HOURLY_DATE,
+                _HOURLY_DATE,
+                DatasetType.MERRA2,
+                TemporalResolution.HOURLY,
+                ["T2M"],
             )
         dates = [r["date"] for r in records]
         assert len(set(dates)) == 24, "Hourly dates must include time component"
 
     def test_date_format_is_iso_datetime(self):
-        with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE):
+        with patch(
+            "env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE
+        ):
             records, _ = _query_point(
-                46.25, -119.25,
-                _HOURLY_DATE, _HOURLY_DATE,
-                DatasetType.MERRA2, TemporalResolution.HOURLY, ["T2M"],
+                46.25,
+                -119.25,
+                _HOURLY_DATE,
+                _HOURLY_DATE,
+                DatasetType.MERRA2,
+                TemporalResolution.HOURLY,
+                ["T2M"],
             )
         assert records[0]["date"] == "2019-08-19T00:00:00"
         assert records[23]["date"] == "2019-08-19T23:00:00"
@@ -856,9 +1016,13 @@ class TestHourlyQueryPoint:
         """Non-HOURLY resolutions still use %Y-%m-%d format."""
         with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
             records, _ = _query_point(
-                _LAT, _LON,
-                "2019-08-19", "2019-08-19",
-                DatasetType.MERRA2, TemporalResolution.DAILY, ["T2M"],
+                _LAT,
+                _LON,
+                "2019-08-19",
+                "2019-08-19",
+                DatasetType.MERRA2,
+                TemporalResolution.DAILY,
+                ["T2M"],
             )
         assert records[0]["date"] == "2019-08-19"
 
@@ -867,21 +1031,37 @@ class TestHourlyQueryBbox:
     """_query_bbox must return 24 records per grid point for a single-day hourly query."""
 
     def test_single_day_returns_24_records_per_point(self):
-        with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE):
+        with patch(
+            "env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE
+        ):
             results, _ = _query_bbox(
-                46.0, 46.5, -119.5, -119.0,
-                _HOURLY_DATE, _HOURLY_DATE,
-                DatasetType.MERRA2, TemporalResolution.HOURLY, ["T2M"],
+                46.0,
+                46.5,
+                -119.5,
+                -119.0,
+                _HOURLY_DATE,
+                _HOURLY_DATE,
+                DatasetType.MERRA2,
+                TemporalResolution.HOURLY,
+                ["T2M"],
             )
         assert len(results) == 1  # 1×1 grid
         assert len(results[0]["records"]) == 24
 
     def test_bbox_record_date_format_is_iso_datetime(self):
-        with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE):
+        with patch(
+            "env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_HOURLY_H_STORE
+        ):
             results, _ = _query_bbox(
-                46.0, 46.5, -119.5, -119.0,
-                _HOURLY_DATE, _HOURLY_DATE,
-                DatasetType.MERRA2, TemporalResolution.HOURLY, ["T2M"],
+                46.0,
+                46.5,
+                -119.5,
+                -119.0,
+                _HOURLY_DATE,
+                _HOURLY_DATE,
+                DatasetType.MERRA2,
+                TemporalResolution.HOURLY,
+                ["T2M"],
             )
         recs = results[0]["records"]
         assert recs[0]["date"] == "2019-08-19T00:00:00"
@@ -895,9 +1075,7 @@ class TestHourlyQueryBbox:
 # 13-step climatology time axis: days since 1970-01-01 with values 1-13
 # where 1-12 = month index (Jan=1..Dec=12) and 13 = annual mean.
 _CLIM_TIME_VALS = list(range(1, 14))
-_CLIM_TIMES = _CLIM_EPOCH + pd.to_timedelta(
-    np.array(_CLIM_TIME_VALS, dtype="f4"), unit="D"
-)
+_CLIM_TIMES = _CLIM_EPOCH + pd.to_timedelta(np.array(_CLIM_TIME_VALS, dtype="f4"), unit="D")
 
 
 def _make_clim_group() -> zarr.Group:
@@ -958,9 +1136,9 @@ class TestClimTimeMask:
     def test_summer_range_returns_3_months_plus_annual(self):
         mask = _clim_time_mask(_CLIM_TIMES, "2019-06-01", "2019-08-31")
         assert mask.sum() == 4
-        assert mask[5]   # slot 6 = June
-        assert mask[6]   # slot 7 = July
-        assert mask[7]   # slot 8 = August
+        assert mask[5]  # slot 6 = June
+        assert mask[6]  # slot 7 = July
+        assert mask[7]  # slot 8 = August
         assert mask[12]  # slot 13 = annual
 
     def test_annual_slot_always_included(self):
@@ -972,16 +1150,16 @@ class TestClimTimeMask:
         # Starts mid-August, ends mid-September → both August and September included
         mask = _clim_time_mask(_CLIM_TIMES, "2019-08-15", "2019-09-10")
         assert mask.sum() == 3  # months 8, 9 + annual
-        assert mask[7]   # August
-        assert mask[8]   # September
+        assert mask[7]  # August
+        assert mask[8]  # September
         assert mask[12]  # annual
 
     def test_cross_year_wrap(self):
         # Nov 2019 → Feb 2020: months 11, 12, 1, 2 + annual
         mask = _clim_time_mask(_CLIM_TIMES, "2019-11-01", "2020-02-28")
         assert mask.sum() == 5
-        assert mask[0]   # January
-        assert mask[1]   # February
+        assert mask[0]  # January
+        assert mask[1]  # February
         assert mask[10]  # November
         assert mask[11]  # December
         assert mask[12]  # annual
@@ -1000,8 +1178,13 @@ class TestClimatologyQueryPoint:
             return_value=_MOCK_CLIM_STORE,
         ):
             records, unavail = _query_point(
-                _LAT, _LON, start, end,
-                DatasetType.MERRA2, TemporalResolution.CLIMATOLOGY, ["T2M"],
+                _LAT,
+                _LON,
+                start,
+                end,
+                DatasetType.MERRA2,
+                TemporalResolution.CLIMATOLOGY,
+                ["T2M"],
             )
         assert unavail == []
         return records
@@ -1043,9 +1226,15 @@ class TestClimatologyQueryBbox:
             return_value=_MOCK_CLIM_STORE,
         ):
             results, unavail = _query_bbox(
-                _BBOX_MIN_LAT, _BBOX_MAX_LAT, _BBOX_MIN_LON, _BBOX_MAX_LON,
-                start, end,
-                DatasetType.MERRA2, TemporalResolution.CLIMATOLOGY, ["T2M"],
+                _BBOX_MIN_LAT,
+                _BBOX_MAX_LAT,
+                _BBOX_MIN_LON,
+                _BBOX_MAX_LON,
+                start,
+                end,
+                DatasetType.MERRA2,
+                TemporalResolution.CLIMATOLOGY,
+                ["T2M"],
             )
         assert unavail == []
         return results

@@ -99,22 +99,22 @@ _BBOX_SIZES: list[dict[str, Any]] = [
 # Extended scenarios for Zarr-based sources — larger ranges give better OLS signal
 # along the time axis without hitting REST-API rate limits.
 _NASA_POWER_SCENARIOS: list[dict[str, Any]] = [
-    {"name": "1day",   "start": "2019-08-19", "end": "2019-08-19", "n_days": 1},
-    {"name": "1week",  "start": "2019-08-13", "end": "2019-08-19", "n_days": 7},
+    {"name": "1day", "start": "2019-08-19", "end": "2019-08-19", "n_days": 1},
+    {"name": "1week", "start": "2019-08-13", "end": "2019-08-19", "n_days": 7},
     {"name": "1month", "start": "2019-08-01", "end": "2019-08-31", "n_days": 31},
     {"name": "3month", "start": "2019-06-01", "end": "2019-08-31", "n_days": 92},
-    {"name": "1year",  "start": "2019-01-01", "end": "2019-12-31", "n_days": 365},
+    {"name": "1year", "start": "2019-01-01", "end": "2019-12-31", "n_days": 365},
 ]
 
 # Extended bbox sizes for Zarr-based sources — larger extents give better OLS
 # signal along the area axis (each size ~4× the previous).
 _NASA_POWER_BBOX_SIZES: list[dict[str, Any]] = [
-    {"name": "0.5x0.5", "half": 0.25,  "area_deg2": 0.25},
-    {"name": "2x2",     "half": 1.0,   "area_deg2": 4.0},
-    {"name": "5x5",     "half": 2.5,   "area_deg2": 25.0},
-    {"name": "10x10",   "half": 5.0,   "area_deg2": 100.0},
-    {"name": "20x20",   "half": 10.0,  "area_deg2": 400.0},
-    {"name": "30x30",   "half": 15.0,  "area_deg2": 900.0},
+    {"name": "0.5x0.5", "half": 0.25, "area_deg2": 0.25},
+    {"name": "2x2", "half": 1.0, "area_deg2": 4.0},
+    {"name": "5x5", "half": 2.5, "area_deg2": 25.0},
+    {"name": "10x10", "half": 5.0, "area_deg2": 100.0},
+    {"name": "20x20", "half": 10.0, "area_deg2": 400.0},
+    {"name": "30x30", "half": 15.0, "area_deg2": 900.0},
 ]
 
 # Maximum acceptable latency per query (hard cap; test fails if exceeded)

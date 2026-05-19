@@ -11,7 +11,7 @@ import json
 import math
 import pathlib
 import re
-import warnings
+from collections.abc import Mapping
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -240,7 +240,7 @@ def build_meta(
     query_params: dict[str, Any],
     rows_returned: int,
     latency_s: float,
-    license_info: dict[str, str | list[str]],
+    license_info: Mapping[str, str | list[str]],
     *,
     auth_required: bool = False,
     auth_present: bool = True,

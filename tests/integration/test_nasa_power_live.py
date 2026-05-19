@@ -6,8 +6,8 @@ All tests require live S3/Zarr access.  Run with:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import pytest
 
@@ -45,6 +45,7 @@ _BBOX = dict(min_lat=45.5, max_lat=47.5, min_lon=-120.5, max_lon=-118.5)
 # ---------------------------------------------------------------------------
 # Per-dataset parameter table
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class _DatasetCase:
@@ -95,6 +96,7 @@ _DATASET_CASES = [
 # Shared fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="module", params=_DATASET_CASES)
 def dc(request) -> _DatasetCase:
     return request.param
@@ -114,7 +116,6 @@ def baseline_daily(dc: _DatasetCase) -> dict:
     )
 
 
-
 # ---------------------------------------------------------------------------
 # Test classes — all parametrized by the `dc` fixture (merra2 | syn1deg)
 # ---------------------------------------------------------------------------
@@ -131,7 +132,8 @@ class TestAvailableVariables:
     def test_primary_var_present(self, dc: _DatasetCase):
         info = dc.avail_fn()
         assert dc.primary_var in info, (
-            f"{dc.label}: {dc.primary_var} missing from available variables — upstream schema change?"
+            f"{dc.label}: {dc.primary_var} missing from available variables"
+            " — upstream schema change?"
         )
 
     def test_primary_var_has_units_and_long_name(self, dc: _DatasetCase):
@@ -143,9 +145,7 @@ class TestAvailableVariables:
     def test_all_default_vars_present(self, dc: _DatasetCase):
         info = dc.avail_fn()
         missing = [v for v in dc.default_vars if v not in info]
-        assert not missing, (
-            f"{dc.label}: default variables absent from available set: {missing}"
-        )
+        assert not missing, f"{dc.label}: default variables absent from available set: {missing}"
 
 
 class TestPointQueryStructure:
@@ -201,8 +201,10 @@ class TestPointQueryStructure:
 
     def test_default_variables_returned(self, dc: _DatasetCase):
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date=_DATE, end_date=_DATE,
+            latitude=_LAT,
+            longitude=_LON,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             max_runtime_s=60.0,
         )
@@ -217,10 +219,12 @@ class TestPointQueryStructure:
 # ---------------------------------------------------------------------------
 
 _TEMPORAL_CASES = [
-    pytest.param(TemporalResolution.DAILY,   "2019-08-15", "2019-08-21",  7,  30.0, id="daily_7d"),
-    pytest.param(TemporalResolution.MONTHLY, "2019-01-01", "2019-12-31", 12,  30.0, id="monthly_12mo"),
-    pytest.param(TemporalResolution.ANNUAL,  "2015-01-01", "2019-12-31",  5,  30.0, id="annual_5yr"),
-    pytest.param(TemporalResolution.HOURLY,  "2019-08-19", "2019-08-19", 24, 120.0, id="hourly_1d"),
+    pytest.param(TemporalResolution.DAILY, "2019-08-15", "2019-08-21", 7, 30.0, id="daily_7d"),
+    pytest.param(
+        TemporalResolution.MONTHLY, "2019-01-01", "2019-12-31", 12, 30.0, id="monthly_12mo"
+    ),
+    pytest.param(TemporalResolution.ANNUAL, "2015-01-01", "2019-12-31", 5, 30.0, id="annual_5yr"),
+    pytest.param(TemporalResolution.HOURLY, "2019-08-19", "2019-08-19", 24, 120.0, id="hourly_1d"),
 ]
 
 
@@ -238,8 +242,10 @@ class TestTemporalResolution:
         max_rt: float,
     ):
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date=start, end_date=end,
+            latitude=_LAT,
+            longitude=_LON,
+            start_date=start,
+            end_date=end,
             temporal_resolution=resolution,
             variables=[dc.primary_var],
             max_runtime_s=max_rt,
@@ -263,8 +269,10 @@ class TestTemporalResolution:
         max_rt: float,
     ):
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date=start, end_date=end,
+            latitude=_LAT,
+            longitude=_LON,
+            start_date=start,
+            end_date=end,
             temporal_resolution=resolution,
             variables=[dc.primary_var],
             max_runtime_s=max_rt,
@@ -278,8 +286,10 @@ class TestHourlyDetails:
     def test_hourly_dates_are_distinct(self, dc: _DatasetCase):
         """Verifies the int64-truncation fix in _get_coordinates for sub-day time values."""
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.HOURLY,
             variables=[dc.primary_var],
             max_runtime_s=120.0,
@@ -297,8 +307,10 @@ class TestHourlyDetails:
 
     def test_hourly_date_format_includes_time(self, dc: _DatasetCase):
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-19", end_date="2019-08-19",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.HOURLY,
             variables=[dc.primary_var],
             max_runtime_s=120.0,
@@ -330,8 +342,10 @@ class TestClimatologyProbe:
     def test_climatology_full_year_returns_13_records(self, dc: _DatasetCase):
         """Date range spanning all 12 calendar months → 13 records."""
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-01-01", end_date="2019-12-31",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-01-01",
+            end_date="2019-12-31",
             temporal_resolution=TemporalResolution.CLIMATOLOGY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -346,8 +360,10 @@ class TestClimatologyProbe:
     def test_climatology_single_month_returns_2_records(self, dc: _DatasetCase):
         """Single-month range → 1 month + annual = 2 records."""
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-08-01", end_date="2019-08-31",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-01",
+            end_date="2019-08-31",
             temporal_resolution=TemporalResolution.CLIMATOLOGY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -365,8 +381,10 @@ class TestClimatologyProbe:
     def test_climatology_multi_month_returns_months_plus_annual(self, dc: _DatasetCase):
         """Jun–Aug range → months 6, 7, 8 + annual = 4 records."""
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-06-01", end_date="2019-08-31",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-06-01",
+            end_date="2019-08-31",
             temporal_resolution=TemporalResolution.CLIMATOLOGY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -384,8 +402,10 @@ class TestClimatologyProbe:
     def test_climatology_full_year_date_labels(self, dc: _DatasetCase):
         """Full-year query: records labeled month-01…month-12 and annual."""
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date="2019-01-01", end_date="2019-12-31",
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-01-01",
+            end_date="2019-12-31",
             temporal_resolution=TemporalResolution.CLIMATOLOGY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -393,9 +413,7 @@ class TestClimatologyProbe:
         assert result["_meta"]["success"] is True
         dates = {r["date"] for r in result["data"]}
         expected = {f"month-{m:02d}" for m in range(1, 13)} | {"annual"}
-        assert dates == expected, (
-            f"{dc.label}: date labels mismatch — got {sorted(dates)}"
-        )
+        assert dates == expected, f"{dc.label}: date labels mismatch — got {sorted(dates)}"
 
 
 class TestNonDefaultVariable:
@@ -407,8 +425,10 @@ class TestNonDefaultVariable:
         if extra is None:
             pytest.skip(f"{dc.label}: all available variables are in the default set")
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date=_DATE, end_date=_DATE,
+            latitude=_LAT,
+            longitude=_LON,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             variables=[extra],
             max_runtime_s=60.0,
@@ -424,8 +444,10 @@ class TestUnavailableVariable:
 
     def test_nonexistent_variable_in_unavailable_list(self, dc: _DatasetCase):
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date=_DATE, end_date=_DATE,
+            latitude=_LAT,
+            longitude=_LON,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             variables=[dc.primary_var, "DOES_NOT_EXIST_XYZ"],
             max_runtime_s=60.0,
@@ -437,8 +459,10 @@ class TestUnavailableVariable:
 
     def test_nonexistent_variable_absent_from_row(self, dc: _DatasetCase):
         result = dc.point_fn(
-            latitude=_LAT, longitude=_LON,
-            start_date=_DATE, end_date=_DATE,
+            latitude=_LAT,
+            longitude=_LON,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             variables=[dc.primary_var, "DOES_NOT_EXIST_XYZ"],
             max_runtime_s=60.0,
@@ -450,13 +474,13 @@ class TestMaxRuntimeGate:
     """max_runtime_s=0.0 must block; max_runtime_s=3600.0 must allow."""
 
     @pytest.mark.parametrize("query_mode", ["point", "bbox"])
-    def test_zero_max_runtime_blocks_query(
-        self, dc: _DatasetCase, query_mode: str
-    ):
+    def test_zero_max_runtime_blocks_query(self, dc: _DatasetCase, query_mode: str):
         if query_mode == "point":
             result = dc.point_fn(
-                latitude=_LAT, longitude=_LON,
-                start_date=_DATE, end_date=_DATE,
+                latitude=_LAT,
+                longitude=_LON,
+                start_date=_DATE,
+                end_date=_DATE,
                 temporal_resolution=TemporalResolution.DAILY,
                 variables=[dc.primary_var],
                 max_runtime_s=0.0,
@@ -464,7 +488,8 @@ class TestMaxRuntimeGate:
         else:
             result = dc.bbox_fn(
                 **_BBOX,
-                start_date=_DATE, end_date=_DATE,
+                start_date=_DATE,
+                end_date=_DATE,
                 temporal_resolution=TemporalResolution.DAILY,
                 variables=[dc.primary_var],
                 max_runtime_s=0.0,
@@ -476,13 +501,13 @@ class TestMaxRuntimeGate:
         assert result["data"] == []
 
     @pytest.mark.parametrize("query_mode", ["point", "bbox"])
-    def test_generous_max_runtime_allows_query(
-        self, dc: _DatasetCase, query_mode: str
-    ):
+    def test_generous_max_runtime_allows_query(self, dc: _DatasetCase, query_mode: str):
         if query_mode == "point":
             result = dc.point_fn(
-                latitude=_LAT, longitude=_LON,
-                start_date=_DATE, end_date=_DATE,
+                latitude=_LAT,
+                longitude=_LON,
+                start_date=_DATE,
+                end_date=_DATE,
                 temporal_resolution=TemporalResolution.DAILY,
                 variables=[dc.primary_var],
                 max_runtime_s=3600.0,
@@ -490,7 +515,8 @@ class TestMaxRuntimeGate:
         else:
             result = dc.bbox_fn(
                 **_BBOX,
-                start_date=_DATE, end_date=_DATE,
+                start_date=_DATE,
+                end_date=_DATE,
                 temporal_resolution=TemporalResolution.DAILY,
                 variables=[dc.primary_var],
                 max_runtime_s=3600.0,
@@ -507,7 +533,8 @@ class TestBboxQuery:
     def test_returns_data(self, dc: _DatasetCase):
         result = dc.bbox_fn(
             **_BBOX,
-            start_date=_DATE, end_date=_DATE,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -518,7 +545,8 @@ class TestBboxQuery:
     def test_has_interior_and_buffer_points(self, dc: _DatasetCase):
         result = dc.bbox_fn(
             **_BBOX,
-            start_date=_DATE, end_date=_DATE,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -531,7 +559,8 @@ class TestBboxQuery:
     def test_grid_point_structure(self, dc: _DatasetCase):
         result = dc.bbox_fn(
             **_BBOX,
-            start_date=_DATE, end_date=_DATE,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -547,7 +576,8 @@ class TestBboxQuery:
     def test_primary_var_plausible_at_all_points(self, dc: _DatasetCase):
         result = dc.bbox_fn(
             **_BBOX,
-            start_date=_DATE, end_date=_DATE,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -562,7 +592,8 @@ class TestBboxQuery:
     def test_multi_day_records_per_grid_point(self, dc: _DatasetCase):
         result = dc.bbox_fn(
             **_BBOX,
-            start_date="2019-08-17", end_date="2019-08-19",
+            start_date="2019-08-17",
+            end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -573,7 +604,8 @@ class TestBboxQuery:
     def test_meta_query_params_echoed(self, dc: _DatasetCase):
         result = dc.bbox_fn(
             **_BBOX,
-            start_date=_DATE, end_date=_DATE,
+            start_date=_DATE,
+            end_date=_DATE,
             temporal_resolution=TemporalResolution.DAILY,
             variables=[dc.primary_var],
             max_runtime_s=60.0,
@@ -617,4 +649,3 @@ class TestSchemaStability:
 
     def test_meta_rows_returned_consistent(self, baseline_daily: dict):
         assert baseline_daily["_meta"]["rows_returned"] == len(baseline_daily["data"])
-

@@ -7,7 +7,6 @@ All tests are offline — no network calls are made.
 from __future__ import annotations
 
 import datetime
-import warnings
 
 import pytest
 
@@ -468,4 +467,3 @@ class TestCheckRuntime:
     def test_scale_factor_allows_otherwise_blocking_query(self) -> None:
         # t(28, 0) = 30.0; 30.0 * 0.9 = 27.0 < 30.0 → None
         assert check_runtime("_test", n_days=28, area_deg2=0.0, scale_factor=0.9) is None
-

@@ -548,7 +548,7 @@ def emit_bbox_query(
     _sd = parse_date(start_date)
     _ed = parse_date(end_date)
     bbox = {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
-    
+
     n_days = (_ed - _sd).days + 1
     area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
     if warn := check_runtime("emit", n_days, area_deg2, max_runtime_s):

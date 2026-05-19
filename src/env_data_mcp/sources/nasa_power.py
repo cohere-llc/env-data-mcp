@@ -8,7 +8,7 @@ Future improvements:
 - Could add datasets beyond MERRA-2 and SYN1deg:
 | Prefix | Dataset | What it is |
 |---|---|---|
-|merra2|MERRA-2|NASA's flagship atmospheric reanalysis, with surface and upper-air variables from 1980 to present. |
+|merra2|MERRA-2|NASA's flagship reanalysis, surface and upper-air variables, 1980–present.|
 |flashflux|CERES FLASHFlux|Near-real-time solar radiation (~5–7 day latency)|
 |geosit|GEOS-IT|Near-real-time meteorology; appended to MERRA-2's end (~2 day latency)|
 |gwm|Global Water Model|Groundwater/hydrology|
@@ -21,8 +21,8 @@ Future improvements:
 from __future__ import annotations
 
 import time
-from typing import Any
 from enum import Enum
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -55,9 +55,11 @@ DEFAULT_SYN1DEG_VARIABLES = [
     "CLRSKY_SFC_PAR_TOT",  # Clear-sky surface photosynthetically active radiation
 ]
 
+
 class DatasetType(Enum):
     MERRA2 = "merra2"
     SYN1DEG = "syn1deg"
+
 
 class TemporalResolution(Enum):
     HOURLY = "hourly"
@@ -65,6 +67,7 @@ class TemporalResolution(Enum):
     MONTHLY = "monthly"
     ANNUAL = "annual"
     CLIMATOLOGY = "climatology"
+
 
 # ---------------------------------------------------------------------------
 # Licence and metadata
@@ -158,9 +161,10 @@ _ZARR_URLS = {
 # Module-level cache for opened Zarr stores and coordinate arrays.
 # ----------------------------------------------------------------------------
 
+
 class ZarrStoreCache:
     """Cache for opened Zarr stores and their coordinate arrays."""
-    
+
     def __init__(self, group: zarr.Group) -> None:
         self._group: zarr.Group = group
         self._cached_dims_for_group: zarr.Group | None = None
@@ -170,7 +174,9 @@ class ZarrStoreCache:
         self._cached_variables_for_group: zarr.Group | None = None
         self._variable_info: dict[str, dict[str, str]] | None = None
 
-# Module level cache for each Zarr store, keyed by temporal resolution and dataset type (MERRA-2 vs SYN1deg).
+
+# Module level cache for each Zarr store, keyed by temporal resolution and dataset type
+# (MERRA-2 vs SYN1deg).
 _zarr_cache: dict[tuple[DatasetType, TemporalResolution], ZarrStoreCache] = {}
 
 
@@ -185,7 +191,9 @@ def _clear_store_cache() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _open_store(dataset_type: DatasetType, temporal_resolution: TemporalResolution) -> ZarrStoreCache:
+def _open_store(
+    dataset_type: DatasetType, temporal_resolution: TemporalResolution
+) -> ZarrStoreCache:
     """Open (and cache) the NASA POWER Zarr store with an optional in-memory cache."""
     global _zarr_cache
     cache_key = (dataset_type, temporal_resolution)
@@ -206,7 +214,9 @@ def _open_store(dataset_type: DatasetType, temporal_resolution: TemporalResoluti
     except ImportError:
         store = source  # no caching if experimental module not available
 
-    _zarr_cache[(dataset_type, temporal_resolution)] = ZarrStoreCache(zarr.open_group(store=store, mode="r"))
+    _zarr_cache[(dataset_type, temporal_resolution)] = ZarrStoreCache(
+        zarr.open_group(store=store, mode="r")
+    )
     return _zarr_cache[(dataset_type, temporal_resolution)]
 
 
@@ -307,10 +317,7 @@ def _clim_time_mask(
         return np.ones(len(times), dtype=bool)
 
     sm, em = start_dt.month, end_dt.month
-    if sm <= em:
-        monthly_mask = (slots >= sm) & (slots <= em)
-    else:  # range wraps across a year boundary (e.g. Nov → Feb)
-        monthly_mask = (slots >= sm) | (slots <= em)
+    monthly_mask = (slots >= sm) & (slots <= em) if sm <= em else (slots >= sm) | (slots <= em)
 
     return np.array(monthly_mask | annual_mask)
 
@@ -373,7 +380,9 @@ def _query_point(
         else:
             unavailable.append(var)
 
-    date_fmt = "%Y-%m-%dT%H:%M:%S" if temporal_resolution == TemporalResolution.HOURLY else "%Y-%m-%d"
+    date_fmt = (
+        "%Y-%m-%dT%H:%M:%S" if temporal_resolution == TemporalResolution.HOURLY else "%Y-%m-%d"
+    )
     records: list[dict[str, Any]] = []
     for i, t_val in enumerate(selected_times):
         if temporal_resolution == TemporalResolution.CLIMATOLOGY:
@@ -401,8 +410,8 @@ def _query_bbox(
     variables: list[str],
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """Extract time-series records for a bounding box from the Zarr store.
-       Returns data for all points within the bounding box, as well as the nearest points
-       outside the box in each direction (if they exist) to allow for interpolation at the edges.
+    Returns data for all points within the bounding box, as well as the nearest points
+    outside the box in each direction (if they exist) to allow for interpolation at the edges.
     """
     store = _open_store(dataset_type, temporal_resolution)
 
@@ -411,17 +420,17 @@ def _query_bbox(
     # lats and lons are sorted ascending in the MERRA-2/SYN1deg stores
     # Indices of the first cell >= min_lat and last cell <= max_lat
     first_lat = int(np.searchsorted(lats, min_lat, side="left"))
-    last_lat  = int(np.searchsorted(lats, max_lat, side="right"))
+    last_lat = int(np.searchsorted(lats, max_lat, side="right"))
 
     # Expand by one buffer cell on each side, clamped to valid range
     lat_start = max(0, first_lat - 1)
-    lat_end   = min(len(lats), last_lat + 1)
+    lat_end = min(len(lats), last_lat + 1)
 
     first_lon = int(np.searchsorted(lons, min_lon, side="left"))
-    last_lon  = int(np.searchsorted(lons, max_lon, side="right"))
+    last_lon = int(np.searchsorted(lons, max_lon, side="right"))
 
     lon_start = max(0, first_lon - 1)
-    lon_end   = min(len(lons), last_lon + 1)
+    lon_end = min(len(lons), last_lon + 1)
 
     if temporal_resolution == TemporalResolution.CLIMATOLOGY:
         time_mask = _clim_time_mask(times, start_date, end_date)
@@ -450,14 +459,17 @@ def _query_bbox(
         else:
             unavailable.append(var)
 
-    date_fmt = "%Y-%m-%dT%H:%M:%S" if temporal_resolution == TemporalResolution.HOURLY else "%Y-%m-%d"
+    date_fmt = (
+        "%Y-%m-%dT%H:%M:%S" if temporal_resolution == TemporalResolution.HOURLY else "%Y-%m-%d"
+    )
     results: list[dict[str, Any]] = []
     for i_lat, lat_idx in enumerate(range(lat_start, lat_end)):
         for i_lon, lon_idx in enumerate(range(lon_start, lon_end)):
             row: dict[str, Any] = {
                 "latitude": float(lats[lat_idx]),
                 "longitude": float(lons[lon_idx]),
-                "in_bbox": (min_lat <= lats[lat_idx] <= max_lat) and (min_lon <= lons[lon_idx] <= max_lon),
+                "in_bbox": (min_lat <= lats[lat_idx] <= max_lat)
+                and (min_lon <= lons[lon_idx] <= max_lon),
                 "records": [],
             }
             for i_time, t_val in enumerate(selected_times):
@@ -476,15 +488,16 @@ def _query_bbox(
 
 
 def _estimate_query_runtime_s(
-        n_days: int,
-        temporal_resolution: TemporalResolution,
-        n_param: int,
-        area_deg2: float,
-        max_runtime_s: float,
+    n_days: int,
+    temporal_resolution: TemporalResolution,
+    n_param: int,
+    area_deg2: float,
+    max_runtime_s: float,
 ) -> dict[str, Any] | None:
     """Rough heuristic to estimate query runtime in seconds based on query size."""
-    
-    # The parameterization is based on daily resolution, so scale n_days accordingly for other temporal resolutions.
+
+    # The parameterization is based on daily resolution, so scale n_days accordingly
+    # for other temporal resolutions.
     n_time_steps: int
     if temporal_resolution == TemporalResolution.HOURLY:
         n_time_steps = n_days * 24
@@ -496,13 +509,13 @@ def _estimate_query_runtime_s(
         n_time_steps = n_days // 365
     elif temporal_resolution == TemporalResolution.CLIMATOLOGY:
         n_time_steps = 1  # Climatology is typically a single time step per variable
-    
+
     return check_runtime(
         source="nasa_power",
         n_days=n_time_steps,
         area_deg2=area_deg2,
         max_runtime_s=max_runtime_s,
-        scale_factor=n_param
+        scale_factor=n_param,
     )
 
 
@@ -547,8 +560,11 @@ def nasa_power_merra2_query(
         start_date: ISO 8601 date string, e.g. "2019-08-15".
         end_date: ISO 8601 date string, inclusive.
         temporal_resolution: "hourly", "daily", "monthly", "annual", or "climatology".
-        variables: NASA POWER variable names. Use nasa_power_merra2_available_variables() tool to get a list of valid variable names. Defaults to a standard set of commonly used variables.
-        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
+        variables: NASA POWER variable names. Use nasa_power_merra2_available_variables()
+            tool to get a list of valid variable names. Defaults to a standard set of commonly
+            used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
 
     query_params: dict[str, Any] = {
@@ -568,9 +584,19 @@ def nasa_power_merra2_query(
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
-        if warn := _estimate_query_runtime_s(n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s):
+        if warn := _estimate_query_runtime_s(
+            n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s
+        ):
             return warn
-        records, unavailable = _query_point(latitude, longitude, start_date, end_date, DatasetType.MERRA2, temporal_resolution, variables)
+        records, unavailable = _query_point(
+            latitude,
+            longitude,
+            start_date,
+            end_date,
+            DatasetType.MERRA2,
+            temporal_resolution,
+            variables,
+        )
         latency = time.perf_counter() - t0
         return {
             "data": records,
@@ -615,7 +641,8 @@ def nasa_power_syn1deg_query(
 ) -> dict[str, Any]:
     """Query NASA POWER SYN1deg surface radiation data for a point location.
 
-    Returns daily surface radiation variables (shortwave and longwave, all-sky and clear-sky) from the NASA POWER dataset via anonymous S3/Zarr. Global coverage, 2001–present.
+    Returns daily surface radiation variables (shortwave and longwave, all-sky and clear-sky) from
+    the NASA POWER dataset via anonymous S3/Zarr. Global coverage, 2001–present.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
@@ -623,8 +650,11 @@ def nasa_power_syn1deg_query(
         start_date: ISO 8601 date string, e.g. "2019-08-15".
         end_date: ISO 8601 date string, inclusive.
         temporal_resolution: Temporal resolution of the data (e.g., daily, monthly).
-        variables: NASA POWER SYN1deg variable names. Use nasa_power_syn1deg_available_variables() tool to get a list of valid variable names. Defaults to a standard set of commonly used surface radiation variables.
-        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
+        variables: NASA POWER SYN1deg variable names. Use nasa_power_syn1deg_available_variables()
+            tool to get a list of valid variable names. Defaults to a standard set of commonly used
+            surface radiation variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     query_params: dict[str, Any] = {
         "latitude": latitude,
@@ -643,9 +673,19 @@ def nasa_power_syn1deg_query(
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
-        if warn := _estimate_query_runtime_s(n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s):
+        if warn := _estimate_query_runtime_s(
+            n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s
+        ):
             return warn
-        records, unavailable = _query_point(latitude, longitude, start_date, end_date, DatasetType.SYN1DEG, temporal_resolution, variables)
+        records, unavailable = _query_point(
+            latitude,
+            longitude,
+            start_date,
+            end_date,
+            DatasetType.SYN1DEG,
+            temporal_resolution,
+            variables,
+        )
         latency = time.perf_counter() - t0
         return {
             "data": records,
@@ -676,7 +716,7 @@ def nasa_power_syn1deg_query(
                 variable_info=var_info,
             ),
         }
-    
+
 
 @mcp.tool()
 def nasa_power_merra2_bbox_query(
@@ -703,8 +743,10 @@ def nasa_power_merra2_bbox_query(
         start_date: ISO 8601 start date.
         end_date: ISO 8601 end date (inclusive).
         temporal_resolution: Temporal resolution of the data (e.g., daily, monthly).
-        variables: NASA POWER MERRA-2 variable names (defaults to standard set). Use nasa_power_merra2_available_variables() tool to get a list of valid variable names.
-        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
+        variables: NASA POWER MERRA-2 variable names (defaults to standard set). Use
+            nasa_power_merra2_available_variables() tool to get a list of valid variable names.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     bbox = BboxInput(
         min_lat=min_lat,
@@ -732,9 +774,25 @@ def nasa_power_merra2_bbox_query(
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
-        if warn := _estimate_query_runtime_s(n_days, temporal_resolution, len(variables), area_deg2=bbox_area_deg2(bbox.model_dump()), max_runtime_s=max_runtime_s):
+        if warn := _estimate_query_runtime_s(
+            n_days,
+            temporal_resolution,
+            len(variables),
+            area_deg2=bbox_area_deg2(bbox.model_dump()),
+            max_runtime_s=max_runtime_s,
+        ):
             return warn
-        records, unavailable = _query_bbox(min_lat, max_lat, min_lon, max_lon, start_date, end_date, DatasetType.MERRA2, temporal_resolution, variables)
+        records, unavailable = _query_bbox(
+            min_lat,
+            max_lat,
+            min_lon,
+            max_lon,
+            start_date,
+            end_date,
+            DatasetType.MERRA2,
+            temporal_resolution,
+            variables,
+        )
         latency = time.perf_counter() - t0
         return {
             "data": records,
@@ -792,8 +850,10 @@ def nasa_power_syn1deg_bbox_query(
         start_date: ISO 8601 start date.
         end_date: ISO 8601 end date (inclusive).
         temporal_resolution: Temporal resolution of the data (e.g., daily, monthly).
-        variables: NASA POWER SYN1deg variable names (defaults to standard set). Use nasa_power_syn1deg_available_variables() tool to get a list of valid variable names.
-        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
+        variables: NASA POWER SYN1deg variable names (defaults to standard set). Use
+            nasa_power_syn1deg_available_variables() tool to get a list of valid variable names.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     bbox = BboxInput(
         min_lat=min_lat,
@@ -821,9 +881,25 @@ def nasa_power_syn1deg_bbox_query(
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
-        if warn := _estimate_query_runtime_s(n_days, temporal_resolution, len(variables), area_deg2=bbox_area_deg2(bbox.model_dump()), max_runtime_s=max_runtime_s):
+        if warn := _estimate_query_runtime_s(
+            n_days,
+            temporal_resolution,
+            len(variables),
+            area_deg2=bbox_area_deg2(bbox.model_dump()),
+            max_runtime_s=max_runtime_s,
+        ):
             return warn
-        records, unavailable = _query_bbox(min_lat, max_lat, min_lon, max_lon, start_date, end_date, DatasetType.SYN1DEG, temporal_resolution, variables)
+        records, unavailable = _query_bbox(
+            min_lat,
+            max_lat,
+            min_lon,
+            max_lon,
+            start_date,
+            end_date,
+            DatasetType.SYN1DEG,
+            temporal_resolution,
+            variables,
+        )
         latency = time.perf_counter() - t0
         return {
             "data": records,
