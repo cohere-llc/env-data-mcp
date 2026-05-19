@@ -5,6 +5,7 @@ All tests are offline — the Zarr store is mocked with an in-memory group.
 
 from __future__ import annotations
 
+import sys
 from unittest.mock import patch
 
 import numpy as np
@@ -24,6 +25,7 @@ from env_data_mcp.sources.nasa_power import (
     ZarrStoreCache,
     _clim_date_label,
     _clim_time_mask,
+    _estimate_query_runtime_s,
     _get_coordinates,
     _get_variable_info,
     _query_bbox,
@@ -128,6 +130,27 @@ def _reset_caches():
         store._variable_info = None
     yield
     _nasa_power_mod._zarr_cache.clear()
+
+
+# ---------------------------------------------------------------------------
+# _get_coordinates tests
+# ---------------------------------------------------------------------------
+
+
+def test_open_store_import_error_fallback():
+    """When zarr.experimental.cache_store is unavailable _open_store uses the raw store."""
+    from unittest.mock import MagicMock
+
+    mock_source = MagicMock()
+    with (
+        patch("env_data_mcp.sources.nasa_power.FsspecStore") as mock_fsspec,
+        patch("zarr.open_group", return_value=_MOCK_MERRA2_GROUP),
+        patch.dict(sys.modules, {"zarr.experimental.cache_store": None}),
+    ):
+        mock_fsspec.from_url.return_value = mock_source
+        _nasa_power_mod._zarr_cache.clear()
+        result = _nasa_power_mod._open_store(DatasetType.MERRA2, TemporalResolution.DAILY)
+    assert isinstance(result, ZarrStoreCache)
 
 
 # ---------------------------------------------------------------------------
@@ -713,6 +736,19 @@ def test_syn1deg_query_variable_info_in_meta():
     assert info["ALLSKY_SFC_SW_DWN"]["units"] == "W/m^2"
 
 
+def test_syn1deg_query_invalid_date_returns_error():
+    with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
+        result = nasa_power_syn1deg_query(
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="not-a-date",
+            end_date="2019-08-19",
+            temporal_resolution=TemporalResolution.DAILY,
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"]["error"] is not None
+
+
 # ---------------------------------------------------------------------------
 # nasa_power_merra2_bbox_query tool tests
 # ---------------------------------------------------------------------------
@@ -803,6 +839,21 @@ def test_merra2_bbox_query_invalid_bbox_raises():
         )
 
 
+def test_merra2_bbox_query_invalid_date_returns_error():
+    with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
+        result = nasa_power_merra2_bbox_query(
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="not-a-date",
+            end_date="2019-08-19",
+            temporal_resolution=TemporalResolution.DAILY,
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"]["error"] is not None
+
+
 # ---------------------------------------------------------------------------
 # nasa_power_syn1deg_bbox_query tool tests
 # ---------------------------------------------------------------------------
@@ -870,6 +921,21 @@ def test_syn1deg_bbox_query_echoes_temporal_resolution():
             variables=["ALLSKY_SFC_SW_DWN"],
         )
     assert result["_meta"]["query_params"]["temporal_resolution"] == "monthly"
+
+
+def test_syn1deg_bbox_query_invalid_date_returns_error():
+    with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
+        result = nasa_power_syn1deg_bbox_query(
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="not-a-date",
+            end_date="2019-08-19",
+            temporal_resolution=TemporalResolution.DAILY,
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"]["error"] is not None
 
 
 # ---------------------------------------------------------------------------
@@ -1255,3 +1321,89 @@ class TestClimatologyQueryBbox:
         interior = next(r for r in results if r["in_bbox"])
         dates = {rec["date"] for rec in interior["records"]}
         assert dates == {f"month-{m:02d}" for m in range(1, 13)} | {"annual"}
+
+
+# ---------------------------------------------------------------------------
+# _estimate_query_runtime_s branch coverage
+# ---------------------------------------------------------------------------
+
+
+def test_estimate_runtime_hourly_branch():
+    result = _estimate_query_runtime_s(
+        1, TemporalResolution.HOURLY, 1, area_deg2=0.0, max_runtime_s=0.0
+    )
+    assert result is not None
+    assert result["_meta"]["success"] is False
+
+
+def test_estimate_runtime_annual_branch():
+    result = _estimate_query_runtime_s(
+        365, TemporalResolution.ANNUAL, 1, area_deg2=0.0, max_runtime_s=0.0
+    )
+    assert result is not None
+    assert result["_meta"]["success"] is False
+
+
+# ---------------------------------------------------------------------------
+# Slow-query warning paths in tool functions
+# ---------------------------------------------------------------------------
+
+
+def test_merra2_query_slow_query_warning():
+    with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
+        result = nasa_power_merra2_query(
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-19",
+            temporal_resolution=TemporalResolution.DAILY,
+            max_runtime_s=0.0,
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"].get("slow_query_warning") is True
+
+
+def test_syn1deg_query_slow_query_warning():
+    with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
+        result = nasa_power_syn1deg_query(
+            latitude=_LAT,
+            longitude=_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-19",
+            temporal_resolution=TemporalResolution.DAILY,
+            max_runtime_s=0.0,
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"].get("slow_query_warning") is True
+
+
+def test_merra2_bbox_query_slow_query_warning():
+    with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
+        result = nasa_power_merra2_bbox_query(
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-19",
+            temporal_resolution=TemporalResolution.DAILY,
+            max_runtime_s=0.0,
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"].get("slow_query_warning") is True
+
+
+def test_syn1deg_bbox_query_slow_query_warning():
+    with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
+        result = nasa_power_syn1deg_bbox_query(
+            min_lat=_BBOX_MIN_LAT,
+            max_lat=_BBOX_MAX_LAT,
+            min_lon=_BBOX_MIN_LON,
+            max_lon=_BBOX_MAX_LON,
+            start_date="2019-08-17",
+            end_date="2019-08-19",
+            temporal_resolution=TemporalResolution.DAILY,
+            max_runtime_s=0.0,
+        )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"].get("slow_query_warning") is True
