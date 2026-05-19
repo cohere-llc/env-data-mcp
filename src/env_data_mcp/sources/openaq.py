@@ -25,7 +25,6 @@ import httpx
 from env_data_mcp.helpers import (
     build_meta,
     check_runtime,
-    clamp_bbox,
     parse_date,
 )
 from env_data_mcp.server import mcp
@@ -396,9 +395,7 @@ def openaq_bbox_query(
     """
     if parameters is None:
         parameters = _DEFAULT_PARAMETERS
-    bbox = clamp_bbox(
-        {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
-    )
+    bbox = {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     lat, lon = (bbox["min_lat"] + bbox["max_lat"]) / 2.0, (bbox["min_lon"] + bbox["max_lon"]) / 2.0
     # Half-diagonal of the bbox in km.
     lat_half = (bbox["max_lat"] - bbox["min_lat"]) / 2.0 * 111.0

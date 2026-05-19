@@ -1,7 +1,7 @@
 """
 Pydantic input schemas shared across tool definitions.
 
-These are used in server.py for type-validated tool parameters and can
+These are used in source modules primarily for validation and can
 also be used in tests and notebooks for constructing inputs programmatically.
 """
 

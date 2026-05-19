@@ -33,6 +33,9 @@ dev = [
     "ruff>=0.4",
     "pyright>=1.1",
 ]
+notebook = [
+    "matplotlib>=3.10.9",
+]
 
 [project.scripts]
 env-data-mcp = "env_data_mcp.server:main"
@@ -56,6 +59,7 @@ addopts = [
 markers = [
     "integration: real API calls; requires network (deselect with -m 'not integration')",
     "smoke: one live call per source to verify connectivity",
+    "benchmark: benchmark timing collection for all sources (deselect with -m 'not benchmark')",
 ]
 
 [tool.ruff]

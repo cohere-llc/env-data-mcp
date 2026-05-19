@@ -29,7 +29,12 @@ import pytest
 from env_data_mcp.sources.emit import emit_bbox_query, emit_query
 from env_data_mcp.sources.essdive import essdive_bbox_query, essdive_query
 from env_data_mcp.sources.gbif import gbif_bbox_occurrences, gbif_occurrences
-from env_data_mcp.sources.nasa_power import nasa_power_bbox_query, nasa_power_query
+from env_data_mcp.sources.nasa_power import (
+    TemporalResolution,
+    _clear_store_cache,
+    nasa_power_merra2_bbox_query,
+    nasa_power_merra2_query,
+)
 from env_data_mcp.sources.oco2 import oco2_bbox_query, oco2_query
 from env_data_mcp.sources.openaq import openaq_bbox_query, openaq_query
 from env_data_mcp.sources.sentinel5p import sentinel5p_bbox_query, sentinel5p_query
@@ -89,6 +94,27 @@ _EXTRA_LOCATIONS = _LOCATIONS[1:]  # additional locations beyond the primary Yak
 _BBOX_SIZES: list[dict[str, Any]] = [
     {"name": "0.5x0.5", "half": 0.25, "area_deg2": 0.25},  # 0.5° × 0.5°
     {"name": "2x2", "half": 1.0, "area_deg2": 4.0},  # 2° × 2°
+]
+
+# Extended scenarios for Zarr-based sources — larger ranges give better OLS signal
+# along the time axis without hitting REST-API rate limits.
+_NASA_POWER_SCENARIOS: list[dict[str, Any]] = [
+    {"name": "1day",   "start": "2019-08-19", "end": "2019-08-19", "n_days": 1},
+    {"name": "1week",  "start": "2019-08-13", "end": "2019-08-19", "n_days": 7},
+    {"name": "1month", "start": "2019-08-01", "end": "2019-08-31", "n_days": 31},
+    {"name": "3month", "start": "2019-06-01", "end": "2019-08-31", "n_days": 92},
+    {"name": "1year",  "start": "2019-01-01", "end": "2019-12-31", "n_days": 365},
+]
+
+# Extended bbox sizes for Zarr-based sources — larger extents give better OLS
+# signal along the area axis (each size ~4× the previous).
+_NASA_POWER_BBOX_SIZES: list[dict[str, Any]] = [
+    {"name": "0.5x0.5", "half": 0.25,  "area_deg2": 0.25},
+    {"name": "2x2",     "half": 1.0,   "area_deg2": 4.0},
+    {"name": "5x5",     "half": 2.5,   "area_deg2": 25.0},
+    {"name": "10x10",   "half": 5.0,   "area_deg2": 100.0},
+    {"name": "20x20",   "half": 10.0,  "area_deg2": 400.0},
+    {"name": "30x30",   "half": 15.0,  "area_deg2": 900.0},
 ]
 
 # Maximum acceptable latency per query (hard cap; test fails if exceeded)
@@ -155,11 +181,13 @@ def _fit_and_write_model() -> None:
 
     Fit uses only observations that returned at least one record to avoid
     biasing coefficients with API-overhead-only (empty-result) timings.
-    Centroid-based sources (NASA POWER, SoilGrids, SSURGO) have beta_area_deg2
-    clamped to 0.0 post-fit since their implementation ignores bbox extent.
+    All fitted coefficients are floored at 0 — latency cannot physically
+    decrease as n_days or area grows; negative values are noise artefacts.
+    Centroid-based sources (SoilGrids, SSURGO) have beta_area_deg2 forced
+    to 0.0 before the floor since their implementation ignores bbox extent.
     """
     # Sources whose implementation queries a single centroid regardless of bbox.
-    _CENTROID_SOURCES = {"nasa_power", "soilgrids", "ssurgo"}
+    _CENTROID_SOURCES = {"soilgrids", "ssurgo"}
 
     if not _TIMING:
         return  # Nothing to write if no benchmarks ran
@@ -227,9 +255,17 @@ def _fit_and_write_model() -> None:
         # area has no genuine effect on their latency.
         if source in _CENTROID_SOURCES:
             beta_a = 0.0
-            # Restate equation with the clamped value
-            if n >= 3:
-                equation = f"t ≈ {alpha:.2f} + {beta_n:.3f}·n_days + 0.0000·area_deg2"
+
+        # Physical floor: latency cannot decrease as n_days or area grows.
+        # Negative OLS coefficients are artefacts of measurement noise; clamp to 0.
+        beta_n = max(0.0, beta_n)
+        beta_a = max(0.0, beta_a)
+
+        # Restate equation from the (possibly floored) coefficients.
+        if n >= 3 or (n == 2 and (has_area_var or has_time_var)):
+            equation = f"t ≈ {alpha:.2f} + {beta_n:.3f}·n_days + {beta_a:.4f}·area_deg2"
+        elif n == 1:
+            equation = f"t ≈ {alpha:.2f}  (single observation)"
 
         model[source] = {
             "alpha": round(alpha, 3),
@@ -254,6 +290,18 @@ def _fit_and_write_model() -> None:
     merged_model = {**existing_model, **model}
     merged_raw = {**existing_raw, **_TIMING}
 
+    # Inject the hard-coded test sentinel so unit tests can make fully
+    # quantitative assertions against known coefficients.  Benchmark runs
+    # must never overwrite it, so we pin it after the merge.
+    # Parameters: t(n, a) = 2.0 + 1.0·n_days + 0.5·area_deg2  (no override)
+    merged_model["_test"] = {
+        "alpha": 2.0,
+        "beta_n_days": 1.0,
+        "beta_area_deg2": 0.5,
+        "r2": 1.0,
+        "equation": "t \u2248 2.00 + 1.000\u00b7n_days + 0.5000\u00b7area_deg2",
+    }
+
     output = {
         "generated_at": datetime.now(UTC).isoformat(),
         "note": (
@@ -261,8 +309,9 @@ def _fit_and_write_model() -> None:
             "point + bbox queries. Model: t_est(n_days, area_deg2) = "
             "alpha + beta_n_days\u00b7n_days + beta_area_deg2\u00b7area_deg2 (seconds). "
             "Fit uses only observations with n_records > 0. "
-            "Centroid-based sources (nasa_power, soilgrids, ssurgo) have "
-            "beta_area_deg2 clamped to 0. "
+            "All coefficients floored at 0 (latency cannot decrease with more data). "
+            "Centroid-based sources (soilgrids, ssurgo) have "
+            "beta_area_deg2 forced to 0 before the floor. "
             "Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration"
         ),
         "locations": _LOCATIONS,
@@ -335,13 +384,16 @@ def _assert_or_skip(result: dict[str, Any], source: str) -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
+@pytest.mark.benchmark
+@pytest.mark.parametrize("sc", _NASA_POWER_SCENARIOS, ids=lambda s: s["name"])
 def test_nasa_power_timing(sc):
-    result = nasa_power_query(
+    _clear_store_cache()
+    result = nasa_power_merra2_query(
         latitude=_LAT,
         longitude=_LON,
         start_date=sc["start"],
         end_date=sc["end"],
+        temporal_resolution=TemporalResolution.DAILY,
         variables=["T2M"],
     )
     _assert_or_skip(result, "nasa_power")
@@ -350,13 +402,16 @@ def test_nasa_power_timing(sc):
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
-@pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
+@pytest.mark.benchmark
+@pytest.mark.parametrize("bz", _NASA_POWER_BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("sc", _NASA_POWER_SCENARIOS, ids=lambda s: s["name"])
 def test_nasa_power_bbox_timing(sc, bz):
-    result = nasa_power_bbox_query(
+    _clear_store_cache()
+    result = nasa_power_merra2_bbox_query(
         **_make_bbox(_LAT, _LON, bz["half"]),
         start_date=sc["start"],
         end_date=sc["end"],
+        temporal_resolution=TemporalResolution.DAILY,
         variables=["T2M"],
     )
     _assert_or_skip(result, "nasa_power/bbox")
@@ -371,13 +426,16 @@ def test_nasa_power_bbox_timing(sc, bz):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_nasa_power_extra_location_timing(loc):
-    result = nasa_power_query(
+    _clear_store_cache()
+    result = nasa_power_merra2_query(
         latitude=loc["lat"],
         longitude=loc["lon"],
         start_date="2019-08-01",
         end_date="2019-08-31",
+        temporal_resolution=TemporalResolution.DAILY,
         variables=["T2M"],
     )
     _assert_or_skip(result, f"nasa_power/{loc['name']}")
@@ -386,26 +444,37 @@ def test_nasa_power_extra_location_timing(loc):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_nasa_power_point_bbox_consistent():
-    """Centroid-based source: point and small bbox must return identical records."""
-    pt = nasa_power_query(
+    """Bbox must include a grid point near the reference point with matching T2M."""
+    _clear_store_cache()
+    pt = nasa_power_merra2_query(
         latitude=_LAT,
         longitude=_LON,
         start_date="2019-08-19",
         end_date="2019-08-19",
+        temporal_resolution=TemporalResolution.DAILY,
         variables=["T2M"],
     )
-    bx = nasa_power_bbox_query(
+    bx = nasa_power_merra2_bbox_query(
         **_BBOX,
         start_date="2019-08-19",
         end_date="2019-08-19",
+        temporal_resolution=TemporalResolution.DAILY,
         variables=["T2M"],
     )
     _assert_or_skip(pt, "nasa_power/point")
     _assert_or_skip(bx, "nasa_power/bbox")
-    assert pt["data"] == bx["data"], (
-        "nasa_power point and bbox results differ for a small bbox "
-        "(both use centroid — should be identical)"
+    pt_t2m = pt["data"][0]["T2M"]
+    # Both point and bbox snap to the same nearest MERRA-2 grid cell
+    nearest = min(
+        bx["data"],
+        key=lambda p: abs(p["latitude"] - _LAT) + abs(p["longitude"] - _LON),
+    )
+    bx_t2m = nearest["records"][0]["T2M"]
+    assert abs(pt_t2m - bx_t2m) < 0.01, (
+        f"nasa_power: point T2M={pt_t2m} vs bbox nearest-grid-point T2M={bx_t2m} "
+        f"at ({nearest['latitude']}, {nearest['longitude']})"
     )
 
 
@@ -415,6 +484,7 @@ def test_nasa_power_point_bbox_consistent():
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_soilgrids_timing():
     result = soilgrids_query(latitude=_LAT, longitude=_LON)
     _assert_or_skip(result, "soilgrids")
@@ -423,6 +493,7 @@ def test_soilgrids_timing():
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 def test_soilgrids_bbox_timing(bz):
     result = soilgrids_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]))
@@ -432,6 +503,7 @@ def test_soilgrids_bbox_timing(bz):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_soilgrids_extra_location_timing(loc):
     result = soilgrids_query(latitude=loc["lat"], longitude=loc["lon"])
@@ -441,6 +513,7 @@ def test_soilgrids_extra_location_timing(loc):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_soilgrids_point_bbox_consistent():
     """Centroid-based: small bbox must return identical records to point query."""
     pt = soilgrids_query(latitude=_LAT, longitude=_LON)
@@ -456,6 +529,7 @@ def test_soilgrids_point_bbox_consistent():
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_ssurgo_timing():
     result = ssurgo_query(latitude=_LAT, longitude=_LON)
     if not result["_meta"].get("success"):
@@ -465,6 +539,7 @@ def test_ssurgo_timing():
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 def test_ssurgo_bbox_timing(bz):
     result = ssurgo_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]))
@@ -475,6 +550,7 @@ def test_ssurgo_bbox_timing(bz):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_ssurgo_extra_location_timing(loc):
     result = ssurgo_query(latitude=loc["lat"], longitude=loc["lon"])
@@ -485,6 +561,7 @@ def test_ssurgo_extra_location_timing(loc):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_ssurgo_point_bbox_consistent():
     """Centroid-based: small bbox must return identical records to point query."""
     pt = ssurgo_query(latitude=_LAT, longitude=_LON)
@@ -502,6 +579,7 @@ _GBIF_SCENARIOS = _SCENARIOS  # fragment cap bounds latency regardless of date r
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _GBIF_SCENARIOS, ids=lambda s: s["name"])
 def test_gbif_timing(sc):
     result = gbif_occurrences(
@@ -518,6 +596,7 @@ def test_gbif_timing(sc):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _GBIF_SCENARIOS, ids=lambda s: s["name"])
 def test_gbif_bbox_timing(sc, bz):
@@ -539,6 +618,7 @@ def test_gbif_bbox_timing(sc, bz):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_gbif_extra_location_timing(loc):
     result = gbif_occurrences(
@@ -555,6 +635,7 @@ def test_gbif_extra_location_timing(loc):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_gbif_point_bbox_consistent():
     """Small bbox should contain records near the point and counts should agree ±20 %."""
     pt = gbif_occurrences(
@@ -582,6 +663,7 @@ def test_gbif_point_bbox_consistent():
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
 def test_sentinel5p_timing(sc):
     result = sentinel5p_query(
@@ -597,6 +679,7 @@ def test_sentinel5p_timing(sc):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
 def test_sentinel5p_bbox_timing(sc, bz):
@@ -618,6 +701,7 @@ def test_sentinel5p_bbox_timing(sc, bz):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_sentinel5p_extra_location_timing(loc):
     result = sentinel5p_query(
@@ -633,6 +717,7 @@ def test_sentinel5p_extra_location_timing(loc):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_sentinel5p_point_bbox_consistent():
     pt = sentinel5p_query(
         latitude=_LAT,
@@ -658,6 +743,7 @@ def test_sentinel5p_point_bbox_consistent():
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
 def test_openaq_timing(sc, _openaq_key):
     result = openaq_query(
@@ -674,6 +760,7 @@ def test_openaq_timing(sc, _openaq_key):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
 def test_openaq_bbox_timing(sc, bz, _openaq_key):
@@ -695,6 +782,7 @@ def test_openaq_bbox_timing(sc, bz, _openaq_key):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_openaq_extra_location_timing(loc, _openaq_key):
     result = openaq_query(
@@ -711,6 +799,7 @@ def test_openaq_extra_location_timing(loc, _openaq_key):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_openaq_point_bbox_consistent(_openaq_key):
     pt = openaq_query(
         latitude=_LAT,
@@ -737,6 +826,7 @@ def test_openaq_point_bbox_consistent(_openaq_key):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
 def test_essdive_timing(sc, _essdive_token):
     # ESS-DIVE is a dataset catalog — temporal filtering by observation window
@@ -753,6 +843,7 @@ def test_essdive_timing(sc, _essdive_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
 def test_essdive_bbox_timing(sc, bz, _essdive_token):
@@ -772,6 +863,7 @@ def test_essdive_bbox_timing(sc, bz, _essdive_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_essdive_extra_location_timing(loc, _essdive_token):
     result = essdive_query(
@@ -786,6 +878,7 @@ def test_essdive_extra_location_timing(loc, _essdive_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_essdive_point_bbox_consistent(_essdive_token):
     """ESS-DIVE: count-only consistency (no per-record lat/lon in results)."""
     pt = essdive_query(
@@ -815,6 +908,7 @@ _OCO2_SCENARIOS = [s for s in _SCENARIOS if s["name"] != "1month"]
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _OCO2_SCENARIOS, ids=lambda s: s["name"])
 def test_oco2_timing(sc, _earthdata_token):
     result = oco2_query(
@@ -829,6 +923,7 @@ def test_oco2_timing(sc, _earthdata_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _OCO2_SCENARIOS, ids=lambda s: s["name"])
 def test_oco2_bbox_timing(sc, bz, _earthdata_token):
@@ -849,6 +944,7 @@ def test_oco2_bbox_timing(sc, bz, _earthdata_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_oco2_extra_location_timing(loc, _earthdata_token):
     result = oco2_query(
@@ -863,6 +959,7 @@ def test_oco2_extra_location_timing(loc, _earthdata_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_oco2_point_bbox_consistent(_earthdata_token):
     pt = oco2_query(
         latitude=_LAT,
@@ -892,6 +989,7 @@ _EMIT_SCENARIOS: list[dict[str, Any]] = [
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _EMIT_SCENARIOS, ids=lambda s: s["name"])
 def test_emit_timing(sc, _earthdata_token):
     result = emit_query(
@@ -906,6 +1004,7 @@ def test_emit_timing(sc, _earthdata_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _EMIT_SCENARIOS, ids=lambda s: s["name"])
 def test_emit_bbox_timing(sc, bz, _earthdata_token):
@@ -926,6 +1025,7 @@ def test_emit_bbox_timing(sc, bz, _earthdata_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_emit_extra_location_timing(loc, _earthdata_token):
     result = emit_query(
@@ -940,6 +1040,7 @@ def test_emit_extra_location_timing(loc, _earthdata_token):
 
 
 @pytest.mark.integration
+@pytest.mark.benchmark
 def test_emit_point_bbox_consistent(_earthdata_token):
     pt = emit_query(
         latitude=_LAT,

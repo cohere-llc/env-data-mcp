@@ -15,7 +15,7 @@ from typing import Any
 
 import httpx
 
-from env_data_mcp.helpers import bbox_centroid, build_meta, check_runtime, clamp_bbox
+from env_data_mcp.helpers import bbox_centroid, build_meta, check_runtime
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -268,7 +268,6 @@ def ssurgo_bbox_query(
         "min_lon": min_lon,
         "max_lon": max_lon,
     }
-    bbox = clamp_bbox(bbox)
     clat, clon = bbox_centroid(bbox)
     area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
     if warn := check_runtime("ssurgo", 0, area_deg2, max_runtime_s):
