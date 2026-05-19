@@ -48,13 +48,12 @@ build-backend = "hatchling.build"
 packages = ["src/env_data_mcp"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "notebooks"]
+testpaths = ["tests"]
 addopts = [
     "--cov=env_data_mcp",
     "--cov-report=term-missing",
     "--nbmake",
     "--nbmake-timeout=300",
-    "--ignore=notebooks/api_smoke_test.ipynb",
 ]
 markers = [
     "integration: real API calls; requires network (deselect with -m 'not integration')",

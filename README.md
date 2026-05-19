@@ -47,12 +47,13 @@ async def main():
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool(
-                "nasa_power_query",
+                "nasa_power_merra2_query",
                 arguments={
                     "latitude": 46.253,
                     "longitude": -119.477,
                     "start_date": "2023-05-01",
                     "end_date": "2023-05-03",
+                    "temporal_resolution": "daily",
                 },
             )
             print(result)
@@ -204,11 +205,14 @@ Two demonstration notebooks are included:
 | `notebooks/pnnl_bbox_demo.ipynb` | NASA POWER + Sentinel-5P over the PNNL Richland bbox |
 
 ```bash
+# load notebook dependencies
+uv sync --extra dev --extra notebook
+
 # Run interactively
 jupyter lab notebooks/
 
 # Or run headlessly via nbmake (network required; S5P cells take 30–120 s each)
-uv run pytest notebooks/ --nbmake --ignore=notebooks/api_smoke_test.ipynb
+uv run pytest notebooks/ --no-cov
 ```
 
 ---
