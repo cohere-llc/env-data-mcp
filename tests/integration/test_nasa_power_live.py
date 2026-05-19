@@ -131,20 +131,20 @@ class TestAvailableVariables:
 
     def test_primary_var_present(self, dc: _DatasetCase):
         info = dc.avail_fn()
-        assert dc.primary_var in info, (
+        assert dc.primary_var in info["data"], (
             f"{dc.label}: {dc.primary_var} missing from available variables"
             " — upstream schema change?"
         )
 
     def test_primary_var_has_units_and_long_name(self, dc: _DatasetCase):
         info = dc.avail_fn()
-        entry = info[dc.primary_var]
+        entry = info["data"][dc.primary_var]
         assert "units" in entry
         assert "long_name" in entry
 
     def test_all_default_vars_present(self, dc: _DatasetCase):
         info = dc.avail_fn()
-        missing = [v for v in dc.default_vars if v not in info]
+        missing = [v for v in dc.default_vars if v not in info["data"]]
         assert not missing, f"{dc.label}: default variables absent from available set: {missing}"
 
 
@@ -421,7 +421,7 @@ class TestNonDefaultVariable:
 
     def test_non_default_variable_returned(self, dc: _DatasetCase):
         all_vars = dc.avail_fn()
-        extra = next((v for v in all_vars if v not in dc.default_vars), None)
+        extra = next((v for v in all_vars["data"] if v not in dc.default_vars), None)
         if extra is None:
             pytest.skip(f"{dc.label}: all available variables are in the default set")
         result = dc.point_fn(

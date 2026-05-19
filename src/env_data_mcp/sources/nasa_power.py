@@ -507,11 +507,11 @@ def _estimate_query_runtime_s(
     elif temporal_resolution == TemporalResolution.DAILY:
         n_time_steps = n_days
     elif temporal_resolution == TemporalResolution.MONTHLY:
-        n_time_steps = n_days // 30
+        n_time_steps = 0 if n_days <= 0 else (n_days + 29) // 30
     elif temporal_resolution == TemporalResolution.ANNUAL:
-        n_time_steps = n_days // 365
+        n_time_steps = 0 if n_days <= 0 else (n_days + 364) // 365
     elif temporal_resolution == TemporalResolution.CLIMATOLOGY:
-        n_time_steps = 1  # Climatology is typically a single time step per variable
+        n_time_steps = 13  # Climatology is time-invariant with 13 slots (12 months + annual mean)
 
     return check_runtime(
         source="nasa_power",
@@ -534,7 +534,13 @@ def nasa_power_merra2_available_variables() -> dict[str, Any]:
     variable_info = _get_variable_info(store)
     return {
         "data": variable_info,
-        "_meta": build_meta(source="nasa_power", dataset=DatasetType.MERRA2.value),
+        "_meta": build_meta(
+            source="nasa_power",
+            query_params={},
+            rows_returned=len(variable_info),
+            latency_s=0.0,
+            license_info=SOURCE_INFO | MERRA2_INFO,
+        ),
     }
 
 
@@ -545,7 +551,13 @@ def nasa_power_syn1deg_available_variables() -> dict[str, Any]:
     variable_info = _get_variable_info(store)
     return {
         "data": variable_info,
-        "_meta": build_meta(source="nasa_power", dataset=DatasetType.SYN1DEG.value),
+        "_meta": build_meta(
+            source="nasa_power",
+            query_params={},
+            rows_returned=len(variable_info),
+            latency_s=0.0,
+            license_info=SOURCE_INFO | SYN1DEG_INFO,
+        ),
     }
 
 

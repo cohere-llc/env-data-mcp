@@ -880,16 +880,17 @@ def test_syn1deg_bbox_query_echoes_temporal_resolution():
 def test_merra2_available_variables_returns_dict():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_MERRA2_STORE):
         result = nasa_power_merra2_available_variables()
-    assert "T2M" in result
-    assert "units" in result["T2M"]
-    assert "long_name" in result["T2M"]
+    assert "T2M" in result["data"]
+    assert "units" in result["data"]["T2M"]
+    assert "long_name" in result["data"]["T2M"]
 
 
 def test_syn1deg_available_variables_returns_dict():
     with patch("env_data_mcp.sources.nasa_power._open_store", return_value=_MOCK_SYN1DEG_STORE):
         result = nasa_power_syn1deg_available_variables()
-    assert "ALLSKY_SFC_SW_DWN" in result
-    assert "units" in result["ALLSKY_SFC_SW_DWN"]
+    assert "ALLSKY_SFC_SW_DWN" in result["data"]
+    assert "units" in result["data"]["ALLSKY_SFC_SW_DWN"]
+    assert "long_name" in result["data"]["ALLSKY_SFC_SW_DWN"]
 
 
 # ---------------------------------------------------------------------------

@@ -130,8 +130,10 @@ See [Credential setup](#environment-variables) for how to obtain each token.
 
 | Tool | Source | Auth | Description |
 |---|---|---|---|
-| `nasa_power_query` | NASA POWER | none | Daily weather (T, precip, RH, radiation) at a point |
-| `nasa_power_bbox_query` | NASA POWER | none | Daily weather statistics over a bounding box |
+| `nasa_power_merra2_query` | NASA POWER MERRA-2 | none | Atmospheric data (T, precip, RH, radiation) at a point |
+| `nasa_power_merra2_bbox_query` | NASA POWER MERRA-2 | none | Atmospheric data over a bounding box |
+| `nasa_power_syn1deg_query` | NASA POWER CERES SYN1deg | none | Radiation fluxes at a point |
+| `nasa_power_syn1deg_bbox_query` | NASA POWER CERES SYN1deg | none | Radiation fluxes over a bounding box |
 | `ssurgo_query` | USDA SSURGO | none | Soil map unit and properties for a US point |
 | `ssurgo_bbox_query` | USDA SSURGO | none | Soil map units within a bounding box |
 | `soilgrids_query` | ISRIC SoilGrids v2 | none | Global soil properties at a point |

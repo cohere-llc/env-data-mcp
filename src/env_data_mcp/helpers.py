@@ -282,6 +282,11 @@ def build_meta(
         "error": error,
         "license": license_info.get("license", ""),
         "license_url": license_info.get("license_url", ""),
+        "citation": license_info.get("citation", ""),
+        "citation_urls": license_info.get("citation_urls", []),
+        "description": license_info.get("description", ""),
+        "description_url": license_info.get("description_url", ""),
+        "acknowledgements": license_info.get("acknowledgements", ""),
         "query_params": query_params,
     }
 
