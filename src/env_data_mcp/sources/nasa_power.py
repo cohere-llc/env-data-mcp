@@ -528,17 +528,25 @@ def _estimate_query_runtime_s(
 
 
 @mcp.tool()
-def nasa_power_merra2_available_variables() -> dict[str, dict[str, str]]:
+def nasa_power_merra2_available_variables() -> dict[str, Any]:
     """Return a list of available NASA POWER MERRA-2 variables with descriptions and units."""
     store = _open_store(DatasetType.MERRA2, TemporalResolution.DAILY)
-    return _get_variable_info(store)
+    variable_info = _get_variable_info(store)
+    return {
+        "data": variable_info,
+        "_meta": build_meta(source="nasa_power", dataset=DatasetType.MERRA2.value),
+    }
 
 
 @mcp.tool()
-def nasa_power_syn1deg_available_variables() -> dict[str, dict[str, str]]:
+def nasa_power_syn1deg_available_variables() -> dict[str, Any]:
     """Return a list of available NASA POWER SYN1deg variables with descriptions and units."""
     store = _open_store(DatasetType.SYN1DEG, TemporalResolution.DAILY)
-    return _get_variable_info(store)
+    variable_info = _get_variable_info(store)
+    return {
+        "data": variable_info,
+        "_meta": build_meta(source="nasa_power", dataset=DatasetType.SYN1DEG.value),
+    }
 
 
 @mcp.tool()
