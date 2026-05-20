@@ -13,7 +13,7 @@ from typing import Any
 
 import httpx
 
-from env_data_mcp.helpers import build_meta, check_runtime, clamp_bbox, parse_date
+from env_data_mcp.helpers import build_meta, check_runtime, parse_date
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -187,14 +187,12 @@ def gbif_occurrences(
         "max_runtime_s": max_runtime_s,
     }
     deg = radius_km / 111.0
-    bbox = clamp_bbox(
-        {
-            "min_lat": latitude - deg,
-            "max_lat": latitude + deg,
-            "min_lon": longitude - deg,
-            "max_lon": longitude + deg,
-        }
-    )
+    bbox = {
+        "min_lat": latitude - deg,
+        "max_lat": latitude + deg,
+        "min_lon": longitude - deg,
+        "max_lon": longitude + deg,
+    }
     query_params["resolved_min_lat"] = bbox["min_lat"]
     query_params["resolved_max_lat"] = bbox["max_lat"]
     query_params["resolved_min_lon"] = bbox["min_lon"]
@@ -288,9 +286,7 @@ def gbif_bbox_occurrences(
         "limit": limit,
         "max_runtime_s": max_runtime_s,
     }
-    bbox = clamp_bbox(
-        {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
-    )
+    bbox = {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
     query_params.update(bbox)
     try:
         _sd = parse_date(start_date)

@@ -21,7 +21,6 @@ from env_data_mcp.helpers import (
     auth_missing_response,
     build_meta,
     check_runtime,
-    clamp_bbox,
     parse_date,
 )
 from env_data_mcp.server import mcp
@@ -394,9 +393,7 @@ def essdive_bbox_query(
             query_params=query_params,
         )
 
-    bbox = clamp_bbox(
-        {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
-    )
+    bbox = {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
 
     try:
         # API bbox format: min_lat,min_lon,max_lat,max_lon

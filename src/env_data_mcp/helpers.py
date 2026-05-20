@@ -11,7 +11,7 @@ import json
 import math
 import pathlib
 import re
-import warnings
+from collections.abc import Mapping
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -111,6 +111,7 @@ def check_runtime(
     n_days: int,
     area_deg2: float,
     max_runtime_s: float | None = None,
+    scale_factor: float = 1.0,
 ) -> dict[str, Any] | None:
     """Return a slow-query warning dict if the estimated runtime exceeds the threshold.
 
@@ -125,12 +126,13 @@ def check_runtime(
         n_days: Number of calendar days in the query window.
         area_deg2: Bounding-box area in square degrees (0 for point queries).
         max_runtime_s: User-supplied acceptable runtime in seconds, or ``None``.
+        scale_factor: Optional multiplier to apply to the estimate.
 
     Returns:
         ``None`` if the estimate is under the threshold, otherwise a response
         dict with ``data=[]`` and a ``_meta`` block describing the estimate.
     """
-    t_est = estimate_runtime(source, n_days, area_deg2)
+    t_est = estimate_runtime(source, n_days, area_deg2) * scale_factor
     threshold = max_runtime_s * 1.2 if max_runtime_s is not None else _DEFAULT_RUNTIME_THRESHOLD_S
     if t_est < threshold:
         return None
@@ -217,53 +219,15 @@ def bbox_to_wkt_polygon(bbox: dict[str, float]) -> str:
     )
 
 
-def clamp_bbox(bbox: dict[str, float], *, max_degrees: float = 10.0) -> dict[str, float]:
-    """Return the bbox unchanged if within limits; otherwise warn and clamp.
+def bbox_area_deg2(bbox: dict[str, float]) -> float:
+    """Return the approximate area of a bounding box in square degrees.
 
-    Each dimension (lat span, lon span) is clamped independently to
-    max_degrees, centred on the bbox centroid.
+    Note: This is a simple approximation and does not account for the Earth's curvature.
     """
-    lat_span = bbox["max_lat"] - bbox["min_lat"]
-    lon_span = bbox["max_lon"] - bbox["min_lon"]
-
-    if lat_span <= max_degrees and lon_span <= max_degrees:
-        return bbox
-
-    warnings.warn(
-        f"Bounding box ({lat_span:.2f}° lat × {lon_span:.2f}° lon) exceeds "
-        f"max_degrees={max_degrees}. Clamping each oversized dimension to "
-        f"{max_degrees}° centred on the bbox centroid.",
-        UserWarning,
-        stacklevel=2,
-    )
-
-    clat, clon = bbox_centroid(bbox)
-    half = max_degrees / 2.0
-    result = dict(bbox)
-
-    if lat_span > max_degrees:
-        result["min_lat"] = clat - half
-        result["max_lat"] = clat + half
-        # Shift window back into valid latitude range [-90, 90] while preserving span.
-        if result["max_lat"] > 90.0:
-            result["min_lat"] -= result["max_lat"] - 90.0
-            result["max_lat"] = 90.0
-        elif result["min_lat"] < -90.0:
-            result["max_lat"] += -90.0 - result["min_lat"]
-            result["min_lat"] = -90.0
-
-    if lon_span > max_degrees:
-        result["min_lon"] = clon - half
-        result["max_lon"] = clon + half
-        # Shift window back into valid longitude range [-180, 180] while preserving span.
-        if result["max_lon"] > 180.0:
-            result["min_lon"] -= result["max_lon"] - 180.0
-            result["max_lon"] = 180.0
-        elif result["min_lon"] < -180.0:
-            result["max_lon"] += -180.0 - result["min_lon"]
-            result["min_lon"] = -180.0
-
-    return result
+    max_lon = bbox["max_lon"] if bbox["max_lon"] >= bbox["min_lon"] else bbox["max_lon"] + 360.0
+    lat_diff = bbox["max_lat"] - bbox["min_lat"]
+    lon_diff = max_lon - bbox["min_lon"]
+    return lat_diff * lon_diff
 
 
 # ---------------------------------------------------------------------------
@@ -276,7 +240,7 @@ def build_meta(
     query_params: dict[str, Any],
     rows_returned: int,
     latency_s: float,
-    license_info: dict[str, str],
+    license_info: Mapping[str, str | list[str]],
     *,
     auth_required: bool = False,
     auth_present: bool = True,
@@ -318,6 +282,11 @@ def build_meta(
         "error": error,
         "license": license_info.get("license", ""),
         "license_url": license_info.get("license_url", ""),
+        "citation": license_info.get("citation", ""),
+        "citation_urls": license_info.get("citation_urls", []),
+        "description": license_info.get("description", ""),
+        "description_url": license_info.get("description_url", ""),
+        "acknowledgements": license_info.get("acknowledgements", ""),
         "query_params": query_params,
     }
 

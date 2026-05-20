@@ -43,7 +43,7 @@ import rasterio
 from rasterio.env import Env
 from rasterio.windows import from_bounds
 
-from env_data_mcp.helpers import bbox_centroid, build_meta, check_runtime, clamp_bbox, parse_date
+from env_data_mcp.helpers import bbox_centroid, build_meta, check_runtime, parse_date
 from env_data_mcp.server import mcp
 
 # ---------------------------------------------------------------------------
@@ -458,9 +458,7 @@ def sentinel5p_bbox_query(
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
-        bbox = clamp_bbox(
-            {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
-        )
+        bbox = {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
         area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
         if warn := check_runtime("sentinel5p", n_days, area_deg2, max_runtime_s):
             return warn

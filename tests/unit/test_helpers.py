@@ -7,17 +7,16 @@ All tests are offline — no network calls are made.
 from __future__ import annotations
 
 import datetime
-import warnings
 
 import pytest
 
 from env_data_mcp.helpers import (
     auth_missing_response,
+    bbox_area_deg2,
     bbox_centroid,
     bbox_to_wkt_polygon,
     build_meta,
     check_runtime,
-    clamp_bbox,
     estimate_runtime,
     parse_date,
 )
@@ -133,6 +132,33 @@ class TestBboxToWktPolygon:
         inner = wkt[wkt.index("((") + 2 : wkt.rindex("))")]
         coords = [c.strip() for c in inner.split(",")]
         assert len(coords) == 5  # 4 corners + closing repeat
+
+
+# ----------------------------------------------------------------------------
+# bbox_area_deg2
+# ---------------------------------------------------------------------------
+
+
+class TestBboxAreaDeg2:
+    def test_unit_box(self) -> None:
+        area = bbox_area_deg2({"min_lat": 0, "max_lat": 1, "min_lon": 0, "max_lon": 1})
+        assert area == pytest.approx(1.0)
+
+    def test_pnnl_bbox(self) -> None:
+        bbox = {
+            "min_lat": 46.251407,
+            "max_lat": 46.251790,
+            "min_lon": -119.728785,
+            "max_lon": -119.728369,
+        }
+        area = bbox_area_deg2(bbox)
+        expected_area = (46.251790 - 46.251407) * (-119.728369 - -119.728785)
+        assert area == pytest.approx(expected_area)
+
+    def test_crosses_antimeridian(self) -> None:
+        area = bbox_area_deg2({"min_lat": 0, "max_lat": 1, "min_lon": 179, "max_lon": -179})
+        # Should be a 2° wide box crossing the antimeridian → area ≈ 2 deg².
+        assert area == pytest.approx(2.0)
 
 
 # ---------------------------------------------------------------------------
@@ -258,71 +284,6 @@ class TestAuthMissingResponse:
 
 
 # ---------------------------------------------------------------------------
-# clamp_bbox
-# ---------------------------------------------------------------------------
-
-
-class TestClampBbox:
-    def test_no_op_within_bounds(self) -> None:
-        bbox = {"min_lat": 0.0, "max_lat": 1.0, "min_lon": 0.0, "max_lon": 1.0}
-        result = clamp_bbox(bbox, max_degrees=10.0)
-        assert result == bbox
-
-    def test_no_op_exactly_at_limit(self) -> None:
-        bbox = {"min_lat": 0.0, "max_lat": 10.0, "min_lon": 0.0, "max_lon": 10.0}
-        result = clamp_bbox(bbox, max_degrees=10.0)
-        assert result == bbox
-
-    def test_clamps_oversized_lat_and_warns(self) -> None:
-        bbox = {"min_lat": 0.0, "max_lat": 20.0, "min_lon": 0.0, "max_lon": 1.0}
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            result = clamp_bbox(bbox, max_degrees=10.0)
-        assert len(caught) == 1
-        assert issubclass(caught[0].category, UserWarning)
-        lat_span = result["max_lat"] - result["min_lat"]
-        assert lat_span == pytest.approx(10.0)
-
-    def test_clamps_oversized_lon_and_warns(self) -> None:
-        bbox = {"min_lat": 0.0, "max_lat": 1.0, "min_lon": 0.0, "max_lon": 25.0}
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            result = clamp_bbox(bbox, max_degrees=10.0)
-        assert len(caught) == 1
-        lon_span = result["max_lon"] - result["min_lon"]
-        assert lon_span == pytest.approx(10.0)
-
-    def test_clamps_only_oversized_dimension(self) -> None:
-        # lat is fine (1°), lon is oversized (25°)
-        bbox = {"min_lat": 0.0, "max_lat": 1.0, "min_lon": 0.0, "max_lon": 25.0}
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            result = clamp_bbox(bbox, max_degrees=10.0)
-        # Lat dimension should be unchanged.
-        assert result["min_lat"] == 0.0
-        assert result["max_lat"] == 1.0
-
-    def test_centred_on_original_centroid(self) -> None:
-        # Centroid of [0, 20] is 10.0; after clamping to 10° → [5, 15].
-        bbox = {"min_lat": 0.0, "max_lat": 20.0, "min_lon": 0.0, "max_lon": 1.0}
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            result = clamp_bbox(bbox, max_degrees=10.0)
-        assert result["min_lat"] == pytest.approx(5.0)
-        assert result["max_lat"] == pytest.approx(15.0)
-
-    def test_pnnl_bbox_not_clamped(self) -> None:
-        bbox = {
-            "min_lat": 46.251407,
-            "max_lat": 46.251790,
-            "min_lon": -119.728785,
-            "max_lon": -119.728369,
-        }
-        result = clamp_bbox(bbox)
-        assert result == bbox
-
-
-# ---------------------------------------------------------------------------
 # estimate_runtime
 # ---------------------------------------------------------------------------
 
@@ -405,17 +366,33 @@ class TestEstimateRuntime:
 # ---------------------------------------------------------------------------
 # check_runtime
 # ---------------------------------------------------------------------------
+# Uses the "_test" sentinel source from timing_model.json:
+#   alpha=2.0, beta_n_days=1.0, beta_area_deg2=0.5  (no runtime override)
+#   t(n, a) = 2.0 + 1.0·n + 0.5·a
+#
+# Key boundary values (default threshold = 30.0 s):
+#   t(1,  0) =  3.0  → passes
+#   t(27, 0) = 29.0  → passes
+#   t(28, 0) = 30.0  → blocks  (not strictly < 30)
+#   t(0, 56) = 30.0  → blocks  (area term alone reaches threshold)
 
 
 class TestCheckRuntime:
     def test_returns_none_when_under_default_threshold(self) -> None:
-        # A tiny GBIF query (1 day, 0 area) should be well under 30 s.
-        result = check_runtime("gbif", n_days=1, area_deg2=0.0, max_runtime_s=None)
-        assert result is None
+        # t(1, 0) = 3.0 < 30.0 → None
+        assert check_runtime("_test", n_days=1, area_deg2=0.0) is None
 
-    def test_returns_warning_dict_when_over_default_threshold(self) -> None:
-        # A 365-day GBIF query in a large area should clearly exceed 30 s.
-        result = check_runtime("gbif", n_days=365, area_deg2=200.0, max_runtime_s=None)
+    def test_just_under_threshold_passes(self) -> None:
+        # t(27, 0) = 29.0 < 30.0 → None
+        assert check_runtime("_test", n_days=27, area_deg2=0.0) is None
+
+    def test_at_threshold_blocks(self) -> None:
+        # t(28, 0) = 30.0, threshold = 30.0 → 30.0 < 30.0 is False → blocks
+        assert check_runtime("_test", n_days=28, area_deg2=0.0) is not None
+
+    def test_returns_warning_dict_structure(self) -> None:
+        # t(28, 0) = 30.0 → warning; verify full schema
+        result = check_runtime("_test", n_days=28, area_deg2=0.0)
         assert result is not None
         assert result["data"] == []
         meta = result["_meta"]
@@ -424,84 +401,69 @@ class TestCheckRuntime:
         assert "estimated_runtime_s" in meta
         assert "threshold_s" in meta
         assert "message" in meta
-        assert "max_runtime_s=" in meta["message"]
+
+    def test_estimated_runtime_exact(self) -> None:
+        # t(28, 0) = 2.0 + 28 + 0 = 30.0
+        result = check_runtime("_test", n_days=28, area_deg2=0.0)
+        assert result is not None
+        assert result["_meta"]["estimated_runtime_s"] == pytest.approx(30.0)
+
+    def test_area_term_contributes_to_estimate(self) -> None:
+        # t(0, 20) = 2.0 + 0 + 10.0 = 12.0 < 30.0 → passes
+        assert check_runtime("_test", n_days=0, area_deg2=20.0) is None
+        # t(0, 56) = 2.0 + 0 + 28.0 = 30.0 → blocks
+        result = check_runtime("_test", n_days=0, area_deg2=56.0)
+        assert result is not None
+        assert result["_meta"]["estimated_runtime_s"] == pytest.approx(30.0)
+
+    def test_default_threshold_is_30s(self) -> None:
+        result = check_runtime("_test", n_days=28, area_deg2=0.0)
+        assert result is not None
+        assert result["_meta"]["threshold_s"] == pytest.approx(30.0)
 
     def test_max_runtime_s_gate_allows_query(self) -> None:
-        # Passing a large max_runtime_s means the 20% grace puts threshold at 12 s.
-        # A 7-day GBIF query should be well under 12 s threshold.
-        result = check_runtime("gbif", n_days=1, area_deg2=0.0, max_runtime_s=100.0)
-        assert result is None
+        # threshold = 10.0 * 1.2 = 12.0;  t(5, 0) = 7.0 < 12.0 → None
+        assert check_runtime("_test", n_days=5, area_deg2=0.0, max_runtime_s=10.0) is None
 
-    def test_max_runtime_s_gate_blocks_slow_query(self) -> None:
-        # Passing max_runtime_s=0.0 means threshold = 0.0 * 1.2 = 0.0 s.
-        # Any source with alpha > 0 should trigger the warning.
-        result = check_runtime("gbif", n_days=1, area_deg2=0.0, max_runtime_s=0.0)
+    def test_max_runtime_s_gate_blocks_query(self) -> None:
+        # threshold = 10.0 * 1.2 = 12.0;  t(10, 0) = 12.0 → not < 12.0 → blocks
+        result = check_runtime("_test", n_days=10, area_deg2=0.0, max_runtime_s=10.0)
         assert result is not None
         assert result["_meta"]["slow_query_warning"] is True
 
     def test_threshold_is_max_runtime_times_1p2(self) -> None:
-        # check that the threshold in the returned meta = max_runtime_s * 1.2
-        result = check_runtime("gbif", n_days=365, area_deg2=200.0, max_runtime_s=1.0)
+        # threshold = 5.0 * 1.2 = 6.0;  t(28, 0) = 30.0 ≥ 6.0 → blocks
+        result = check_runtime("_test", n_days=28, area_deg2=0.0, max_runtime_s=5.0)
         assert result is not None
-        assert result["_meta"]["threshold_s"] == pytest.approx(1.2, abs=0.01)
+        assert result["_meta"]["threshold_s"] == pytest.approx(6.0)
+
+    def test_max_runtime_s_zero_blocks_any_nonzero_alpha(self) -> None:
+        # threshold = 0.0 * 1.2 = 0.0;  t(0, 0) = 2.0 ≥ 0.0 → blocks
+        result = check_runtime("_test", n_days=0, area_deg2=0.0, max_runtime_s=0.0)
+        assert result is not None
+        assert result["_meta"]["slow_query_warning"] is True
 
     def test_unknown_source_never_blocks(self) -> None:
         # estimate_runtime returns 0.0 for unknown sources → always passes.
-        result = check_runtime("no_such_source", n_days=9999, area_deg2=9999.0)
-        assert result is None
+        assert check_runtime("no_such_source", n_days=9999, area_deg2=9999.0) is None
 
     def test_latency_s_is_zero(self) -> None:
-        result = check_runtime("gbif", n_days=365, area_deg2=200.0)
+        result = check_runtime("_test", n_days=28, area_deg2=0.0)
         assert result is not None
         assert result["_meta"]["latency_s"] == 0.0
 
-    def test_headroom_suggestion_in_message(self) -> None:
-        result = check_runtime("gbif", n_days=365, area_deg2=200.0)
+    def test_headroom_suggestion_exact(self) -> None:
+        # t_est=30.0; headroom = int(30.0 * 1.25) + 1 = 37 + 1 = 38
+        result = check_runtime("_test", n_days=28, area_deg2=0.0)
         assert result is not None
-        msg = result["_meta"]["message"]
-        # Should suggest a specific max_runtime_s value.
-        assert "max_runtime_s=" in msg
+        assert "max_runtime_s=38" in result["_meta"]["message"]
 
-    def test_clamp_near_north_pole_stays_within_valid_range(self) -> None:
-        # Centroid = 90, naive clamp to 10° would give max_lat = 95.
-        # Fix must shift window down to [80, 90] and preserve span.
-        bbox = {"min_lat": 82.0, "max_lat": 98.0, "min_lon": 0.0, "max_lon": 1.0}
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            result = clamp_bbox(bbox, max_degrees=10.0)
-        assert result["max_lat"] == pytest.approx(90.0)
-        assert result["min_lat"] == pytest.approx(80.0)
-        assert result["max_lat"] - result["min_lat"] == pytest.approx(10.0)
+    def test_scale_factor_blocks_otherwise_passing_query(self) -> None:
+        # t(5, 0) = 7.0; 7.0 * 5.0 = 35.0 ≥ 30.0 → blocks
+        result = check_runtime("_test", n_days=5, area_deg2=0.0, scale_factor=5.0)
+        assert result is not None
+        assert result["_meta"]["estimated_runtime_s"] == pytest.approx(35.0)
 
-    def test_clamp_near_south_pole_stays_within_valid_range(self) -> None:
-        # Centroid = -90, naive clamp to 10° would give min_lat = -95.
-        # Fix must shift window up to [-90, -80] and preserve span.
-        bbox = {"min_lat": -98.0, "max_lat": -82.0, "min_lon": 0.0, "max_lon": 1.0}
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            result = clamp_bbox(bbox, max_degrees=10.0)
-        assert result["min_lat"] == pytest.approx(-90.0)
-        assert result["max_lat"] == pytest.approx(-80.0)
-        assert result["max_lat"] - result["min_lat"] == pytest.approx(10.0)
-
-    def test_clamp_near_antimeridian_stays_within_valid_range(self) -> None:
-        # Centroid lon = 178, naive clamp to 10° would give max_lon = 183.
-        # Fix must shift window left to [170, 180] and preserve span.
-        bbox = {"min_lat": 0.0, "max_lat": 1.0, "min_lon": 160.0, "max_lon": 196.0}
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            result = clamp_bbox(bbox, max_degrees=10.0)
-        assert result["max_lon"] == pytest.approx(180.0)
-        assert result["min_lon"] == pytest.approx(170.0)
-        assert result["max_lon"] - result["min_lon"] == pytest.approx(10.0)
-
-    def test_clamp_near_western_antimeridian_stays_within_valid_range(self) -> None:
-        # Centroid lon = -178, naive clamp to 10° would give min_lon = -183.
-        # Fix must shift window right to [-180, -170] and preserve span.
-        bbox = {"min_lat": 0.0, "max_lat": 1.0, "min_lon": -196.0, "max_lon": -160.0}
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            result = clamp_bbox(bbox, max_degrees=10.0)
-        assert result["min_lon"] == pytest.approx(-180.0)
-        assert result["max_lon"] == pytest.approx(-170.0)
-        assert result["max_lon"] - result["min_lon"] == pytest.approx(10.0)
+    def test_scale_factor_allows_otherwise_blocking_query(self) -> None:
+        # t(28, 0) = 30.0; 30.0 * 0.9 = 27.0 < 30.0 → None
+        assert check_runtime("_test", n_days=28, area_deg2=0.0, scale_factor=0.9) is None

@@ -134,15 +134,3 @@ Required acknowledgment in any publication:
 The license for each dataset is retrieved at query time from the ESS-DIVE
 metadata API and propagated in `_meta.license`. Check the per-dataset
 metadata for citation requirements.
-
----
-
-## Google Earth Engine datasets
-
-**Tool**: `gee_query`  
-**License**: Varies per dataset  
-**Terms**: https://developers.google.com/earth-engine/datasets  
-
-The license for each GEE dataset is dataset-specific. `_meta.license`
-attempts to extract the license from the Earth Engine catalog metadata.
-Always verify the license for the specific dataset used in your project.
