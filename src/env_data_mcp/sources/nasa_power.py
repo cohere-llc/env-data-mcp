@@ -1,6 +1,6 @@
 """NASA POWER MERRA-2 and CERES SYN1deg data adapter.
 
-Data source: Unsigned HTTPS Zarr at ``https://nasa-power.s3.amazonaws.com/`` via fsspec's HTTPFileSystem
+Data source: Unsigned HTTPS Zarr at ``https://nasa-power.s3.amazonaws.com/``
 Coverage: Global, 1980–present
 Auth required: No
 
