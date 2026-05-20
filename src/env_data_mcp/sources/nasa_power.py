@@ -203,7 +203,11 @@ def _open_store(
     source = FsspecStore.from_url(
         _ZARR_URLS[dataset_type][temporal_resolution],
         read_only=True,
-        storage_options={"anon": True},
+        # skip_instance_cache=True: bypass s3fs's global instance cache so we
+        # always get a fresh anon=True filesystem, even if another library on
+        # the same process (e.g. on a Lakehouse node) has already cached a
+        # credentialed S3FileSystem instance under the same key.
+        storage_options={"anon": True, "skip_instance_cache": True},
     )
     try:
         from zarr.experimental.cache_store import CacheStore
