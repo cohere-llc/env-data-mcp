@@ -141,8 +141,8 @@ SYN1DEG_INFO: dict[str, str] = {
 # ----------------------------------------------------------------------------
 
 # Use virtual-hosted HTTPS URLs rather than s3:// so that fsspec routes reads
-# through its HTTPFileSystem (plain aiohttp GET requests) instead of through
-# aiobotocore.  This means the AWS SDK credential chain is never invoked, which
+# through its HTTPFileSystem / unsigned HTTPS access path instead of through
+# aiobotocore. This means boto credential resolution is never invoked, which
 # prevents "Access Denied" errors on environments (e.g. Lakehouse/EKS) where
 # IRSA injects AWS credentials that the NASA POWER public-bucket policy rejects.
 _ZARR_BASE = "https://nasa-power.s3.amazonaws.com"
