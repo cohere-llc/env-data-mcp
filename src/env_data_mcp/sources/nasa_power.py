@@ -1,6 +1,6 @@
 """NASA POWER MERRA-2 and CERES SYN1deg data adapter.
 
-Data source: Anonymous S3 Zarr at ``s3://nasa-power/``
+Data source: Unsigned HTTPS Zarr at ``https://nasa-power.s3.amazonaws.com/``
 Coverage: Global, 1980–present
 Auth required: No
 
@@ -140,20 +140,28 @@ SYN1DEG_INFO: dict[str, str] = {
 # Store URLs
 # ----------------------------------------------------------------------------
 
+# Use virtual-hosted HTTPS URLs rather than s3:// so that fsspec routes reads
+# through its HTTPFileSystem / unsigned HTTPS access path instead of through
+# aiobotocore. This means boto credential resolution is never invoked, which
+# prevents "Access Denied" errors on environments (e.g. Lakehouse/EKS) where
+# IRSA injects AWS credentials that the NASA POWER public-bucket policy rejects.
+_ZARR_BASE = "https://nasa-power.s3.amazonaws.com"
+_M2 = f"{_ZARR_BASE}/merra2/spatial"
+_S1 = f"{_ZARR_BASE}/syn1deg/spatial"
 _ZARR_URLS = {
     DatasetType.MERRA2: {
-        TemporalResolution.HOURLY: "s3://nasa-power/merra2/spatial/power_merra2_hourly_spatial_utc.zarr",
-        TemporalResolution.DAILY: "s3://nasa-power/merra2/spatial/power_merra2_daily_spatial_utc.zarr",
-        TemporalResolution.MONTHLY: "s3://nasa-power/merra2/spatial/power_merra2_monthly_spatial_utc.zarr",
-        TemporalResolution.ANNUAL: "s3://nasa-power/merra2/spatial/power_merra2_annual_spatial_utc.zarr",
-        TemporalResolution.CLIMATOLOGY: "s3://nasa-power/merra2/spatial/power_merra2_climatology_spatial_utc.zarr",
+        TemporalResolution.HOURLY: f"{_M2}/power_merra2_hourly_spatial_utc.zarr",
+        TemporalResolution.DAILY: f"{_M2}/power_merra2_daily_spatial_utc.zarr",
+        TemporalResolution.MONTHLY: f"{_M2}/power_merra2_monthly_spatial_utc.zarr",
+        TemporalResolution.ANNUAL: f"{_M2}/power_merra2_annual_spatial_utc.zarr",
+        TemporalResolution.CLIMATOLOGY: f"{_M2}/power_merra2_climatology_spatial_utc.zarr",
     },
     DatasetType.SYN1DEG: {
-        TemporalResolution.HOURLY: "s3://nasa-power/syn1deg/spatial/power_syn1deg_hourly_spatial_utc.zarr",
-        TemporalResolution.DAILY: "s3://nasa-power/syn1deg/spatial/power_syn1deg_daily_spatial_utc.zarr",
-        TemporalResolution.MONTHLY: "s3://nasa-power/syn1deg/spatial/power_syn1deg_monthly_spatial_utc.zarr",
-        TemporalResolution.ANNUAL: "s3://nasa-power/syn1deg/spatial/power_syn1deg_annual_spatial_utc.zarr",
-        TemporalResolution.CLIMATOLOGY: "s3://nasa-power/syn1deg/spatial/power_syn1deg_climatology_spatial_utc.zarr",
+        TemporalResolution.HOURLY: f"{_S1}/power_syn1deg_hourly_spatial_utc.zarr",
+        TemporalResolution.DAILY: f"{_S1}/power_syn1deg_daily_spatial_utc.zarr",
+        TemporalResolution.MONTHLY: f"{_S1}/power_syn1deg_monthly_spatial_utc.zarr",
+        TemporalResolution.ANNUAL: f"{_S1}/power_syn1deg_annual_spatial_utc.zarr",
+        TemporalResolution.CLIMATOLOGY: f"{_S1}/power_syn1deg_climatology_spatial_utc.zarr",
     },
 }
 
@@ -203,7 +211,6 @@ def _open_store(
     source = FsspecStore.from_url(
         _ZARR_URLS[dataset_type][temporal_resolution],
         read_only=True,
-        storage_options={"anon": True},
     )
     try:
         from zarr.experimental.cache_store import CacheStore
