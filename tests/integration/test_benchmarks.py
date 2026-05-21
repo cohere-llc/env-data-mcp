@@ -39,7 +39,7 @@ from env_data_mcp.sources.oco2 import oco2_bbox_query, oco2_query
 from env_data_mcp.sources.openaq import openaq_bbox_query, openaq_query
 from env_data_mcp.sources.sentinel5p import sentinel5p_bbox_query, sentinel5p_query
 from env_data_mcp.sources.soilgrids import soilgrids_bbox_query, soilgrids_query
-from env_data_mcp.sources.ssurgo import ssurgo_bbox_query, ssurgo_query
+from env_data_mcp.sources.ssurgo import ssurgo_soil_profile_bbox_query, ssurgo_soil_profile_query
 
 # ---------------------------------------------------------------------------
 # Reference location & time windows
@@ -531,7 +531,7 @@ def test_soilgrids_point_bbox_consistent():
 @pytest.mark.integration
 @pytest.mark.benchmark
 def test_ssurgo_timing():
-    result = ssurgo_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
     if not result["_meta"].get("success"):
         pytest.skip(f"SSURGO query failed: {result['_meta'].get('error')}")
     _record("ssurgo", "point", 0, result)
@@ -542,7 +542,7 @@ def test_ssurgo_timing():
 @pytest.mark.benchmark
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 def test_ssurgo_bbox_timing(bz):
-    result = ssurgo_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]))
+    result = ssurgo_soil_profile_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]))
     if not result["_meta"].get("success"):
         pytest.skip(f"ssurgo/bbox/{bz['name']}: {result['_meta'].get('error')}")
     _record("ssurgo", f"bbox/{bz['name']}", 0, result, area_deg2=bz["area_deg2"])
@@ -553,7 +553,7 @@ def test_ssurgo_bbox_timing(bz):
 @pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_ssurgo_extra_location_timing(loc):
-    result = ssurgo_query(latitude=loc["lat"], longitude=loc["lon"])
+    result = ssurgo_soil_profile_query(latitude=loc["lat"], longitude=loc["lon"])
     if not result["_meta"].get("success"):
         pytest.skip(f"ssurgo/{loc['name']}: no data (US-only)")
     _record("ssurgo", "point", 0, result, location=loc["name"])
@@ -564,8 +564,8 @@ def test_ssurgo_extra_location_timing(loc):
 @pytest.mark.benchmark
 def test_ssurgo_point_bbox_consistent():
     """Centroid-based: small bbox must return identical records to point query."""
-    pt = ssurgo_query(latitude=_LAT, longitude=_LON)
-    bx = ssurgo_bbox_query(**_BBOX)
+    pt = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    bx = ssurgo_soil_profile_bbox_query(**_BBOX)
     if not pt["_meta"].get("success") or not bx["_meta"].get("success"):
         pytest.skip("SSURGO returned no data for this location")
     assert pt["data"] == bx["data"], "ssurgo point/bbox results differ (centroid-based)"

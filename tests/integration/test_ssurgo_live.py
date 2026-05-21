@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from env_data_mcp.sources.ssurgo import _NO_COVERAGE_MSG, ssurgo_query
+from env_data_mcp.sources.ssurgo import _NO_COVERAGE_MSG, ssurgo_soil_profile_query
 
 pytestmark = pytest.mark.integration
 
@@ -22,14 +22,14 @@ _NON_US_LON = 2.3522
 
 @pytest.mark.integration
 def test_ssurgo_query_live_us_point_returns_data():
-    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_US_LAT, longitude=_US_LON)
     assert result["_meta"]["success"] is True
     assert len(result["data"]) > 0
 
 
 @pytest.mark.integration
 def test_ssurgo_query_live_us_point_has_expected_columns():
-    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_US_LAT, longitude=_US_LON)
     row = result["data"][0]
     for col in ("mukey", "muname", "compname", "hzdepb_r", "sandtotal_r"):
         assert col in row, f"Missing column: {col}"
@@ -38,7 +38,7 @@ def test_ssurgo_query_live_us_point_has_expected_columns():
 @pytest.mark.integration
 def test_ssurgo_query_live_us_point_sand_plausible():
     """Sand fraction for Yakima Valley soils should be > 0."""
-    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_US_LAT, longitude=_US_LON)
     sand_vals = [
         float(r["sandtotal_r"]) for r in result["data"] if r.get("sandtotal_r") is not None
     ]
@@ -48,7 +48,7 @@ def test_ssurgo_query_live_us_point_sand_plausible():
 
 @pytest.mark.integration
 def test_ssurgo_query_live_non_us_graceful_empty():
-    result = ssurgo_query(latitude=_NON_US_LAT, longitude=_NON_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_NON_US_LAT, longitude=_NON_US_LON)
     assert result["_meta"]["success"] is True
     assert result["data"] == []
     assert result["_meta"]["error"] == _NO_COVERAGE_MSG
@@ -56,7 +56,7 @@ def test_ssurgo_query_live_non_us_graceful_empty():
 
 @pytest.mark.integration
 def test_ssurgo_query_live_meta_fields():
-    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_US_LAT, longitude=_US_LON)
     meta = result["_meta"]
     assert meta["source"] == "ssurgo"
     assert meta["auth_required"] is False
@@ -70,7 +70,7 @@ def test_ssurgo_query_live_meta_fields():
 
 @pytest.mark.integration
 def test_ssurgo_schema_expected_columns():
-    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_US_LAT, longitude=_US_LON)
     if not result["data"]:
         pytest.skip("No SSURGO data returned for this point")
     row = result["data"][0]
@@ -82,7 +82,7 @@ def test_ssurgo_schema_expected_columns():
 @pytest.mark.integration
 def test_ssurgo_schema_depth_physical_range():
     """Horizon bottom depth must be positive and < 500 cm."""
-    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_US_LAT, longitude=_US_LON)
     for row in result["data"]:
         depth = row.get("hzdepb_r")
         if depth is not None:
@@ -93,7 +93,7 @@ def test_ssurgo_schema_depth_physical_range():
 
 @pytest.mark.integration
 def test_ssurgo_schema_variable_info_present():
-    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_US_LAT, longitude=_US_LON)
     meta = result["_meta"]
     assert "variable_info" in meta, "SSURGO: _meta.variable_info missing"
     vi = meta["variable_info"]
@@ -102,7 +102,7 @@ def test_ssurgo_schema_variable_info_present():
 
 @pytest.mark.integration
 def test_ssurgo_schema_license_present():
-    result = ssurgo_query(latitude=_US_LAT, longitude=_US_LON)
+    result = ssurgo_soil_profile_query(latitude=_US_LAT, longitude=_US_LON)
     meta = result["_meta"]
     assert meta["license"] != "", "SSURGO: _meta.license is empty"
     assert meta["license_url"] != "", "SSURGO: _meta.license_url is empty"
