@@ -586,7 +586,7 @@ def ssurgo_soil_suitability_available_variables() -> dict[str, Any]:
     """
     t0 = time.perf_counter()
     try:
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client(timeout=90.0) as client:
             resp = client.post(_SDA_URL, data={"query": _SOIL_SUITABILITY_RULES_SQL})
             resp.raise_for_status()
         latency = time.perf_counter() - t0

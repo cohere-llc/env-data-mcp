@@ -70,8 +70,8 @@ def test_soil_temperature_query_row_fields(httpx_mock):
     assert row["mukey"] == "2764208"
     assert row["compname"] == "Ritzville"
     assert row["month"] == "January"
-    assert row["dept_r"] == "25"
-    assert row["soiltempmnth_r"] == "2.5"
+    assert row["soitempdept_r"] == "25"
+    assert row["soitempmm"] == "2.5"
 
 
 def test_soil_temperature_query_meta_query_type(httpx_mock):
@@ -110,8 +110,8 @@ def test_soil_temperature_query_variable_info_in_meta(httpx_mock):
 
 def test_soil_temperature_default_variables_contains_expected():
     assert "month" in DEFAULT_SOIL_TEMPERATURE_VARIABLES
-    assert "dept_r" in DEFAULT_SOIL_TEMPERATURE_VARIABLES
-    assert "soiltempmnth_r" in DEFAULT_SOIL_TEMPERATURE_VARIABLES
+    assert "soitempdept_r" in DEFAULT_SOIL_TEMPERATURE_VARIABLES
+    assert "soitempmm" in DEFAULT_SOIL_TEMPERATURE_VARIABLES
 
 
 # ---------------------------------------------------------------------------

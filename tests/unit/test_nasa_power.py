@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import zarr
+import zarr.storage
 from pydantic import ValidationError
 
 import env_data_mcp.sources.nasa_power as _nasa_power_mod
@@ -1170,20 +1171,20 @@ class TestClimDateLabel:
 
     def test_january(self):
         t = pd.Timestamp("1970-01-02")  # day=2 → slot 1 = January
-        assert _clim_date_label(t) == "month-01"
+        assert _clim_date_label(t) == "month-01"  # type: ignore[arg-type]
 
     def test_december(self):
         t = pd.Timestamp("1970-01-13")  # day=13 → slot 12 = December
-        assert _clim_date_label(t) == "month-12"
+        assert _clim_date_label(t) == "month-12"  # type: ignore[arg-type]
 
     def test_annual(self):
         t = pd.Timestamp("1970-01-14")  # day=14 → slot 13 = annual
-        assert _clim_date_label(t) == "annual"
+        assert _clim_date_label(t) == "annual"  # type: ignore[arg-type]
 
     def test_all_monthly_slots(self):
         for slot in range(1, 13):
             t = pd.Timestamp("1970-01-01") + pd.Timedelta(days=slot)
-            assert _clim_date_label(t) == f"month-{slot:02d}"
+            assert _clim_date_label(t) == f"month-{slot:02d}"  # type: ignore[arg-type]
 
 
 class TestClimTimeMask:

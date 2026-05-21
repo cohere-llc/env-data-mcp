@@ -504,7 +504,9 @@ def test_get_fill_value_numpy_array():
         ds.attrs["_FillValue"] = fill_arr
     buf.seek(0)
     with h5py.File(buf, "r") as hf:
-        result = _get_fill_value(hf["XCO2"])
+        _ds = hf["XCO2"]
+        assert isinstance(_ds, h5py.Dataset)
+        result = _get_fill_value(_ds)
     assert result == pytest.approx(-9999.0)
 
 

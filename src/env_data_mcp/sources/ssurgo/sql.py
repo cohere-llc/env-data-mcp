@@ -6,7 +6,9 @@ import re
 
 from ._client import _get_column_table_map
 
-_RULE_NAME_RE = re.compile(r"^[A-Za-z0-9 \-\(\)\.,/&%]+$")
+_RULE_NAME_RE = re.compile(
+    r"^[\x20-\x7E]+$"
+)  # all printable ASCII; single-quotes are escaped below
 
 
 def _sanitize_variable(var: str) -> str:
@@ -194,4 +196,4 @@ def _build_soil_temperature_sql(wkt: str, variables: list[str]) -> str:
         )
         AND component.majcompflag = 'Yes'
         ORDER BY mapunit.mukey, component.cokey,
-                 comonth.comonthkey, cosoiltemp.dept_r"""
+                 comonth.comonthkey, cosoiltemp.soitempdept_r"""

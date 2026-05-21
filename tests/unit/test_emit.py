@@ -151,6 +151,7 @@ def test_decode_mineral_names():
     content = _make_lat_lon_nc4()
     with h5py.File(io.BytesIO(content), "r") as hf:
         ds = hf["mineral_metadata/mineral_name"]
+        assert isinstance(ds, h5py.Dataset)
         names = _decode_mineral_names(ds)
     assert names == _MINERAL_NAMES
 
@@ -164,6 +165,7 @@ def test_decode_mineral_names_bytes():
     buf.seek(0)
     with h5py.File(buf, "r") as hf:
         ds = hf["mineral_name"]
+        assert isinstance(ds, h5py.Dataset)
         names = _decode_mineral_names(ds)
     assert names == ["Calcite", "Kaolinite"]
 

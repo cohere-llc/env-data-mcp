@@ -58,9 +58,6 @@ DEFAULT_AREA_SUMMARY_VARIABLES: list[str] = [
     "drclassdcd",
     "hydgrpdcd",
     "aws0150wta",
-    "soc0_999wta",
-    "nccpi3all",
-    "pctearthmc",
     "flodfreqdcd",
     "wtdepannmin",
 ]
@@ -124,8 +121,6 @@ DEFAULT_ECOLOGICAL_SITE_VARIABLES: list[str] = [
     "majcompflag",
     "ecoclassid",
     "ecoclassname",
-    "ecosubclcd",
-    "ecotype",
 ]
 
 # ---------------------------------------------------------------------------
@@ -153,10 +148,9 @@ DEFAULT_SOIL_TEMPERATURE_VARIABLES: list[str] = [
     "compname",
     "comppct_r",
     "month",
-    "dept_r",
-    "soiltempmnth_r",
-    "soiltempmnth_l",
-    "soiltempmnth_h",
+    "soitempdept_r",
+    "soitempdepb_r",
+    "soitempmm",
 ]
 
 # ---------------------------------------------------------------------------

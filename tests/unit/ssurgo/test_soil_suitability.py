@@ -92,11 +92,11 @@ def test_soil_suitability_query_http_error_returns_failure(httpx_mock):
 
 
 def test_soil_suitability_query_invalid_rule_name_returns_error():
-    """A rule name containing SQL-unsafe characters must be rejected."""
+    """A rule name containing control characters must be rejected."""
     result = ssurgo_soil_suitability_query(
         latitude=_LAT,
         longitude=_LON,
-        rule_names=["ENG - Dwellings'; DROP TABLE component --"],
+        rule_names=["ENG - Dwellings\x00; DROP TABLE component"],
     )
     assert result["_meta"]["success"] is False
     assert "Invalid rule name" in result["_meta"]["error"]

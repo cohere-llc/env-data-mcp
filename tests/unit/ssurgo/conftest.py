@@ -182,12 +182,13 @@ _COLUMN_TABLE_MAP_TEST_DATA: dict[str, str] = {
     "pmorigin": "copm",
     "pmmodified": "copm",
     # cosoiltemp
-    "dept_r": "cosoiltemp",
-    "dept_l": "cosoiltemp",
-    "dept_h": "cosoiltemp",
-    "soiltempmnth_r": "cosoiltemp",
-    "soiltempmnth_l": "cosoiltemp",
-    "soiltempmnth_h": "cosoiltemp",
+    "soitempdept_l": "cosoiltemp",
+    "soitempdept_r": "cosoiltemp",
+    "soitempdept_h": "cosoiltemp",
+    "soitempdepb_l": "cosoiltemp",
+    "soitempdepb_r": "cosoiltemp",
+    "soitempdepb_h": "cosoiltemp",
+    "soitempmm": "cosoiltemp",
 }
 
 # ---------------------------------------------------------------------------
@@ -422,10 +423,9 @@ SOIL_TEMP_XML = textwrap.dedent("""\
         <compname>Ritzville</compname>
         <comppct_r>75</comppct_r>
         <month>January</month>
-        <dept_r>25</dept_r>
-        <soiltempmnth_r>2.5</soiltempmnth_r>
-        <soiltempmnth_l>1.8</soiltempmnth_l>
-        <soiltempmnth_h>3.2</soiltempmnth_h>
+        <soitempdept_r>25</soitempdept_r>
+        <soitempdepb_r>50</soitempdepb_r>
+        <soitempmm>2.5</soitempmm>
       </Table>
       <Table>
         <mukey>2764208</mukey>
@@ -433,10 +433,9 @@ SOIL_TEMP_XML = textwrap.dedent("""\
         <compname>Ritzville</compname>
         <comppct_r>75</comppct_r>
         <month>July</month>
-        <dept_r>25</dept_r>
-        <soiltempmnth_r>21.0</soiltempmnth_r>
-        <soiltempmnth_l>19.5</soiltempmnth_l>
-        <soiltempmnth_h>22.5</soiltempmnth_h>
+        <soitempdept_r>25</soitempdept_r>
+        <soitempdepb_r>50</soitempdepb_r>
+        <soitempmm>21.0</soitempmm>
       </Table>
     </NewDataSet>
 """)
