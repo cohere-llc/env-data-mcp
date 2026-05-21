@@ -11,6 +11,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_area_summary_bbox_query,
     ssurgo_area_summary_query,
 )
+from env_data_mcp.sources.ssurgo.constants import _AREA_SUMMARY_AVAIL_SQL
 
 from .conftest import (
     _LAT,
@@ -21,13 +22,13 @@ from .conftest import (
     _MIN_LON,
     _SDA_URL,
     AREA_SUMMARY_XML,
-    AVAIL_XML,
     EMPTY_XML,
+    add_schema_responses,
 )
 
 
 def test_area_summary_available_variables_returns_variables_key(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, text=AVAIL_XML)
+    add_schema_responses(httpx_mock, _AREA_SUMMARY_AVAIL_SQL)
     result = ssurgo_area_summary_available_variables()
     assert "variables" in result
     assert "_meta" in result

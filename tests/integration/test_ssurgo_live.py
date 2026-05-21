@@ -288,6 +288,42 @@ class TestAvailableVariables:
             " — SDA schema change?"
         )
 
+    def test_more_than_defaults_available(self, qc: _QueryCase):
+        """SDA exposes additional columns beyond the curated default set."""
+        if qc.uses_rule_names:
+            pytest.skip("soil_suitability uses rule_names, not variable columns")
+        result = qc.avail_fn()
+        all_vars = [v["variable"] for t_vars in result["variables"].values() for v in t_vars]
+        assert len(all_vars) > len(qc.default_vars), (
+            f"{qc.label}: expected more columns than the {len(qc.default_vars)} defaults,"
+            f" but only got {len(all_vars)}"
+        )
+
+    def test_each_entry_has_variable_name_and_metadata(self, qc: _QueryCase):
+        """Every entry has a non-empty 'variable', 'label', and 'units' field.
+
+        Labels and units are parsed from the SDA Tables and Columns Report PDF
+        (``TablesAndColumnsReport.pdf``) downloaded once per process.  Units
+        may legitimately be empty for dimensionless quantities such as pH; for
+        those columns the ``units`` key is absent from the entry rather than
+        present with an empty value.
+        """
+        if qc.uses_rule_names:
+            pytest.skip("soil_suitability uses rule_names, not variable columns")
+        result = qc.avail_fn()
+        for table, entries in result["variables"].items():
+            for entry in entries:
+                assert entry.get("variable"), (
+                    f"{qc.label}/{table}: entry missing non-empty 'variable': {entry!r}"
+                )
+                assert entry.get("label"), (
+                    f"{qc.label}/{table}: entry missing non-empty 'label': {entry!r}"
+                )
+                if "units" in entry:
+                    assert entry["units"], (
+                        f"{qc.label}/{table}: entry has empty 'units' string: {entry!r}"
+                    )
+
 
 class TestPointQueryStructure:
     """Baseline default-variable point query: structure and meta fields."""

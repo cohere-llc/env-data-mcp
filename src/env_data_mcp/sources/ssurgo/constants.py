@@ -12,9 +12,10 @@ LICENSE_INFO: dict[str, str] = {
         "https://www.nrcs.usda.gov/resources/data-and-reports/"
         "soil-survey-geographic-database-ssurgo"
     ),
-    "citation": "USDA-NRCS (2024). Web Soil Survey. "
-    "Soil Survey Geographic Database (SSURGO). "
-    "https://websoilsurvey.nrcs.usda.gov",
+    "citation": "Soil Survey Staff, Natural Resources Conservation Service, "
+    "United States Department of Agriculture. Web Soil Survey. Available online "
+    "at https://websoilsurvey.nrcs.usda.gov/. Accessed [month/day/year].",
+    "description_url": "https://www.nrcs.usda.gov/resources/data-and-reports/soil-survey-geographic-database-ssurgo",
 }
 
 _SDA_URL = "https://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService/post.rest"

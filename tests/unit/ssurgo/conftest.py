@@ -6,9 +6,15 @@ import textwrap
 
 import pytest
 
-from env_data_mcp.sources.ssurgo._client import _COLUMN_TABLE_CACHE, _VARIABLE_INFO_CACHE
+import env_data_mcp.sources.ssurgo._client as _ssurgo_client
+from env_data_mcp.sources.ssurgo._client import (
+    _COLUMN_TABLE_CACHE,
+    _PDF_COL_METADATA_CACHE,
+    _VARIABLE_INFO_CACHE,
+)
 from env_data_mcp.sources.ssurgo.constants import (
     _AREA_SUMMARY_AVAIL_SQL,
+    _AVAIL_SQL_TABLES,
     _ECOLOGICAL_SITE_AVAIL_SQL,
     _PARENT_MATERIAL_AVAIL_SQL,
     _SEASONAL_HYDROLOGY_AVAIL_SQL,
@@ -22,6 +28,28 @@ from env_data_mcp.sources.ssurgo.constants import (
 # ---------------------------------------------------------------------------
 
 _SDA_URL = "https://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService/post.rest"
+
+
+# ---------------------------------------------------------------------------
+# Cache management: clear all SSURGO module-level caches before each test.
+# _PDF_COL_METADATA_LOADED is set to True so that _load_column_metadata()
+# returns the (empty) cache immediately without attempting a network call.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _clear_ssurgo_caches() -> object:
+    """Reset all SSURGO module-level caches around each unit test."""
+    _VARIABLE_INFO_CACHE.clear()
+    _COLUMN_TABLE_CACHE.clear()
+    _PDF_COL_METADATA_CACHE.clear()
+    _ssurgo_client._PDF_COL_METADATA_LOADED = True  # suppress PDF download
+    yield
+    _VARIABLE_INFO_CACHE.clear()
+    _COLUMN_TABLE_CACHE.clear()
+    _PDF_COL_METADATA_CACHE.clear()
+    _ssurgo_client._PDF_COL_METADATA_LOADED = False
+
 
 # ---------------------------------------------------------------------------
 # Test-time column → table seed data (mirrors the schema queried by
@@ -209,32 +237,63 @@ _MAX_LON = -119.728369
 
 EMPTY_XML = '<?xml version="1.0" encoding="utf-8"?><NewDataSet />'
 
-AVAIL_XML = textwrap.dedent("""\
-    <?xml version="1.0" encoding="utf-8"?>
-    <NewDataSet>
-      <Table>
-        <tabphyname>chorizon</tabphyname>
-        <colphyname>sandtotal_r</colphyname>
-        <collogname>Total Sand - Rep Value</collogname>
-        <coldesc>The total sand content of the less than 2 mm fraction.</coldesc>
-        <uomabbrev>%</uomabbrev>
-      </Table>
-      <Table>
-        <tabphyname>mapunit</tabphyname>
-        <colphyname>muname</colphyname>
-        <collogname>Map Unit Name</collogname>
-        <coldesc>Name assigned to a map unit.</coldesc>
-        <uomabbrev>NULL</uomabbrev>
-      </Table>
-      <Table>
-        <tabphyname>component</tabphyname>
-        <colphyname>drainagecl</colphyname>
-        <collogname>Drainage Class</collogname>
-        <coldesc>The natural drainage condition of the soil.</coldesc>
-        <uomabbrev>NULL</uomabbrev>
-      </Table>
-    </NewDataSet>
-""")
+
+def _schema_xml(*cols: str) -> str:
+    """Build a minimal XSD-embedded SDA response for the given column names.
+
+    Mirrors the format returned by ``SELECT TOP 1 * FROM <table>`` so that
+    ``_sda_table_columns`` can parse column names from it in unit tests without
+    making real network calls.
+    """
+    elements = "\n                ".join(
+        f'<xs:element name="{c}" type="xs:string" minOccurs="0" />' for c in cols
+    )
+    return textwrap.dedent(f"""\
+        <?xml version="1.0" encoding="utf-8"?>
+        <NewDataSet>
+          <xs:schema id="NewDataSet" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+            <xs:element name="NewDataSet" msdata:IsDataSet="true">
+              <xs:complexType>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                  <xs:element name="Table">
+                    <xs:complexType>
+                      <xs:sequence>
+                        {elements}
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:choice>
+              </xs:complexType>
+            </xs:element>
+          </xs:schema>
+        </NewDataSet>
+    """)
+
+
+# Minimal per-table XSD schema responses (column names only; no metadata).
+TABLE_SCHEMA_XMLS: dict[str, str] = {
+    "mapunit": _schema_xml("mukey", "muname"),
+    "component": _schema_xml("cokey", "compname", "comppct_r"),
+    "chorizon": _schema_xml("hzdept_r", "sandtotal_r", "claytotal_r"),
+    "muaggatt": _schema_xml("drclassdcd", "hydgrpdcd", "aws025wta"),
+    "corestrictions": _schema_xml("reskind", "resdept_r"),
+    "comonth": _schema_xml("month", "flodfreqcl"),
+    "cosoilmoist": _schema_xml("soimoistdept_r", "soimoiststat"),
+    "cosoiltemp": _schema_xml("soitempdept_r", "soitempdepb_r"),
+    "coecoclass": _schema_xml("ecoclassid", "ecoclassname"),
+    "copmgrp": _schema_xml("pmgroupname", "rvindicator"),
+    "copm": _schema_xml("pmkind", "pmorigin"),
+}
+
+
+def add_schema_responses(httpx_mock: object, avail_sql: str) -> None:
+    """Register one mock schema response per table for the given avail_sql key."""
+    for table in _AVAIL_SQL_TABLES[avail_sql]:
+        httpx_mock.add_response(  # type: ignore[attr-defined]
+            method="POST", url=_SDA_URL, text=TABLE_SCHEMA_XMLS[table]
+        )
+
 
 YAKIMA_XML = textwrap.dedent("""\
     <?xml version="1.0" encoding="utf-8"?>

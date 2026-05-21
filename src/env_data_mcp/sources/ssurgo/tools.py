@@ -52,22 +52,24 @@ from .sql import (
 
 
 def _available_vars_response(avail_sql: str, query_type: str) -> dict[str, Any]:
-    """Query SDA column metadata and return variables grouped by table."""
+    """Discover available columns via XSD schema introspection, grouped by table.
+
+    Columns are enriched with ``label`` and ``units`` parsed from the SDA
+    Tables and Columns Report PDF when available.
+    """
     t0 = time.perf_counter()
     try:
         info = _get_variable_info(avail_sql)
         latency = time.perf_counter() - t0
         by_table: dict[str, list[dict[str, Any]]] = {}
         for col, meta in info.items():
-            table = meta["table"] or "unknown"
-            by_table.setdefault(table, []).append(
-                {
-                    "variable": col,
-                    "label": meta["label"],
-                    "description": meta["description"],
-                    "units": meta["units"],
-                }
-            )
+            table = meta.get("table") or "unknown"
+            entry: dict[str, Any] = {"variable": col}
+            if label := meta.get("label"):
+                entry["label"] = label
+            if units := meta.get("units"):
+                entry["units"] = units
+            by_table.setdefault(table, []).append(entry)
         return {
             "variables": by_table,
             "_meta": build_meta(

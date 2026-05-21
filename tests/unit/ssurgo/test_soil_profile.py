@@ -22,14 +22,14 @@ from .conftest import (
     _MIN_LAT,
     _MIN_LON,
     _SDA_URL,
-    AVAIL_XML,
     EMPTY_XML,
     YAKIMA_XML,
+    add_schema_responses,
 )
 
 
 def test_soil_profile_available_variables_returns_variables_key(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, text=AVAIL_XML)
+    add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
     result = ssurgo_soil_profile_available_variables()
     assert "variables" in result
     assert "_meta" in result
@@ -39,19 +39,18 @@ def test_soil_profile_available_variables_returns_variables_key(httpx_mock):
 
 
 def test_soil_profile_available_variables_entry_structure(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, text=AVAIL_XML)
+    add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
     result = ssurgo_soil_profile_available_variables()
-    entry = result["variables"]["chorizon"][0]
-    assert entry["variable"] == "sandtotal_r"
-    assert entry["label"] == "Total Sand - Rep Value"
-    assert entry["units"] == "%"
+    chorizon_vars = {e["variable"] for e in result["variables"]["chorizon"]}
+    assert "sandtotal_r" in chorizon_vars
+    assert all("variable" in e for e in result["variables"]["chorizon"])
 
 
 def test_soil_profile_available_variables_meta_success(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, text=AVAIL_XML)
+    add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
     result = ssurgo_soil_profile_available_variables()
     assert result["_meta"]["success"] is True
-    assert result["_meta"]["rows_returned"] == 3
+    assert result["_meta"]["rows_returned"] > 0
 
 
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
@@ -114,19 +113,13 @@ def test_soil_profile_query_http_error_returns_failure(httpx_mock):
 
 def test_soil_profile_query_variable_info_in_meta(httpx_mock):
     _VARIABLE_INFO_CACHE[_SOIL_PROFILE_AVAIL_SQL] = {
-        "sandtotal_r": {
-            "table": "chorizon",
-            "label": "Total Sand - Rep Value",
-            "description": "The total sand content of the less than 2 mm fraction.",
-            "units": "%",
-        },
+        "sandtotal_r": {"table": "chorizon"},
     }
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
     result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
     info = result["_meta"]["variable_info"]
     assert "sandtotal_r" in info
-    assert info["sandtotal_r"]["description"] != ""
-    assert info["sandtotal_r"]["units"] == "%"
+    assert info["sandtotal_r"]["table"] == "chorizon"
 
 
 def test_soil_profile_query_sand_in_valid_range(httpx_mock):

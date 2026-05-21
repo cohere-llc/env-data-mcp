@@ -20,6 +20,7 @@ dependencies = [
     "dask[dataframe]>=2026.3.0",
     "h5py>=3.16.0",
     "rasterio>=1.4.4",
+    "pdfplumber>=0.11.9",
 ]
 
 [project.optional-dependencies]

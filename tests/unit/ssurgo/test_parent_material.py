@@ -10,6 +10,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_parent_material_bbox_query,
     ssurgo_parent_material_query,
 )
+from env_data_mcp.sources.ssurgo.constants import _PARENT_MATERIAL_AVAIL_SQL
 
 from .conftest import (
     _LAT,
@@ -19,9 +20,9 @@ from .conftest import (
     _MIN_LAT,
     _MIN_LON,
     _SDA_URL,
-    AVAIL_XML,
     EMPTY_XML,
     PARENT_MAT_XML,
+    add_schema_responses,
 )
 
 # ---------------------------------------------------------------------------
@@ -30,7 +31,7 @@ from .conftest import (
 
 
 def test_parent_material_available_variables_returns_variables_key(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, text=AVAIL_XML)
+    add_schema_responses(httpx_mock, _PARENT_MATERIAL_AVAIL_SQL)
     result = ssurgo_parent_material_available_variables()
     assert "variables" in result
     assert "_meta" in result

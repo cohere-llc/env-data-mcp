@@ -10,6 +10,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_ecological_site_bbox_query,
     ssurgo_ecological_site_query,
 )
+from env_data_mcp.sources.ssurgo.constants import _ECOLOGICAL_SITE_AVAIL_SQL
 
 from .conftest import (
     _LAT,
@@ -19,9 +20,9 @@ from .conftest import (
     _MIN_LAT,
     _MIN_LON,
     _SDA_URL,
-    AVAIL_XML,
     ECOCLASS_XML,
     EMPTY_XML,
+    add_schema_responses,
 )
 
 # ---------------------------------------------------------------------------
@@ -30,7 +31,7 @@ from .conftest import (
 
 
 def test_ecological_site_available_variables_returns_variables_key(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, text=AVAIL_XML)
+    add_schema_responses(httpx_mock, _ECOLOGICAL_SITE_AVAIL_SQL)
     result = ssurgo_ecological_site_available_variables()
     assert "variables" in result
     assert "_meta" in result
