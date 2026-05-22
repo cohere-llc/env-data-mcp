@@ -36,7 +36,7 @@ from .conftest import (
 def test_soil_temperature_available_variables_structure(httpx_mock):
     add_schema_responses(httpx_mock, _SOIL_TEMPERATURE_AVAIL_SQL)
     result = ssurgo_soil_temperature_available_variables()
-    assert "variables" in result
+    assert "data" in result
     assert "_meta" in result
 
 
@@ -51,7 +51,7 @@ def test_soil_temperature_available_variables_http_error(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
     result = ssurgo_soil_temperature_available_variables()
     assert result["_meta"]["success"] is False
-    assert result["variables"] == {}
+    assert result["data"] == {}
 
 
 # ---------------------------------------------------------------------------

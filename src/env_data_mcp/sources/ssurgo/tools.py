@@ -52,26 +52,24 @@ from .sql import (
 
 
 def _available_vars_response(avail_sql: str, query_type: str) -> dict[str, Any]:
-    """Discover available columns via XSD schema introspection, grouped by table.
+    """Discover available columns via XSD schema introspection.
 
-    Columns are enriched with ``label`` and ``units`` parsed from the SDA
+    Columns are enriched with ``description`` and ``units`` parsed from the SDA
     Tables and Columns Report PDF when available.
     """
     t0 = time.perf_counter()
     try:
         info = _get_variable_info(avail_sql)
         latency = time.perf_counter() - t0
-        by_table: dict[str, list[dict[str, Any]]] = {}
-        for col, meta in info.items():
-            table = meta.get("table") or "unknown"
-            entry: dict[str, Any] = {"variable": col}
-            if label := meta.get("label"):
-                entry["label"] = label
-            if units := meta.get("units"):
-                entry["units"] = units
-            by_table.setdefault(table, []).append(entry)
+        flat: dict[str, dict[str, Any]] = {
+            col: {
+                "description": meta.get("label") or "",
+                "units": meta.get("units") or "",
+            }
+            for col, meta in info.items()
+        }
         return {
-            "variables": by_table,
+            "data": flat,
             "_meta": build_meta(
                 source="ssurgo",
                 query_params={"query_type": query_type},
@@ -83,7 +81,7 @@ def _available_vars_response(avail_sql: str, query_type: str) -> dict[str, Any]:
     except Exception as exc:
         latency = time.perf_counter() - t0
         return {
-            "variables": {},
+            "data": {},
             "_meta": build_meta(
                 source="ssurgo",
                 query_params={"query_type": query_type},
@@ -138,7 +136,14 @@ def _point_query(
         full_info = _get_variable_info(avail_sql)
         sql = sql_builder(wkt, vars_)
         records, latency = _fetch_sda(sql)
-        vinfo = {v: full_info[v] for v in vars_ if v in full_info}
+        vinfo = {
+            v: {
+                "description": full_info[v].get("label", ""),
+                "units": full_info[v].get("units", ""),
+            }
+            for v in vars_
+            if v in full_info
+        }
         return {
             "data": records,
             "_meta": build_meta(
@@ -216,7 +221,14 @@ def _bbox_query(
         full_info = _get_variable_info(avail_sql)
         sql = sql_builder(wkt, vars_)
         records, latency = _fetch_sda(sql)
-        vinfo = {v: full_info[v] for v in vars_ if v in full_info}
+        vinfo = {
+            v: {
+                "description": full_info[v].get("label", ""),
+                "units": full_info[v].get("units", ""),
+            }
+            for v in vars_
+            if v in full_info
+        }
         return {
             "data": records,
             "_meta": build_meta(

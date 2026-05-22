@@ -31,19 +31,18 @@ from .conftest import (
 def test_soil_profile_available_variables_returns_variables_key(httpx_mock):
     add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
     result = ssurgo_soil_profile_available_variables()
-    assert "variables" in result
+    assert "data" in result
     assert "_meta" in result
-    assert "chorizon" in result["variables"]
-    assert "mapunit" in result["variables"]
-    assert "component" in result["variables"]
+    assert "sandtotal_r" in result["data"]
+    assert "mukey" in result["data"]
+    assert "compname" in result["data"]
 
 
 def test_soil_profile_available_variables_entry_structure(httpx_mock):
     add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
     result = ssurgo_soil_profile_available_variables()
-    chorizon_vars = {e["variable"] for e in result["variables"]["chorizon"]}
-    assert "sandtotal_r" in chorizon_vars
-    assert all("variable" in e for e in result["variables"]["chorizon"])
+    assert "sandtotal_r" in result["data"]
+    assert all("description" in e for e in result["data"].values())
 
 
 def test_soil_profile_available_variables_meta_success(httpx_mock):
@@ -58,7 +57,7 @@ def test_soil_profile_available_variables_http_error(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
     result = ssurgo_soil_profile_available_variables()
     assert result["_meta"]["success"] is False
-    assert result["variables"] == {}
+    assert result["data"] == {}
 
 
 def test_soil_profile_query_success_structure(httpx_mock):
@@ -113,13 +112,15 @@ def test_soil_profile_query_http_error_returns_failure(httpx_mock):
 
 def test_soil_profile_query_variable_info_in_meta(httpx_mock):
     _VARIABLE_INFO_CACHE[_SOIL_PROFILE_AVAIL_SQL] = {
-        "sandtotal_r": {"table": "chorizon"},
+        "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
     }
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
     result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
     info = result["_meta"]["variable_info"]
     assert "sandtotal_r" in info
-    assert info["sandtotal_r"]["table"] == "chorizon"
+    assert info["sandtotal_r"]["description"] == "Sand Total"
+    assert info["sandtotal_r"]["units"] == "%"
+    assert "table" not in info["sandtotal_r"]
 
 
 def test_soil_profile_query_sand_in_valid_range(httpx_mock):

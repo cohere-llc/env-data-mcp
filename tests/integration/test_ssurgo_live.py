@@ -249,12 +249,12 @@ class TestAvailableVariables:
 
     def test_returns_nonempty(self, qc: _QueryCase):
         result = qc.avail_fn()
-        key = "rule_names" if qc.uses_rule_names else "variables"
+        key = "rule_names" if qc.uses_rule_names else "data"
         assert len(result[key]) > 0, f"{qc.label}: avail result is empty"
 
     def test_result_key_present(self, qc: _QueryCase):
         result = qc.avail_fn()
-        key = "rule_names" if qc.uses_rule_names else "variables"
+        key = "rule_names" if qc.uses_rule_names else "data"
         assert key in result, f"{qc.label}: expected key '{key}' missing from avail result"
 
     def test_primary_col_listed(self, qc: _QueryCase):
@@ -265,7 +265,7 @@ class TestAvailableVariables:
                 f"{qc.label}: none of the default rule names found in SDA cointerp"
             )
         else:
-            all_vars = [v["variable"] for t_vars in result["variables"].values() for v in t_vars]
+            all_vars = list(result["data"].keys())
             assert qc.primary_col in all_vars, (
                 f"{qc.label}: primary_col '{qc.primary_col}' absent from available variables"
                 " — SDA schema change?"
@@ -281,7 +281,7 @@ class TestAvailableVariables:
         if qc.uses_rule_names:
             pytest.skip("soil_suitability uses rule_names, not variable columns")
         result = qc.avail_fn()
-        all_vars = [v["variable"] for t_vars in result["variables"].values() for v in t_vars]
+        all_vars = list(result["data"].keys())
         missing = [v for v in qc.default_vars if v not in all_vars]
         assert not missing, (
             f"{qc.label}: default variables missing from available set: {missing}"
@@ -293,36 +293,29 @@ class TestAvailableVariables:
         if qc.uses_rule_names:
             pytest.skip("soil_suitability uses rule_names, not variable columns")
         result = qc.avail_fn()
-        all_vars = [v["variable"] for t_vars in result["variables"].values() for v in t_vars]
+        all_vars = list(result["data"].keys())
         assert len(all_vars) > len(qc.default_vars), (
             f"{qc.label}: expected more columns than the {len(qc.default_vars)} defaults,"
             f" but only got {len(all_vars)}"
         )
 
     def test_each_entry_has_variable_name_and_metadata(self, qc: _QueryCase):
-        """Every entry has a non-empty 'variable', 'label', and 'units' field.
+        """Every entry has non-empty 'description' and a 'units' key.
 
-        Labels and units are parsed from the SDA Tables and Columns Report PDF
-        (``TablesAndColumnsReport.pdf``) downloaded once per process.  Units
-        may legitimately be empty for dimensionless quantities such as pH; for
-        those columns the ``units`` key is absent from the entry rather than
-        present with an empty value.
+        Descriptions and units are parsed from the SDA Tables and Columns
+        Report PDF (``TablesAndColumnsReport.pdf``) downloaded once per
+        process.  Units may legitimately be empty for dimensionless quantities
+        such as pH; the key is always present but may be an empty string.
         """
         if qc.uses_rule_names:
             pytest.skip("soil_suitability uses rule_names, not variable columns")
         result = qc.avail_fn()
-        for table, entries in result["variables"].items():
-            for entry in entries:
-                assert entry.get("variable"), (
-                    f"{qc.label}/{table}: entry missing non-empty 'variable': {entry!r}"
-                )
-                assert entry.get("label"), (
-                    f"{qc.label}/{table}: entry missing non-empty 'label': {entry!r}"
-                )
-                if "units" in entry:
-                    assert entry["units"], (
-                        f"{qc.label}/{table}: entry has empty 'units' string: {entry!r}"
-                    )
+        for col, entry in result["data"].items():
+            assert col, f"{qc.label}: empty column name in available variables"
+            assert entry.get("description"), (
+                f"{qc.label}: column '{col}' missing non-empty 'description'"
+            )
+            assert "units" in entry, f"{qc.label}: column '{col}' missing 'units' key"
 
 
 class TestPointQueryStructure:
@@ -631,3 +624,64 @@ class TestSchemaStability:
                 f"{qc.label}: {col}={v} outside expected range"
                 f" [{qc.plausible_lo}, {qc.plausible_hi}] — fill value or unit change?"
             )
+
+
+class TestAvailableVariablesRoundtrip:
+    """Verify that non-default variables returned by available_variables can be
+    used directly in point and bbox query functions.
+
+    For each query type, this test calls ``avail_fn()`` to discover available
+    variables, selects up to three columns that are *not* in the curated
+    default set, then issues a live query with those non-default columns and
+    asserts the query succeeds and returns data.  This proves the full
+    discovery → selection → query workflow end-to-end.
+    """
+
+    def test_avail_variables_usable_in_point_query(self, qc: _QueryCase):
+        if qc.uses_rule_names:
+            pytest.skip(f"{qc.label}: soil_suitability uses rule_names, not variable columns")
+        avail = qc.avail_fn()
+        assert avail["_meta"]["success"] is True, (
+            f"{qc.label}: avail_fn() failed — {avail['_meta'].get('error')}"
+        )
+        default_set = set(qc.default_vars)
+        non_default = [v for v in avail["data"] if v not in default_set][:3]
+        if not non_default:
+            pytest.skip(f"{qc.label}: no non-default variables found in avail result")
+        result = qc.point_fn(
+            latitude=_LAT,
+            longitude=_LON,
+            variables=non_default,
+            max_runtime_s=120.0,
+        )
+        assert result["_meta"]["success"] is True, (
+            f"{qc.label}: point query with non-default vars {non_default} failed"
+            f" — {result['_meta'].get('error')}"
+        )
+        assert len(result["data"]) > 0, (
+            f"{qc.label}: expected data rows for non-default vars {non_default} but got none"
+        )
+
+    def test_avail_variables_usable_in_bbox_query(self, qc: _QueryCase):
+        if qc.uses_rule_names:
+            pytest.skip(f"{qc.label}: soil_suitability uses rule_names, not variable columns")
+        avail = qc.avail_fn()
+        assert avail["_meta"]["success"] is True, (
+            f"{qc.label}: avail_fn() failed — {avail['_meta'].get('error')}"
+        )
+        default_set = set(qc.default_vars)
+        non_default = [v for v in avail["data"] if v not in default_set][:3]
+        if not non_default:
+            pytest.skip(f"{qc.label}: no non-default variables found in avail result")
+        result = qc.bbox_fn(
+            **_BBOX,
+            variables=non_default,
+            max_runtime_s=120.0,
+        )
+        assert result["_meta"]["success"] is True, (
+            f"{qc.label}: bbox query with non-default vars {non_default} failed"
+            f" — {result['_meta'].get('error')}"
+        )
+        assert len(result["data"]) > 0, (
+            f"{qc.label}: expected data rows for non-default vars {non_default} but got none"
+        )

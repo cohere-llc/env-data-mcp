@@ -136,11 +136,11 @@ class TestAvailableVariables:
             " — upstream schema change?"
         )
 
-    def test_primary_var_has_units_and_long_name(self, dc: _DatasetCase):
+    def test_primary_var_has_units_and_description(self, dc: _DatasetCase):
         info = dc.avail_fn()
         entry = info["data"][dc.primary_var]
         assert "units" in entry
-        assert "long_name" in entry
+        assert "description" in entry
 
     def test_all_default_vars_present(self, dc: _DatasetCase):
         info = dc.avail_fn()
@@ -194,7 +194,7 @@ class TestPointQueryStructure:
         vi = baseline_daily["_meta"]["variable_info"]
         assert dc.primary_var in vi
         assert "units" in vi[dc.primary_var]
-        assert "long_name" in vi[dc.primary_var]
+        assert "description" in vi[dc.primary_var]
 
     def test_meta_license_nonempty(self, baseline_daily: dict):
         assert baseline_daily["_meta"]["license"] != ""
@@ -642,7 +642,7 @@ class TestSchemaStability:
         vi = baseline_daily["_meta"]["variable_info"]
         assert dc.primary_var in vi
         assert "units" in vi[dc.primary_var]
-        assert "long_name" in vi[dc.primary_var]
+        assert "description" in vi[dc.primary_var]
 
     def test_meta_license_nonempty(self, baseline_daily: dict):
         assert baseline_daily["_meta"]["license"] != ""

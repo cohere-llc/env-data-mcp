@@ -29,7 +29,7 @@ from .conftest import (
 def test_subsurface_barriers_available_variables_returns_variables_key(httpx_mock):
     add_schema_responses(httpx_mock, _SUBSURFACE_BARRIERS_AVAIL_SQL)
     result = ssurgo_subsurface_barriers_available_variables()
-    assert "variables" in result
+    assert "data" in result
     assert "_meta" in result
 
 
@@ -38,7 +38,7 @@ def test_subsurface_barriers_available_variables_http_error(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
     result = ssurgo_subsurface_barriers_available_variables()
     assert result["_meta"]["success"] is False
-    assert result["variables"] == {}
+    assert result["data"] == {}
 
 
 def test_subsurface_barriers_query_success_structure(httpx_mock):
