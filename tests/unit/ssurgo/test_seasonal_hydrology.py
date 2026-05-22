@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from env_data_mcp.models import AvailableVariablesResponse, GroupedGeometryResponse
 from env_data_mcp.sources.ssurgo import (
     _NO_COVERAGE_MSG,
     ssurgo_seasonal_hydrology_available_variables,
@@ -29,6 +30,7 @@ from .conftest import (
 def test_seasonal_hydrology_available_variables_returns_variables_key(httpx_mock):
     add_schema_responses(httpx_mock, _SEASONAL_HYDROLOGY_AVAIL_SQL)
     result = ssurgo_seasonal_hydrology_available_variables()
+    AvailableVariablesResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
 
@@ -44,9 +46,10 @@ def test_seasonal_hydrology_available_variables_http_error(httpx_mock):
 def test_seasonal_hydrology_query_success_structure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=HYDROLOGY_XML)
     result = ssurgo_seasonal_hydrology_query(latitude=_LAT, longitude=_LON)
+    GroupedGeometryResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
-    assert len(result["data"]) == 2
+    assert len(result["data"]) == 1
 
 
 def test_seasonal_hydrology_query_meta_success(httpx_mock):
@@ -100,5 +103,6 @@ def test_seasonal_hydrology_bbox_query_returns_data(httpx_mock):
     result = ssurgo_seasonal_hydrology_bbox_query(
         min_lat=_MIN_LAT, max_lat=_MAX_LAT, min_lon=_MIN_LON, max_lon=_MAX_LON
     )
+    GroupedGeometryResponse.model_validate(result)
     assert result["_meta"]["success"] is True
-    assert len(result["data"]) == 2
+    assert len(result["data"]) == 1

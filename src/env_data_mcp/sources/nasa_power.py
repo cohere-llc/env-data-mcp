@@ -478,8 +478,9 @@ def _query_bbox(
             row: dict[str, Any] = {
                 "latitude": float(lats[lat_idx]),
                 "longitude": float(lons[lon_idx]),
-                "in_bbox": (min_lat <= lats[lat_idx] <= max_lat)
-                and (min_lon <= lons[lon_idx] <= max_lon),
+                "in_bbox": bool(
+                    (min_lat <= lats[lat_idx] <= max_lat) and (min_lon <= lons[lon_idx] <= max_lon)
+                ),
                 "records": [],
             }
             for i_time, t_val in enumerate(selected_times):

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-21T21:59:05.844817+00:00",
+  "generated_at": "2026-05-22T21:32:08.931488+00:00",
   "note": "Phase 3 \u2014 multiple locations (Yakima WA, Manaus BR, Frankfurt DE), point + bbox queries. Model: t_est(n_days, area_deg2) = alpha + beta_n_days\u00b7n_days + beta_area_deg2\u00b7area_deg2 (seconds). Fit uses only observations with n_records > 0. All coefficients floored at 0 (latency cannot decrease with more data). Centroid-based sources (soilgrids only) have beta_area_deg2 forced to 0 before the floor. Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration",
   "locations": [
     {
@@ -23,11 +23,11 @@
   ],
   "model": {
     "emit": {
-      "alpha": 0.224,
+      "alpha": 0.379,
       "beta_n_days": 0.0,
-      "beta_area_deg2": 0.0011,
-      "r2": 0.3744,
-      "equation": "t \u2248 0.22 + 0.000\u00b7n_days + 0.0011\u00b7area_deg2"
+      "beta_area_deg2": 0.0,
+      "r2": 0.6943,
+      "equation": "t \u2248 0.38 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "essdive": {
       "alpha": 0.913,
@@ -37,53 +37,53 @@
       "equation": "t \u2248 0.91 + 0.000\u00b7n_days + 0.0276\u00b7area_deg2"
     },
     "gbif": {
-      "alpha": 2.208,
-      "beta_n_days": 0.0832,
-      "beta_area_deg2": 0.1646,
-      "r2": 0.6325,
-      "equation": "t \u2248 2.21 + 0.083\u00b7n_days + 0.1646\u00b7area_deg2"
+      "alpha": 2.379,
+      "beta_n_days": 0.0824,
+      "beta_area_deg2": 0.117,
+      "r2": 0.6303,
+      "equation": "t \u2248 2.38 + 0.082\u00b7n_days + 0.1170\u00b7area_deg2"
     },
     "nasa_power": {
-      "alpha": 0.175,
-      "beta_n_days": 0.0084,
-      "beta_area_deg2": 0.0005,
-      "r2": 0.944,
-      "equation": "t \u2248 0.18 + 0.008\u00b7n_days + 0.0005\u00b7area_deg2"
+      "alpha": 0.276,
+      "beta_n_days": 0.011,
+      "beta_area_deg2": 0.0003,
+      "r2": 0.7616,
+      "equation": "t \u2248 0.28 + 0.011\u00b7n_days + 0.0003\u00b7area_deg2"
     },
     "oco2": {
-      "alpha": 2.757,
-      "beta_n_days": 0.0533,
+      "alpha": 3.109,
+      "beta_n_days": 0.1045,
       "beta_area_deg2": 0.0,
-      "r2": 0.4555,
-      "equation": "t \u2248 2.76 + 0.053\u00b7n_days + 0.0000\u00b7area_deg2"
+      "r2": 0.1458,
+      "equation": "t \u2248 3.11 + 0.105\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "openaq": {
-      "alpha": 1.068,
-      "beta_n_days": 0.0,
+      "alpha": 0.837,
+      "beta_n_days": 0.0137,
       "beta_area_deg2": 0.0,
-      "r2": 0.1073,
-      "equation": "t \u2248 1.07 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
+      "r2": 0.3598,
+      "equation": "t \u2248 0.84 + 0.014\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "sentinel5p": {
-      "alpha": 3.151,
-      "beta_n_days": 0.0894,
+      "alpha": 3.607,
+      "beta_n_days": 0.0947,
       "beta_area_deg2": 0.0,
-      "r2": 0.7565,
-      "equation": "t \u2248 3.15 + 0.089\u00b7n_days + 0.0000\u00b7area_deg2"
+      "r2": 0.7215,
+      "equation": "t \u2248 3.61 + 0.095\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "soilgrids": {
-      "alpha": 1.348,
+      "alpha": 1.045,
       "beta_n_days": 0.0,
       "beta_area_deg2": 0.0,
-      "r2": 0.0465,
-      "equation": "t \u2248 1.35 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
+      "r2": 0.9945,
+      "equation": "t \u2248 1.04 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "ssurgo": {
-      "alpha": 1.223,
+      "alpha": 1.315,
       "beta_n_days": 0.0,
-      "beta_area_deg2": 0.1994,
-      "r2": 0.8449,
-      "equation": "t \u2248 1.22 + 0.000\u00b7n_days + 0.1994\u00b7area_deg2"
+      "beta_area_deg2": 0.2225,
+      "r2": 0.8245,
+      "equation": "t \u2248 1.31 + 0.000\u00b7n_days + 0.2225\u00b7area_deg2"
     },
     "_test": {
       "alpha": 2.0,
@@ -100,7 +100,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.326,
+        "latency_s": 0.353,
         "success": true,
         "n_records": 1
       },
@@ -109,7 +109,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.454,
+        "latency_s": 0.539,
         "success": true,
         "n_records": 7
       },
@@ -118,7 +118,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.526,
+        "latency_s": 0.707,
         "success": true,
         "n_records": 31
       },
@@ -127,7 +127,7 @@
         "n_days": 92,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.991,
+        "latency_s": 2.438,
         "success": true,
         "n_records": 92
       },
@@ -136,7 +136,7 @@
         "n_days": 365,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 3.048,
+        "latency_s": 8.422,
         "success": true,
         "n_records": 365
       },
@@ -145,7 +145,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.241,
+        "latency_s": 0.416,
         "success": true,
         "n_records": 9
       },
@@ -154,7 +154,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.393,
+        "latency_s": 0.452,
         "success": true,
         "n_records": 30
       },
@@ -163,7 +163,7 @@
         "n_days": 1,
         "area_deg2": 25.0,
         "location": "yakima_wa",
-        "latency_s": 0.241,
+        "latency_s": 0.444,
         "success": true,
         "n_records": 120
       },
@@ -172,7 +172,7 @@
         "n_days": 1,
         "area_deg2": 100.0,
         "location": "yakima_wa",
-        "latency_s": 0.239,
+        "latency_s": 0.453,
         "success": true,
         "n_records": 396
       },
@@ -181,7 +181,7 @@
         "n_days": 1,
         "area_deg2": 400.0,
         "location": "yakima_wa",
-        "latency_s": 0.256,
+        "latency_s": 0.448,
         "success": true,
         "n_records": 1428
       },
@@ -190,7 +190,7 @@
         "n_days": 1,
         "area_deg2": 900.0,
         "location": "yakima_wa",
-        "latency_s": 0.263,
+        "latency_s": 0.526,
         "success": true,
         "n_records": 3100
       },
@@ -199,7 +199,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.256,
+        "latency_s": 0.465,
         "success": true,
         "n_records": 9
       },
@@ -208,7 +208,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.25,
+        "latency_s": 0.445,
         "success": true,
         "n_records": 30
       },
@@ -217,7 +217,7 @@
         "n_days": 7,
         "area_deg2": 25.0,
         "location": "yakima_wa",
-        "latency_s": 0.266,
+        "latency_s": 0.528,
         "success": true,
         "n_records": 120
       },
@@ -226,7 +226,7 @@
         "n_days": 7,
         "area_deg2": 100.0,
         "location": "yakima_wa",
-        "latency_s": 0.307,
+        "latency_s": 0.449,
         "success": true,
         "n_records": 396
       },
@@ -235,7 +235,7 @@
         "n_days": 7,
         "area_deg2": 400.0,
         "location": "yakima_wa",
-        "latency_s": 0.289,
+        "latency_s": 0.498,
         "success": true,
         "n_records": 1428
       },
@@ -244,7 +244,7 @@
         "n_days": 7,
         "area_deg2": 900.0,
         "location": "yakima_wa",
-        "latency_s": 0.349,
+        "latency_s": 0.428,
         "success": true,
         "n_records": 3100
       },
@@ -253,7 +253,7 @@
         "n_days": 31,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.431,
+        "latency_s": 0.495,
         "success": true,
         "n_records": 9
       },
@@ -262,7 +262,7 @@
         "n_days": 31,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.411,
+        "latency_s": 0.465,
         "success": true,
         "n_records": 30
       },
@@ -271,7 +271,7 @@
         "n_days": 31,
         "area_deg2": 25.0,
         "location": "yakima_wa",
-        "latency_s": 0.447,
+        "latency_s": 0.464,
         "success": true,
         "n_records": 120
       },
@@ -280,7 +280,7 @@
         "n_days": 31,
         "area_deg2": 100.0,
         "location": "yakima_wa",
-        "latency_s": 0.569,
+        "latency_s": 0.487,
         "success": true,
         "n_records": 396
       },
@@ -289,7 +289,7 @@
         "n_days": 31,
         "area_deg2": 400.0,
         "location": "yakima_wa",
-        "latency_s": 0.552,
+        "latency_s": 0.56,
         "success": true,
         "n_records": 1428
       },
@@ -298,7 +298,7 @@
         "n_days": 31,
         "area_deg2": 900.0,
         "location": "yakima_wa",
-        "latency_s": 0.653,
+        "latency_s": 0.697,
         "success": true,
         "n_records": 3100
       },
@@ -307,7 +307,7 @@
         "n_days": 92,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.027,
+        "latency_s": 1.075,
         "success": true,
         "n_records": 9
       },
@@ -316,7 +316,7 @@
         "n_days": 92,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 1.522,
+        "latency_s": 1.143,
         "success": true,
         "n_records": 30
       },
@@ -325,7 +325,7 @@
         "n_days": 92,
         "area_deg2": 25.0,
         "location": "yakima_wa",
-        "latency_s": 0.901,
+        "latency_s": 1.002,
         "success": true,
         "n_records": 120
       },
@@ -334,7 +334,7 @@
         "n_days": 92,
         "area_deg2": 100.0,
         "location": "yakima_wa",
-        "latency_s": 0.956,
+        "latency_s": 0.998,
         "success": true,
         "n_records": 396
       },
@@ -343,7 +343,7 @@
         "n_days": 92,
         "area_deg2": 400.0,
         "location": "yakima_wa",
-        "latency_s": 1.056,
+        "latency_s": 1.204,
         "success": true,
         "n_records": 1428
       },
@@ -352,7 +352,7 @@
         "n_days": 92,
         "area_deg2": 900.0,
         "location": "yakima_wa",
-        "latency_s": 1.335,
+        "latency_s": 1.582,
         "success": true,
         "n_records": 3100
       },
@@ -361,7 +361,7 @@
         "n_days": 365,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 2.62,
+        "latency_s": 2.978,
         "success": true,
         "n_records": 9
       },
@@ -370,7 +370,7 @@
         "n_days": 365,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 3.024,
+        "latency_s": 3.165,
         "success": true,
         "n_records": 30
       },
@@ -379,7 +379,7 @@
         "n_days": 365,
         "area_deg2": 25.0,
         "location": "yakima_wa",
-        "latency_s": 2.789,
+        "latency_s": 2.933,
         "success": true,
         "n_records": 120
       },
@@ -388,7 +388,7 @@
         "n_days": 365,
         "area_deg2": 100.0,
         "location": "yakima_wa",
-        "latency_s": 3.113,
+        "latency_s": 3.484,
         "success": true,
         "n_records": 396
       },
@@ -397,7 +397,7 @@
         "n_days": 365,
         "area_deg2": 400.0,
         "location": "yakima_wa",
-        "latency_s": 3.947,
+        "latency_s": 4.256,
         "success": true,
         "n_records": 1428
       },
@@ -406,7 +406,7 @@
         "n_days": 365,
         "area_deg2": 900.0,
         "location": "yakima_wa",
-        "latency_s": 4.696,
+        "latency_s": 5.337,
         "success": true,
         "n_records": 3100
       },
@@ -415,7 +415,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 0.464,
+        "latency_s": 0.478,
         "success": true,
         "n_records": 31
       },
@@ -424,7 +424,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 0.471,
+        "latency_s": 0.435,
         "success": true,
         "n_records": 31
       }
@@ -435,7 +435,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.988,
+        "latency_s": 1.095,
         "success": true,
         "n_records": 12
       },
@@ -444,7 +444,7 @@
         "n_days": 0,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.164,
+        "latency_s": 1.088,
         "success": true,
         "n_records": 12
       },
@@ -453,7 +453,7 @@
         "n_days": 0,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 1.17,
+        "latency_s": 2.068,
         "success": true,
         "n_records": 12
       },
@@ -462,7 +462,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 1.014,
+        "latency_s": 1.006,
         "success": true,
         "n_records": 12
       },
@@ -471,7 +471,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 1.205,
+        "latency_s": 1.052,
         "success": true,
         "n_records": 12
       }
@@ -482,7 +482,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.384,
+        "latency_s": 0.39,
         "success": true,
         "n_records": 1
       },
@@ -491,330 +491,6 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.48,
-        "success": true,
-        "n_records": 1
-      },
-      {
-        "scenario": "parent_material",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "yakima_wa",
-        "latency_s": 0.419,
-        "success": true,
-        "n_records": 1
-      },
-      {
-        "scenario": "seasonal_hydrology",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "yakima_wa",
-        "latency_s": 0.401,
-        "success": true,
-        "n_records": 12
-      },
-      {
-        "scenario": "soil_profile",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "yakima_wa",
-        "latency_s": 0.394,
-        "success": true,
-        "n_records": 2
-      },
-      {
-        "scenario": "soil_suitability",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "yakima_wa",
-        "latency_s": 0.497,
-        "success": true,
-        "n_records": 2
-      },
-      {
-        "scenario": "soil_temperature",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "yakima_wa",
-        "latency_s": 0.403,
-        "success": true,
-        "n_records": 12
-      },
-      {
-        "scenario": "subsurface_barriers",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "yakima_wa",
-        "latency_s": 0.407,
-        "success": true,
-        "n_records": 1
-      },
-      {
-        "scenario": "area_summary/bbox/0.5x0.5",
-        "n_days": 0,
-        "area_deg2": 0.25,
-        "location": "yakima_wa",
-        "latency_s": 0.612,
-        "success": true,
-        "n_records": 213
-      },
-      {
-        "scenario": "area_summary/bbox/2x2",
-        "n_days": 0,
-        "area_deg2": 4.0,
-        "location": "yakima_wa",
-        "latency_s": 2.272,
-        "success": true,
-        "n_records": 2286
-      },
-      {
-        "scenario": "area_summary/bbox/5x5",
-        "n_days": 0,
-        "area_deg2": 25.0,
-        "location": "yakima_wa",
-        "latency_s": 8.84,
-        "success": true,
-        "n_records": 15024
-      },
-      {
-        "scenario": "area_summary/bbox/10x10",
-        "n_days": 0,
-        "area_deg2": 100.0,
-        "location": "yakima_wa",
-        "latency_s": 16.233,
-        "success": true,
-        "n_records": 32988
-      },
-      {
-        "scenario": "ecological_site/bbox/0.5x0.5",
-        "n_days": 0,
-        "area_deg2": 0.25,
-        "location": "yakima_wa",
-        "latency_s": 0.629,
-        "success": true,
-        "n_records": 238
-      },
-      {
-        "scenario": "ecological_site/bbox/2x2",
-        "n_days": 0,
-        "area_deg2": 4.0,
-        "location": "yakima_wa",
-        "latency_s": 2.509,
-        "success": true,
-        "n_records": 3514
-      },
-      {
-        "scenario": "ecological_site/bbox/5x5",
-        "n_days": 0,
-        "area_deg2": 25.0,
-        "location": "yakima_wa",
-        "latency_s": 11.215,
-        "success": true,
-        "n_records": 39075
-      },
-      {
-        "scenario": "ecological_site/bbox/10x10",
-        "n_days": 0,
-        "area_deg2": 100.0,
-        "location": "yakima_wa",
-        "latency_s": 20.089,
-        "success": true,
-        "n_records": 84988
-      },
-      {
-        "scenario": "parent_material/bbox/0.5x0.5",
-        "n_days": 0,
-        "area_deg2": 0.25,
-        "location": "yakima_wa",
-        "latency_s": 0.704,
-        "success": true,
-        "n_records": 424
-      },
-      {
-        "scenario": "parent_material/bbox/2x2",
-        "n_days": 0,
-        "area_deg2": 4.0,
-        "location": "yakima_wa",
-        "latency_s": 3.176,
-        "success": true,
-        "n_records": 6536
-      },
-      {
-        "scenario": "parent_material/bbox/5x5",
-        "n_days": 0,
-        "area_deg2": 25.0,
-        "location": "yakima_wa",
-        "latency_s": 11.93,
-        "success": true,
-        "n_records": 63900
-      },
-      {
-        "scenario": "seasonal_hydrology/bbox/0.5x0.5",
-        "n_days": 0,
-        "area_deg2": 0.25,
-        "location": "yakima_wa",
-        "latency_s": 1.117,
-        "success": true,
-        "n_records": 2812
-      },
-      {
-        "scenario": "seasonal_hydrology/bbox/2x2",
-        "n_days": 0,
-        "area_deg2": 4.0,
-        "location": "yakima_wa",
-        "latency_s": 4.818,
-        "success": true,
-        "n_records": 36948
-      },
-      {
-        "scenario": "soil_profile/bbox/0.5x0.5",
-        "n_days": 0,
-        "area_deg2": 0.25,
-        "location": "yakima_wa",
-        "latency_s": 0.948,
-        "success": true,
-        "n_records": 755
-      },
-      {
-        "scenario": "soil_profile/bbox/2x2",
-        "n_days": 0,
-        "area_deg2": 4.0,
-        "location": "yakima_wa",
-        "latency_s": 3.404,
-        "success": true,
-        "n_records": 11187
-      },
-      {
-        "scenario": "soil_suitability/bbox/0.5x0.5",
-        "n_days": 0,
-        "area_deg2": 0.25,
-        "location": "yakima_wa",
-        "latency_s": 1.207,
-        "success": true,
-        "n_records": 594
-      },
-      {
-        "scenario": "soil_suitability/bbox/2x2",
-        "n_days": 0,
-        "area_deg2": 4.0,
-        "location": "yakima_wa",
-        "latency_s": 2.989,
-        "success": true,
-        "n_records": 10178
-      },
-      {
-        "scenario": "soil_suitability/bbox/5x5",
-        "n_days": 0,
-        "area_deg2": 25.0,
-        "location": "yakima_wa",
-        "latency_s": 13.78,
-        "success": true,
-        "n_records": 91255
-      },
-      {
-        "scenario": "soil_temperature/bbox/0.5x0.5",
-        "n_days": 0,
-        "area_deg2": 0.25,
-        "location": "yakima_wa",
-        "latency_s": 1.089,
-        "success": true,
-        "n_records": 2779
-      },
-      {
-        "scenario": "soil_temperature/bbox/2x2",
-        "n_days": 0,
-        "area_deg2": 4.0,
-        "location": "yakima_wa",
-        "latency_s": 4.774,
-        "success": true,
-        "n_records": 36210
-      },
-      {
-        "scenario": "subsurface_barriers/bbox/0.5x0.5",
-        "n_days": 0,
-        "area_deg2": 0.25,
-        "location": "yakima_wa",
-        "latency_s": 0.86,
-        "success": true,
-        "n_records": 238
-      },
-      {
-        "scenario": "subsurface_barriers/bbox/2x2",
-        "n_days": 0,
-        "area_deg2": 4.0,
-        "location": "yakima_wa",
-        "latency_s": 2.37,
-        "success": true,
-        "n_records": 3191
-      },
-      {
-        "scenario": "subsurface_barriers/bbox/5x5",
-        "n_days": 0,
-        "area_deg2": 25.0,
-        "location": "yakima_wa",
-        "latency_s": 11.111,
-        "success": true,
-        "n_records": 26969
-      },
-      {
-        "scenario": "subsurface_barriers/bbox/10x10",
-        "n_days": 0,
-        "area_deg2": 100.0,
-        "location": "yakima_wa",
-        "latency_s": 20.3,
-        "success": true,
-        "n_records": 58816
-      },
-      {
-        "scenario": "area_summary",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "phoenix_az",
-        "latency_s": 0.397,
-        "success": true,
-        "n_records": 1
-      },
-      {
-        "scenario": "area_summary",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "atlanta_ga",
-        "latency_s": 0.388,
-        "success": true,
-        "n_records": 1
-      },
-      {
-        "scenario": "area_summary",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "chicago_il",
-        "latency_s": 0.401,
-        "success": true,
-        "n_records": 1
-      },
-      {
-        "scenario": "ecological_site",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "phoenix_az",
-        "latency_s": 0.389,
-        "success": true,
-        "n_records": 1
-      },
-      {
-        "scenario": "ecological_site",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "atlanta_ga",
-        "latency_s": 0.392,
-        "success": true,
-        "n_records": 1
-      },
-      {
-        "scenario": "ecological_site",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "chicago_il",
         "latency_s": 0.402,
         "success": true,
         "n_records": 1
@@ -823,26 +499,350 @@
         "scenario": "parent_material",
         "n_days": 0,
         "area_deg2": 0.0,
+        "location": "yakima_wa",
+        "latency_s": 0.396,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "seasonal_hydrology",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "yakima_wa",
+        "latency_s": 0.453,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "soil_profile",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "yakima_wa",
+        "latency_s": 0.398,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "soil_suitability",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "yakima_wa",
+        "latency_s": 0.433,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "soil_temperature",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "yakima_wa",
+        "latency_s": 0.402,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "subsurface_barriers",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "yakima_wa",
+        "latency_s": 0.445,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "area_summary/bbox/0.5x0.5",
+        "n_days": 0,
+        "area_deg2": 0.25,
+        "location": "yakima_wa",
+        "latency_s": 0.692,
+        "success": true,
+        "n_records": 213
+      },
+      {
+        "scenario": "area_summary/bbox/2x2",
+        "n_days": 0,
+        "area_deg2": 4.0,
+        "location": "yakima_wa",
+        "latency_s": 6.462,
+        "success": true,
+        "n_records": 2286
+      },
+      {
+        "scenario": "ecological_site/bbox/0.5x0.5",
+        "n_days": 0,
+        "area_deg2": 0.25,
+        "location": "yakima_wa",
+        "latency_s": 0.622,
+        "success": true,
+        "n_records": 213
+      },
+      {
+        "scenario": "ecological_site/bbox/2x2",
+        "n_days": 0,
+        "area_deg2": 4.0,
+        "location": "yakima_wa",
+        "latency_s": 2.658,
+        "success": true,
+        "n_records": 2286
+      },
+      {
+        "scenario": "ecological_site/bbox/5x5",
+        "n_days": 0,
+        "area_deg2": 25.0,
+        "location": "yakima_wa",
+        "latency_s": 10.493,
+        "success": true,
+        "n_records": 15024
+      },
+      {
+        "scenario": "ecological_site/bbox/10x10",
+        "n_days": 0,
+        "area_deg2": 100.0,
+        "location": "yakima_wa",
+        "latency_s": 21.105,
+        "success": true,
+        "n_records": 32988
+      },
+      {
+        "scenario": "parent_material/bbox/0.5x0.5",
+        "n_days": 0,
+        "area_deg2": 0.25,
+        "location": "yakima_wa",
+        "latency_s": 1.092,
+        "success": true,
+        "n_records": 213
+      },
+      {
+        "scenario": "parent_material/bbox/2x2",
+        "n_days": 0,
+        "area_deg2": 4.0,
+        "location": "yakima_wa",
+        "latency_s": 5.554,
+        "success": true,
+        "n_records": 2286
+      },
+      {
+        "scenario": "parent_material/bbox/5x5",
+        "n_days": 0,
+        "area_deg2": 25.0,
+        "location": "yakima_wa",
+        "latency_s": 13.723,
+        "success": true,
+        "n_records": 15024
+      },
+      {
+        "scenario": "seasonal_hydrology/bbox/0.5x0.5",
+        "n_days": 0,
+        "area_deg2": 0.25,
+        "location": "yakima_wa",
+        "latency_s": 1.137,
+        "success": true,
+        "n_records": 213
+      },
+      {
+        "scenario": "seasonal_hydrology/bbox/2x2",
+        "n_days": 0,
+        "area_deg2": 4.0,
+        "location": "yakima_wa",
+        "latency_s": 5.936,
+        "success": true,
+        "n_records": 2286
+      },
+      {
+        "scenario": "soil_profile/bbox/0.5x0.5",
+        "n_days": 0,
+        "area_deg2": 0.25,
+        "location": "yakima_wa",
+        "latency_s": 1.026,
+        "success": true,
+        "n_records": 213
+      },
+      {
+        "scenario": "soil_profile/bbox/2x2",
+        "n_days": 0,
+        "area_deg2": 4.0,
+        "location": "yakima_wa",
+        "latency_s": 3.906,
+        "success": true,
+        "n_records": 2286
+      },
+      {
+        "scenario": "soil_suitability/bbox/0.5x0.5",
+        "n_days": 0,
+        "area_deg2": 0.25,
+        "location": "yakima_wa",
+        "latency_s": 1.149,
+        "success": true,
+        "n_records": 213
+      },
+      {
+        "scenario": "soil_suitability/bbox/2x2",
+        "n_days": 0,
+        "area_deg2": 4.0,
+        "location": "yakima_wa",
+        "latency_s": 3.157,
+        "success": true,
+        "n_records": 2286
+      },
+      {
+        "scenario": "soil_suitability/bbox/5x5",
+        "n_days": 0,
+        "area_deg2": 25.0,
+        "location": "yakima_wa",
+        "latency_s": 14.008,
+        "success": true,
+        "n_records": 15024
+      },
+      {
+        "scenario": "soil_temperature/bbox/0.5x0.5",
+        "n_days": 0,
+        "area_deg2": 0.25,
+        "location": "yakima_wa",
+        "latency_s": 1.139,
+        "success": true,
+        "n_records": 213
+      },
+      {
+        "scenario": "soil_temperature/bbox/2x2",
+        "n_days": 0,
+        "area_deg2": 4.0,
+        "location": "yakima_wa",
+        "latency_s": 4.215,
+        "success": true,
+        "n_records": 2286
+      },
+      {
+        "scenario": "subsurface_barriers/bbox/0.5x0.5",
+        "n_days": 0,
+        "area_deg2": 0.25,
+        "location": "yakima_wa",
+        "latency_s": 1.285,
+        "success": true,
+        "n_records": 213
+      },
+      {
+        "scenario": "subsurface_barriers/bbox/2x2",
+        "n_days": 0,
+        "area_deg2": 4.0,
+        "location": "yakima_wa",
+        "latency_s": 2.365,
+        "success": true,
+        "n_records": 2286
+      },
+      {
+        "scenario": "subsurface_barriers/bbox/5x5",
+        "n_days": 0,
+        "area_deg2": 25.0,
+        "location": "yakima_wa",
+        "latency_s": 10.029,
+        "success": true,
+        "n_records": 15024
+      },
+      {
+        "scenario": "subsurface_barriers/bbox/10x10",
+        "n_days": 0,
+        "area_deg2": 100.0,
+        "location": "yakima_wa",
+        "latency_s": 20.191,
+        "success": true,
+        "n_records": 32988
+      },
+      {
+        "scenario": "area_summary",
+        "n_days": 0,
+        "area_deg2": 0.0,
         "location": "phoenix_az",
         "latency_s": 0.395,
         "success": true,
         "n_records": 1
       },
       {
+        "scenario": "area_summary",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "atlanta_ga",
+        "latency_s": 0.725,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "area_summary",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "chicago_il",
+        "latency_s": 0.387,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "ecological_site",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "phoenix_az",
+        "latency_s": 0.395,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "ecological_site",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "atlanta_ga",
+        "latency_s": 0.384,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "ecological_site",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "chicago_il",
+        "latency_s": 0.407,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "parent_material",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "phoenix_az",
+        "latency_s": 0.388,
+        "success": true,
+        "n_records": 1
+      },
+      {
         "scenario": "parent_material",
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "atlanta_ga",
+        "latency_s": 0.386,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "parent_material",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "chicago_il",
+        "latency_s": 0.395,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "seasonal_hydrology",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "phoenix_az",
         "latency_s": 0.392,
         "success": true,
         "n_records": 1
       },
       {
-        "scenario": "parent_material",
+        "scenario": "seasonal_hydrology",
         "n_days": 0,
         "area_deg2": 0.0,
-        "location": "chicago_il",
-        "latency_s": 0.39,
+        "location": "atlanta_ga",
+        "latency_s": 0.394,
         "success": true,
         "n_records": 1
       },
@@ -850,45 +850,27 @@
         "scenario": "seasonal_hydrology",
         "n_days": 0,
         "area_deg2": 0.0,
+        "location": "chicago_il",
+        "latency_s": 0.414,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "soil_profile",
+        "n_days": 0,
+        "area_deg2": 0.0,
         "location": "phoenix_az",
+        "latency_s": 0.395,
+        "success": true,
+        "n_records": 1
+      },
+      {
+        "scenario": "soil_profile",
+        "n_days": 0,
+        "area_deg2": 0.0,
+        "location": "atlanta_ga",
         "latency_s": 0.399,
         "success": true,
-        "n_records": 12
-      },
-      {
-        "scenario": "seasonal_hydrology",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "atlanta_ga",
-        "latency_s": 0.462,
-        "success": true,
-        "n_records": 12
-      },
-      {
-        "scenario": "seasonal_hydrology",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "chicago_il",
-        "latency_s": 0.401,
-        "success": true,
-        "n_records": 12
-      },
-      {
-        "scenario": "soil_profile",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "phoenix_az",
-        "latency_s": 0.418,
-        "success": true,
-        "n_records": 4
-      },
-      {
-        "scenario": "soil_profile",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "atlanta_ga",
-        "latency_s": 0.408,
-        "success": true,
         "n_records": 1
       },
       {
@@ -896,7 +878,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "chicago_il",
-        "latency_s": 0.401,
+        "latency_s": 0.529,
         "success": true,
         "n_records": 1
       },
@@ -905,61 +887,61 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "phoenix_az",
-        "latency_s": 0.426,
+        "latency_s": 0.416,
         "success": true,
-        "n_records": 3
+        "n_records": 1
       },
       {
         "scenario": "soil_suitability",
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "atlanta_ga",
-        "latency_s": 0.406,
+        "latency_s": 0.42,
         "success": true,
-        "n_records": 3
+        "n_records": 1
       },
       {
         "scenario": "soil_suitability",
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "chicago_il",
-        "latency_s": 0.406,
+        "latency_s": 0.416,
         "success": true,
-        "n_records": 2
+        "n_records": 1
       },
       {
         "scenario": "soil_temperature",
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "phoenix_az",
-        "latency_s": 0.401,
+        "latency_s": 0.491,
         "success": true,
-        "n_records": 12
+        "n_records": 1
       },
       {
         "scenario": "soil_temperature",
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "atlanta_ga",
-        "latency_s": 0.397,
+        "latency_s": 0.382,
         "success": true,
-        "n_records": 12
+        "n_records": 1
       },
       {
         "scenario": "soil_temperature",
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "chicago_il",
-        "latency_s": 0.403,
+        "latency_s": 0.404,
         "success": true,
-        "n_records": 12
+        "n_records": 1
       },
       {
         "scenario": "subsurface_barriers",
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "phoenix_az",
-        "latency_s": 0.387,
+        "latency_s": 0.395,
         "success": true,
         "n_records": 1
       },
@@ -968,7 +950,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "atlanta_ga",
-        "latency_s": 0.387,
+        "latency_s": 0.385,
         "success": true,
         "n_records": 1
       },
@@ -977,7 +959,7 @@
         "n_days": 0,
         "area_deg2": 0.0,
         "location": "chicago_il",
-        "latency_s": 0.397,
+        "latency_s": 0.377,
         "success": true,
         "n_records": 1
       }
@@ -988,7 +970,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.817,
+        "latency_s": 1.853,
         "success": true,
         "n_records": 101
       },
@@ -997,7 +979,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 4.762,
+        "latency_s": 4.859,
         "success": true,
         "n_records": 500
       },
@@ -1006,7 +988,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 4.553,
+        "latency_s": 4.74,
         "success": true,
         "n_records": 500
       },
@@ -1015,7 +997,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.246,
+        "latency_s": 1.249,
         "success": true,
         "n_records": 36
       },
@@ -1024,7 +1006,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 2.37,
+        "latency_s": 2.617,
         "success": true,
         "n_records": 299
       },
@@ -1033,7 +1015,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 2.264,
+        "latency_s": 2.612,
         "success": true,
         "n_records": 260
       },
@@ -1042,7 +1024,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 4.718,
+        "latency_s": 4.595,
         "success": true,
         "n_records": 500
       },
@@ -1051,7 +1033,7 @@
         "n_days": 31,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 4.691,
+        "latency_s": 4.805,
         "success": true,
         "n_records": 500
       },
@@ -1060,7 +1042,7 @@
         "n_days": 31,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 4.866,
+        "latency_s": 4.653,
         "success": true,
         "n_records": 500
       },
@@ -1069,7 +1051,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 4.908,
+        "latency_s": 5.137,
         "success": true,
         "n_records": 500
       },
@@ -1078,7 +1060,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 5.076,
+        "latency_s": 5.291,
         "success": true,
         "n_records": 500
       }
@@ -1089,7 +1071,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 3.941,
+        "latency_s": 4.319,
         "success": true,
         "n_records": 1
       },
@@ -1098,7 +1080,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 3.759,
+        "latency_s": 4.982,
         "success": true,
         "n_records": 7
       },
@@ -1107,7 +1089,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 6.336,
+        "latency_s": 6.765,
         "success": true,
         "n_records": 31
       },
@@ -1116,7 +1098,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 2.823,
+        "latency_s": 3.167,
         "success": true,
         "n_records": 1
       },
@@ -1125,7 +1107,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 3.14,
+        "latency_s": 3.613,
         "success": true,
         "n_records": 1
       },
@@ -1134,7 +1116,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 3.263,
+        "latency_s": 3.103,
         "success": true,
         "n_records": 9
       },
@@ -1143,7 +1125,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 1.215,
+        "latency_s": 0.979,
         "success": true,
         "n_records": 9
       },
@@ -1152,7 +1134,7 @@
         "n_days": 31,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 4.981,
+        "latency_s": 5.317,
         "success": true,
         "n_records": 45
       },
@@ -1161,7 +1143,7 @@
         "n_days": 31,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 5.092,
+        "latency_s": 5.376,
         "success": true,
         "n_records": 46
       },
@@ -1170,7 +1152,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 5.169,
+        "latency_s": 6.302,
         "success": true,
         "n_records": 20
       },
@@ -1179,7 +1161,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 7.126,
+        "latency_s": 7.695,
         "success": true,
         "n_records": 28
       }
@@ -1190,7 +1172,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 1.191,
+        "latency_s": 1.038,
         "success": true,
         "n_records": 200
       },
@@ -1199,7 +1181,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.837,
+        "latency_s": 1.101,
         "success": true,
         "n_records": 200
       },
@@ -1208,7 +1190,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.954,
+        "latency_s": 1.078,
         "success": true,
         "n_records": 200
       },
@@ -1217,7 +1199,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.009,
+        "latency_s": 0.852,
         "success": true,
         "n_records": 200
       },
@@ -1226,7 +1208,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 1.419,
+        "latency_s": 0.695,
         "success": true,
         "n_records": 200
       },
@@ -1235,7 +1217,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 1.06,
+        "latency_s": 0.579,
         "success": true,
         "n_records": 200
       },
@@ -1244,7 +1226,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.634,
+        "latency_s": 0.69,
         "success": true,
         "n_records": 200
       },
@@ -1253,7 +1235,7 @@
         "n_days": 31,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.689,
+        "latency_s": 0.753,
         "success": true,
         "n_records": 200
       },
@@ -1262,7 +1244,7 @@
         "n_days": 31,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.931,
+        "latency_s": 1.224,
         "success": true,
         "n_records": 200
       },
@@ -1271,7 +1253,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 0.892,
+        "latency_s": 1.255,
         "success": true,
         "n_records": 200
       },
@@ -1280,7 +1262,7 @@
         "n_days": 31,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 1.162,
+        "latency_s": 1.871,
         "success": true,
         "n_records": 200
       }
@@ -1392,7 +1374,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 3.005,
+        "latency_s": 2.933,
         "success": true,
         "n_records": 1
       },
@@ -1401,7 +1383,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 3.359,
+        "latency_s": 3.236,
         "success": true,
         "n_records": 7
       },
@@ -1410,7 +1392,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 2.567,
+        "latency_s": 3.058,
         "success": true,
         "n_records": 1
       },
@@ -1419,7 +1401,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 2.683,
+        "latency_s": 3.221,
         "success": true,
         "n_records": 12
       },
@@ -1428,7 +1410,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 3.363,
+        "latency_s": 3.283,
         "success": true,
         "n_records": 7
       },
@@ -1437,7 +1419,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 2.924,
+        "latency_s": 3.068,
         "success": true,
         "n_records": 84
       },
@@ -1446,7 +1428,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 2.84,
+        "latency_s": 3.128,
         "success": true,
         "n_records": 7
       },
@@ -1455,7 +1437,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 2.989,
+        "latency_s": 6.059,
         "success": true,
         "n_records": 7
       }
@@ -1466,7 +1448,7 @@
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.226,
+        "latency_s": 0.432,
         "success": true,
         "n_records": 0
       },
@@ -1475,7 +1457,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.2,
+        "latency_s": 0.256,
         "success": true,
         "n_records": 0
       },
@@ -1484,7 +1466,7 @@
         "n_days": 1,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.219,
+        "latency_s": 0.322,
         "success": true,
         "n_records": 0
       },
@@ -1493,7 +1475,7 @@
         "n_days": 1,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.227,
+        "latency_s": 0.285,
         "success": true,
         "n_records": 0
       },
@@ -1502,7 +1484,7 @@
         "n_days": 7,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.217,
+        "latency_s": 0.234,
         "success": true,
         "n_records": 0
       },
@@ -1511,7 +1493,7 @@
         "n_days": 7,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 0.216,
+        "latency_s": 0.249,
         "success": true,
         "n_records": 0
       },
@@ -1520,7 +1502,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 0.205,
+        "latency_s": 0.228,
         "success": true,
         "n_records": 0
       },
@@ -1529,7 +1511,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 0.226,
+        "latency_s": 0.246,
         "success": true,
         "n_records": 0
       }

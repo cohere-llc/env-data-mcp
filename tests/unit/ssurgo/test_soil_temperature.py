@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from env_data_mcp.models import AvailableVariablesResponse, GroupedGeometryResponse
 from env_data_mcp.sources.ssurgo import (
     _NO_COVERAGE_MSG,
     ssurgo_soil_temperature_available_variables,
@@ -36,6 +37,7 @@ from .conftest import (
 def test_soil_temperature_available_variables_structure(httpx_mock):
     add_schema_responses(httpx_mock, _SOIL_TEMPERATURE_AVAIL_SQL)
     result = ssurgo_soil_temperature_available_variables()
+    AvailableVariablesResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
 
@@ -62,15 +64,17 @@ def test_soil_temperature_available_variables_http_error(httpx_mock):
 def test_soil_temperature_query_default_variables_success(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SOIL_TEMP_XML)
     result = ssurgo_soil_temperature_query(latitude=_LAT, longitude=_LON)
+    GroupedGeometryResponse.model_validate(result)
     assert result["_meta"]["success"] is True
-    assert len(result["data"]) == 2
+    assert len(result["data"]) == 1
 
 
 def test_soil_temperature_query_row_fields(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SOIL_TEMP_XML)
     result = ssurgo_soil_temperature_query(latitude=_LAT, longitude=_LON)
-    row = result["data"][0]
-    assert row["mukey"] == "2764208"
+    group = result["data"][0]
+    assert group["mukey"] == "2764208"
+    row = group["records"][0]
     assert row["compname"] == "Ritzville"
     assert row["month"] == "January"
     assert row["soitempdept_r"] == "25"
@@ -137,5 +141,6 @@ def test_soil_temperature_bbox_query_returns_data(httpx_mock):
     result = ssurgo_soil_temperature_bbox_query(
         min_lat=_MIN_LAT, max_lat=_MAX_LAT, min_lon=_MIN_LON, max_lon=_MAX_LON
     )
+    GroupedGeometryResponse.model_validate(result)
     assert result["_meta"]["success"] is True
-    assert len(result["data"]) == 2
+    assert len(result["data"]) == 1

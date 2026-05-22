@@ -11,6 +11,12 @@ from dataclasses import dataclass, field
 
 import pytest
 
+from env_data_mcp.models import (
+    AvailableVariablesResponse,
+    GeoJsonGeometry,
+    GroupedGeometryResponse,
+    SuitabilityRulesResponse,
+)
 from env_data_mcp.sources.ssurgo import (
     _NO_COVERAGE_MSG,
     ssurgo_area_summary_available_variables,
@@ -128,7 +134,7 @@ _QUERY_CASES = [
             avail_fn=ssurgo_subsurface_barriers_available_variables,
             default_vars=DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
             custom_var="resdept_h",  # restriction top depth high, corestrictions — not in defaults
-            primary_col="mukey",
+            primary_col="compname",
         ),
         id="subsurface_barriers",
     ),
@@ -317,6 +323,14 @@ class TestAvailableVariables:
             )
             assert "units" in entry, f"{qc.label}: column '{col}' missing 'units' key"
 
+    def test_schema_valid(self, qc: _QueryCase):
+        """Full available_variables response validates against its Pydantic schema."""
+        result = qc.avail_fn()
+        if qc.uses_rule_names:
+            SuitabilityRulesResponse.model_validate(result)
+        else:
+            AvailableVariablesResponse.model_validate(result)
+
 
 class TestPointQueryStructure:
     """Baseline default-variable point query: structure and meta fields."""
@@ -332,8 +346,9 @@ class TestPointQueryStructure:
     def test_primary_col_in_row(self, qc: _QueryCase, baseline_point: dict):
         if not baseline_point["data"]:
             pytest.skip(f"{qc.label}: no data rows returned")
-        assert qc.primary_col in baseline_point["data"][0], (
-            f"{qc.label}: primary_col '{qc.primary_col}' absent from first row"
+        group = baseline_point["data"][0]
+        assert qc.primary_col in group["records"][0], (
+            f"{qc.label}: primary_col '{qc.primary_col}' absent from first record"
         )
 
     def test_meta_source_field(self, baseline_point: dict):
@@ -361,17 +376,37 @@ class TestPointQueryStructure:
         assert len(vi) > 0, f"{qc.label}: variable_info is empty"
 
     def test_meta_rows_returned_consistent(self, baseline_point: dict):
-        assert baseline_point["_meta"]["rows_returned"] == len(baseline_point["data"])
+        data = baseline_point["data"]
+        assert baseline_point["_meta"]["rows_returned"] == sum(len(g["records"]) for g in data)
+
+    def test_full_response_schema_valid(self, baseline_point: dict):
+        """Full point-query response validates against GroupedGeometryResponse schema."""
+        GroupedGeometryResponse.model_validate(baseline_point)
 
     def test_default_vars_present_in_rows(self, qc: _QueryCase, baseline_point: dict):
         if not baseline_point["data"]:
             pytest.skip(f"{qc.label}: no data rows returned")
-        row = baseline_point["data"][0]
+        row = baseline_point["data"][0]["records"][0]
         if qc.uses_rule_names:
             assert "mrulename" in row, f"{qc.label}: mrulename absent from suitability row"
         else:
             found = [v for v in qc.default_vars if v in row]
             assert len(found) > 0, f"{qc.label}: no default variables found in output row"
+
+    def test_group_wrapper_fields(self, qc: _QueryCase, baseline_point: dict):
+        if not baseline_point["data"]:
+            pytest.skip(f"{qc.label}: no data returned")
+        group = baseline_point["data"][0]
+        assert "mukey" in group, f"{qc.label}: 'mukey' absent from group wrapper"
+        assert "muname" in group, f"{qc.label}: 'muname' absent from group wrapper"
+        assert len(group["records"]) > 0, f"{qc.label}: group has no inner records"
+
+    def test_group_has_geometry(self, qc: _QueryCase, baseline_point: dict):
+        if not baseline_point["data"]:
+            pytest.skip(f"{qc.label}: no data returned")
+        geom = baseline_point["data"][0]["geometry"]
+        assert geom is not None, f"{qc.label}: geometry is None for first group"
+        GeoJsonGeometry.model_validate(geom)
 
 
 class TestNonDefaultVariable:
@@ -398,7 +433,7 @@ class TestNonDefaultVariable:
             )
             # Rows may be empty if the soil has no rating for this rule
             if result["data"]:
-                assert "mrulename" in result["data"][0]
+                assert "mrulename" in result["data"][0]["records"][0]
         else:
             result = qc.point_fn(
                 latitude=_LAT,
@@ -413,8 +448,8 @@ class TestNonDefaultVariable:
             assert len(result["data"]) > 0, (
                 f"{qc.label}: no data returned for custom variable '{qc.custom_var}'"
             )
-            assert qc.custom_var in result["data"][0], (
-                f"{qc.label}: requested column '{qc.custom_var}' absent from output row"
+            assert qc.custom_var in result["data"][0]["records"][0], (
+                f"{qc.label}: requested column '{qc.custom_var}' absent from output record"
             )
 
 
@@ -540,9 +575,9 @@ class TestBboxQuery:
     def test_primary_col_in_rows(self, qc: _QueryCase, baseline_bbox: dict):
         if not baseline_bbox["data"]:
             pytest.skip(f"{qc.label}: no bbox data rows returned")
-        for row in baseline_bbox["data"]:
-            assert qc.primary_col in row, (
-                f"{qc.label}: primary_col '{qc.primary_col}' absent from bbox row"
+        for group in baseline_bbox["data"]:
+            assert qc.primary_col in group["records"][0], (
+                f"{qc.label}: primary_col '{qc.primary_col}' absent from bbox record"
             )
 
     def test_meta_query_params_echoed(self, qc: _QueryCase, baseline_bbox: dict):
@@ -553,7 +588,8 @@ class TestBboxQuery:
         assert qp["max_lon"] == _BBOX["max_lon"]
 
     def test_meta_rows_returned_consistent(self, baseline_bbox: dict):
-        assert baseline_bbox["_meta"]["rows_returned"] == len(baseline_bbox["data"])
+        data = baseline_bbox["data"]
+        assert baseline_bbox["_meta"]["rows_returned"] == sum(len(g["records"]) for g in data)
 
     def test_custom_var_returned(self, qc: _QueryCase):
         if qc.uses_rule_names:
@@ -582,8 +618,8 @@ class TestBboxQuery:
                 f"{qc.label}: bbox custom var '{qc.custom_var}' query failed"
             )
             if result["data"]:
-                assert qc.custom_var in result["data"][0], (
-                    f"{qc.label}: custom column '{qc.custom_var}' absent from bbox row"
+                assert qc.custom_var in result["data"][0]["records"][0], (
+                    f"{qc.label}: custom column '{qc.custom_var}' absent from bbox record"
                 )
 
 
@@ -593,7 +629,7 @@ class TestSchemaStability:
     def test_primary_col_present(self, qc: _QueryCase, baseline_point: dict):
         if not baseline_point["data"]:
             pytest.skip(f"{qc.label}: no data rows returned")
-        assert qc.primary_col in baseline_point["data"][0], (
+        assert qc.primary_col in baseline_point["data"][0]["records"][0], (
             f"{qc.label}: primary_col '{qc.primary_col}' missing — SDA schema change?"
         )
 
@@ -609,14 +645,20 @@ class TestSchemaStability:
         assert baseline_point["_meta"]["license_url"] != ""
 
     def test_meta_rows_returned_consistent(self, baseline_point: dict):
-        assert baseline_point["_meta"]["rows_returned"] == len(baseline_point["data"])
+        data = baseline_point["data"]
+        assert baseline_point["_meta"]["rows_returned"] == sum(len(g["records"]) for g in data)
 
     def test_plausible_value_range(self, qc: _QueryCase, baseline_point: dict):
         """Numeric plausible-range check — currently configured for soil_profile sand %."""
         if not qc.plausible_col:
             pytest.skip(f"{qc.label}: no plausible_col configured")
         col = qc.plausible_col
-        values = [float(r[col]) for r in baseline_point["data"] if r.get(col) is not None]
+        values = [
+            float(r[col])
+            for g in baseline_point["data"]
+            for r in g["records"]
+            if r.get(col) is not None
+        ]
         if not values:
             pytest.skip(f"{qc.label}: all rows have NULL for '{col}'")
         for v in values:

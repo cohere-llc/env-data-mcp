@@ -11,7 +11,7 @@ import httpx
 from env_data_mcp.helpers import bbox_to_wkt_polygon, build_meta, check_runtime
 from env_data_mcp.server import mcp
 
-from ._client import _fetch_sda, _get_variable_info, _parse_xml
+from ._client import _fetch_mukey_geometries, _fetch_sda, _get_variable_info, _parse_xml
 from .constants import (
     _AREA_SUMMARY_AVAIL_SQL,
     _ECOLOGICAL_SITE_AVAIL_SQL,
@@ -46,9 +46,30 @@ from .sql import (
     _resolve_variables,
 )
 
+# Degrees of buffer added around a point when fetching map-unit polygon geometries
+# via the SDA WFS endpoint (~5.5 km at mid-latitudes).
+_GEOM_BBOX_BUFFER_DEG = 0.05
+
 # ---------------------------------------------------------------------------
 # Shared query helpers
 # ---------------------------------------------------------------------------
+
+
+def _group_by_mukey(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Group flat SDA result rows by mukey.
+
+    Returns a dict mapping mukey → {"muname": str, "rows": list[dict]}.
+    The ``mukey`` and ``muname`` keys are lifted to the group header; all
+    other column values remain in the inner row dicts.
+    """
+    grouped: dict[str, dict[str, Any]] = {}
+    for row in records:
+        mk = row.get("mukey", "")
+        if mk not in grouped:
+            grouped[mk] = {"muname": row.get("muname", ""), "rows": []}
+        inner = {k: v for k, v in row.items() if k not in ("mukey", "muname")}
+        grouped[mk]["rows"].append(inner)
+    return grouped
 
 
 def _available_vars_response(avail_sql: str, query_type: str) -> dict[str, Any]:
@@ -123,37 +144,54 @@ def _point_query(
                 error=str(exc),
             ),
         }
+    user_vars = vars_
+    sql_vars = ["mukey", "muname"] + [v for v in vars_ if v not in ("mukey", "muname")]
     wkt = f"POINT({float(longitude)} {float(latitude)})"
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
-        "variables": vars_,
+        "variables": user_vars,
         "max_runtime_s": max_runtime_s,
         "query_type": query_type,
     }
     t0 = time.perf_counter()
     try:
         full_info = _get_variable_info(avail_sql)
-        sql = sql_builder(wkt, vars_)
+        sql = sql_builder(wkt, sql_vars)
         records, latency = _fetch_sda(sql)
+        grouped = _group_by_mukey(records)
+        _buf = _GEOM_BBOX_BUFFER_DEG
+        geo_bbox = (longitude - _buf, latitude - _buf, longitude + _buf, latitude + _buf)
+        geometries = _fetch_mukey_geometries(list(grouped.keys()), geo_bbox)
+        data = [
+            {
+                "mukey": mk,
+                "muname": info["muname"],
+                "geometry": geometries.get(mk),
+                "records": info["rows"],
+            }
+            for mk, info in grouped.items()
+        ]
+        total_records = sum(len(g["records"]) for g in data)
         vinfo = {
             v: {
                 "description": full_info[v].get("label", ""),
                 "units": full_info[v].get("units", ""),
             }
-            for v in vars_
+            for v in user_vars
             if v in full_info
         }
         return {
-            "data": records,
+            "data": data,
             "_meta": build_meta(
                 source="ssurgo",
+                variables=user_vars,
                 query_params=query_params,
-                rows_returned=len(records),
+                rows_returned=total_records,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 variable_info=vinfo,
-                error=_NO_COVERAGE_MSG if not records else None,
+                error=_NO_COVERAGE_MSG if not data else None,
             ),
         }
     except Exception as exc:
@@ -209,36 +247,52 @@ def _bbox_query(
                 error=str(exc),
             ),
         }
+    user_vars = vars_
+    sql_vars = ["mukey", "muname"] + [v for v in vars_ if v not in ("mukey", "muname")]
     wkt = bbox_to_wkt_polygon(bbox)
     query_params: dict[str, Any] = {
         **base_params,
-        "variables": vars_,
+        "variables": user_vars,
         "max_runtime_s": max_runtime_s,
         "query_type": query_type,
     }
     t0 = time.perf_counter()
     try:
         full_info = _get_variable_info(avail_sql)
-        sql = sql_builder(wkt, vars_)
+        sql = sql_builder(wkt, sql_vars)
         records, latency = _fetch_sda(sql)
+        grouped = _group_by_mukey(records)
+        geo_bbox = (min_lon, min_lat, max_lon, max_lat)
+        geometries = _fetch_mukey_geometries(list(grouped.keys()), geo_bbox)
+        data = [
+            {
+                "mukey": mk,
+                "muname": info["muname"],
+                "geometry": geometries.get(mk),
+                "records": info["rows"],
+            }
+            for mk, info in grouped.items()
+        ]
+        total_records = sum(len(g["records"]) for g in data)
         vinfo = {
             v: {
                 "description": full_info[v].get("label", ""),
                 "units": full_info[v].get("units", ""),
             }
-            for v in vars_
+            for v in user_vars
             if v in full_info
         }
         return {
-            "data": records,
+            "data": data,
             "_meta": build_meta(
                 source="ssurgo",
+                variables=user_vars,
                 query_params=query_params,
-                rows_returned=len(records),
+                rows_returned=total_records,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 variable_info=vinfo,
-                error=_NO_COVERAGE_MSG if not records else None,
+                error=_NO_COVERAGE_MSG if not data else None,
             ),
         }
     except Exception as exc:
@@ -685,15 +739,29 @@ def ssurgo_soil_suitability_query(
     try:
         sql = _build_soil_suitability_sql(wkt, names)
         records, latency = _fetch_sda(sql)
+        grouped = _group_by_mukey(records)
+        _buf = _GEOM_BBOX_BUFFER_DEG
+        geo_bbox = (longitude - _buf, latitude - _buf, longitude + _buf, latitude + _buf)
+        geometries = _fetch_mukey_geometries(list(grouped.keys()), geo_bbox)
+        data = [
+            {
+                "mukey": mk,
+                "muname": info["muname"],
+                "geometry": geometries.get(mk),
+                "records": info["rows"],
+            }
+            for mk, info in grouped.items()
+        ]
+        total_records = sum(len(g["records"]) for g in data)
         return {
-            "data": records,
+            "data": data,
             "_meta": build_meta(
                 source="ssurgo",
                 query_params=query_params,
-                rows_returned=len(records),
+                rows_returned=total_records,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
-                error=_NO_COVERAGE_MSG if not records else None,
+                error=_NO_COVERAGE_MSG if not data else None,
             ),
         }
     except Exception as exc:
@@ -768,15 +836,28 @@ def ssurgo_soil_suitability_bbox_query(
     try:
         sql = _build_soil_suitability_sql(wkt, names)
         records, latency = _fetch_sda(sql)
+        grouped = _group_by_mukey(records)
+        geo_bbox = (min_lon, min_lat, max_lon, max_lat)
+        geometries = _fetch_mukey_geometries(list(grouped.keys()), geo_bbox)
+        data = [
+            {
+                "mukey": mk,
+                "muname": info["muname"],
+                "geometry": geometries.get(mk),
+                "records": info["rows"],
+            }
+            for mk, info in grouped.items()
+        ]
+        total_records = sum(len(g["records"]) for g in data)
         return {
-            "data": records,
+            "data": data,
             "_meta": build_meta(
                 source="ssurgo",
                 query_params=query_params,
-                rows_returned=len(records),
+                rows_returned=total_records,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
-                error=_NO_COVERAGE_MSG if not records else None,
+                error=_NO_COVERAGE_MSG if not data else None,
             ),
         }
     except Exception as exc:

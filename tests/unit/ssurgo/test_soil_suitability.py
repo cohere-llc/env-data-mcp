@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from env_data_mcp.models import GroupedGeometryResponse, SuitabilityRulesResponse
 from env_data_mcp.sources.ssurgo import (
     _NO_COVERAGE_MSG,
     ssurgo_soil_suitability_available_variables,
@@ -29,6 +30,7 @@ def test_soil_suitability_available_variables_returns_rule_names(httpx_mock):
     """available_variables for suitability returns flat 'rule_names' list, not 'variables'."""
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=RULES_XML)
     result = ssurgo_soil_suitability_available_variables()
+    SuitabilityRulesResponse.model_validate(result)
     assert "rule_names" in result
     assert "variables" not in result
     assert "_meta" in result
@@ -53,9 +55,11 @@ def test_soil_suitability_available_variables_http_error(httpx_mock):
 def test_soil_suitability_query_success_structure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SUITABILITY_XML)
     result = ssurgo_soil_suitability_query(latitude=_LAT, longitude=_LON)
+    GroupedGeometryResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
-    assert len(result["data"]) == 2
+    assert len(result["data"]) == 1
+    assert len(result["data"][0]["records"]) == 2
 
 
 def test_soil_suitability_query_meta_success(httpx_mock):
@@ -117,5 +121,6 @@ def test_soil_suitability_bbox_query_returns_data(httpx_mock):
     result = ssurgo_soil_suitability_bbox_query(
         min_lat=_MIN_LAT, max_lat=_MAX_LAT, min_lon=_MIN_LON, max_lon=_MAX_LON
     )
+    GroupedGeometryResponse.model_validate(result)
     assert result["_meta"]["success"] is True
-    assert len(result["data"]) == 2
+    assert len(result["data"]) == 1

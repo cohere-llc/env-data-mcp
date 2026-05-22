@@ -248,3 +248,145 @@ def _get_variable_info(avail_sql: str) -> dict[str, dict[str, str]]:
         raise RuntimeError(f"No tables configured for avail_sql key: {avail_sql!r}")
     _VARIABLE_INFO_CACHE[avail_sql] = info
     return info
+
+
+def _parse_ring(ring_str: str) -> list[list[float]]:
+    """Parse a WKT coordinate sequence into a list of [lon, lat] pairs."""
+    result: list[list[float]] = []
+    for pair in ring_str.split(","):
+        xy = pair.strip().split()
+        if len(xy) >= 2:
+            result.append([float(xy[0]), float(xy[1])])
+    return result
+
+
+def _wkt_to_geojson_geometry(wkt: str) -> dict[str, Any] | None:
+    """Convert a WKT POLYGON or MULTIPOLYGON string to a GeoJSON geometry dict.
+
+    Coordinates are [longitude, latitude] as in both WKT and GeoJSON conventions.
+    Returns None if the WKT cannot be parsed.
+    """
+    try:
+        wkt = wkt.strip()
+        if wkt.upper().startswith("MULTIPOLYGON"):
+            body = re.match(r"MULTIPOLYGON\s*\(\s*(.*)\s*\)\s*$", wkt, re.I | re.S)
+            if not body:
+                return None
+            polys: list[list[list[list[float]]]] = []
+            for poly_m in re.finditer(
+                r"\(\s*(\([^()]+\)(?:\s*,\s*\([^()]+\))*)\s*\)", body.group(1)
+            ):
+                rings = [
+                    _parse_ring(m.group(1)) for m in re.finditer(r"\(([^()]+)\)", poly_m.group(1))
+                ]
+                polys.append(rings)
+            return {"type": "MultiPolygon", "coordinates": polys} if polys else None
+        elif wkt.upper().startswith("POLYGON"):
+            body = re.match(r"POLYGON\s*\(\s*(.*)\s*\)\s*$", wkt, re.I | re.S)
+            if not body:
+                return None
+            rings = [_parse_ring(m.group(1)) for m in re.finditer(r"\(([^()]+)\)", body.group(1))]
+            return {"type": "Polygon", "coordinates": rings} if rings else None
+    except Exception:
+        pass
+    return None
+
+
+_WFS_URL = "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs"
+_WFS_MAX_FEATURES = 500
+
+
+def _parse_gml2_coords(coords_text: str) -> list[list[float]]:
+    """Parse a GML2 ``lat,lon`` coordinate string into a GeoJSON ``[lon, lat]`` ring."""
+    ring: list[list[float]] = []
+    for pair in coords_text.strip().split():
+        parts = pair.split(",")
+        if len(parts) >= 2:
+            try:
+                lat, lon = float(parts[0]), float(parts[1])
+                ring.append([lon, lat])
+            except ValueError:
+                continue
+    return ring
+
+
+def _gml2_to_geojson(gml_text: str, mukeys: set[str]) -> dict[str, dict[str, Any]]:
+    """Parse a GML2 WFS response; return mukey → GeoJSON geometry for *mukeys* only.
+
+    Multiple WFS features sharing the same mukey are merged into a single
+    MultiPolygon.
+    """
+    try:
+        root = ET.fromstring(gml_text)
+    except ET.ParseError:
+        return {}
+
+    GML_NS = "http://www.opengis.net/gml"
+    MS_NS = "http://mapserver.gis.umn.edu/mapserver"
+
+    # Collect every polygon (as a list-of-rings) per mukey.
+    mukey_polygons: dict[str, list[list[list[list[float]]]]] = {}
+    for feat in root.findall(f".//{{{MS_NS}}}mapunitpoly"):
+        mk_el = feat.find(f"{{{MS_NS}}}mukey")
+        if mk_el is None or mk_el.text not in mukeys:
+            continue
+        mk = mk_el.text
+        for poly in feat.findall(f".//{{{GML_NS}}}Polygon"):
+            rings: list[list[list[float]]] = []
+            outer = poly.find(f"{{{GML_NS}}}outerBoundaryIs//{{{GML_NS}}}coordinates")
+            if outer is not None and outer.text:
+                rings.append(_parse_gml2_coords(outer.text))
+            for inner_el in poly.findall(f"{{{GML_NS}}}innerBoundaryIs//{{{GML_NS}}}coordinates"):
+                if inner_el.text:
+                    rings.append(_parse_gml2_coords(inner_el.text))
+            if rings and rings[0]:
+                mukey_polygons.setdefault(mk, []).append(rings)
+
+    result: dict[str, dict[str, Any]] = {}
+    for mk, polygons in mukey_polygons.items():
+        if len(polygons) == 1:
+            result[mk] = {"type": "Polygon", "coordinates": polygons[0]}
+        else:
+            result[mk] = {"type": "MultiPolygon", "coordinates": polygons}
+    return result
+
+
+def _fetch_mukey_geometries(
+    mukeys: list[str], bbox: tuple[float, float, float, float]
+) -> dict[str, dict[str, Any]]:
+    """Fetch GeoJSON polygon geometry for each mukey via the SDA WFS endpoint.
+
+    *bbox* is ``(min_lon, min_lat, max_lon, max_lat)`` in WGS-84.  For point
+    queries, callers should expand the point by a small buffer before passing
+    it here.
+
+    Returns a dict mapping mukey → GeoJSON geometry dict.  Mukeys whose
+    geometry cannot be fetched or parsed are silently omitted.
+    """
+    if not mukeys:
+        return {}
+    min_lon, min_lat, max_lon, max_lat = bbox
+    bbox_filter = (
+        f"<Filter><BBOX><PropertyName>Geometry</PropertyName>"
+        f"<Box srsName='EPSG:4326'>"
+        f"<coordinates>{min_lon},{min_lat} {max_lon},{max_lat}</coordinates>"
+        f"</Box></BBOX></Filter>"
+    )
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            resp = client.get(
+                _WFS_URL,
+                params={
+                    "SERVICE": "WFS",
+                    "VERSION": "1.1.0",
+                    "REQUEST": "GetFeature",
+                    "TYPENAME": "mapunitpoly",
+                    "FILTER": bbox_filter,
+                    "OUTPUTFORMAT": "GML2",
+                    "MAXFEATURES": str(_WFS_MAX_FEATURES),
+                },
+            )
+            resp.raise_for_status()
+    except Exception:
+        return {}
+    return _gml2_to_geojson(resp.text, set(mukeys))

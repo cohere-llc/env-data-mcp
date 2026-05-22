@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from env_data_mcp.models import AvailableVariablesResponse, GroupedGeometryResponse
 from env_data_mcp.sources.ssurgo import (
     _NO_COVERAGE_MSG,
     LICENSE_INFO,
@@ -31,6 +32,7 @@ from .conftest import (
 def test_soil_profile_available_variables_returns_variables_key(httpx_mock):
     add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
     result = ssurgo_soil_profile_available_variables()
+    AvailableVariablesResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
     assert "sandtotal_r" in result["data"]
@@ -63,9 +65,14 @@ def test_soil_profile_available_variables_http_error(httpx_mock):
 def test_soil_profile_query_success_structure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
     result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    GroupedGeometryResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
-    assert len(result["data"]) == 2
+    assert len(result["data"]) == 1
+    assert len(result["data"][0]["records"]) == 2
+    group = result["data"][0]
+    assert "mukey" in group
+    assert "muname" in group
 
 
 def test_soil_profile_query_meta_success(httpx_mock):
@@ -126,25 +133,28 @@ def test_soil_profile_query_variable_info_in_meta(httpx_mock):
 def test_soil_profile_query_sand_in_valid_range(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
     result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
-    for row in result["data"]:
-        sand = float(row["sandtotal_r"])
-        assert 0.0 <= sand <= 100.0, f"sandtotal_r={sand} outside 0-100%"
+    for group in result["data"]:
+        for row in group["records"]:
+            sand = float(row["sandtotal_r"])
+            assert 0.0 <= sand <= 100.0, f"sandtotal_r={sand} outside 0-100%"
 
 
 def test_soil_profile_query_ph_in_valid_range(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
     result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
-    for row in result["data"]:
-        ph = float(row["ph1to1h2o_r"])
-        assert 2.0 <= ph <= 11.0, f"ph1to1h2o_r={ph} outside 2-11"
+    for group in result["data"]:
+        for row in group["records"]:
+            ph = float(row["ph1to1h2o_r"])
+            assert 2.0 <= ph <= 11.0, f"ph1to1h2o_r={ph} outside 2-11"
 
 
 def test_soil_profile_query_bulk_density_in_valid_range(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
     result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
-    for row in result["data"]:
-        bd = float(row["dbthirdbar_r"])
-        assert 0.5 <= bd <= 2.0, f"dbthirdbar_r={bd} outside 0.5-2.0 g/cm3"
+    for group in result["data"]:
+        for row in group["records"]:
+            bd = float(row["dbthirdbar_r"])
+            assert 0.5 <= bd <= 2.0, f"dbthirdbar_r={bd} outside 0.5-2.0 g/cm3"
 
 
 def test_soil_profile_query_custom_variables(httpx_mock):
@@ -179,5 +189,6 @@ def test_soil_profile_bbox_query_returns_data(httpx_mock):
     result = ssurgo_soil_profile_bbox_query(
         min_lat=_MIN_LAT, max_lat=_MAX_LAT, min_lon=_MIN_LON, max_lon=_MAX_LON
     )
+    GroupedGeometryResponse.model_validate(result)
     assert result["_meta"]["success"] is True
-    assert len(result["data"]) == 2
+    assert len(result["data"]) == 1

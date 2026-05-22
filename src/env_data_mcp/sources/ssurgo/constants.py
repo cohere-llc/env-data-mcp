@@ -31,21 +31,30 @@ _NO_COVERAGE_MSG = (
 # ---------------------------------------------------------------------------
 
 DEFAULT_SOIL_PROFILE_VARIABLES: list[str] = [
-    "mukey",
-    "muname",
-    "compname",
-    "majcompflag",
-    "comppct_r",
-    "hzdept_r",
-    "hzdepb_r",
-    "sandtotal_r",
-    "silttotal_r",
-    "claytotal_r",
-    "ph1to1h2o_r",
-    "om_r",
-    "ksat_r",
-    "awc_r",
-    "dbthirdbar_r",
+    # --- Identity & provenance ---
+    "mukey",  # Mapunit Key
+    "muname",  # Mapunit Name
+    "compname",  # Component Name
+    "majcompflag",  # Major Component
+    "comppct_r",  # Comp % [percent]
+    # --- Depth profile ---
+    "hzdept_r",  # Top Depth [cm]
+    "hzdepb_r",  # Bottom Depth [cm]
+    # --- Texture ---
+    "sandtotal_r",  # Total Sand [percent]
+    "silttotal_r",  # Total Silt [percent]
+    "claytotal_r",  # Total Clay [percent]
+    # --- Biogeochemistry ---
+    "ph1to1h2o_r",  # pH H2O
+    "om_r",  # OM [percent]
+    "cec7_r",  # CEC-7 [cmol(+)/kg]
+    # --- Physical / hydraulic ---
+    "ksat_r",  # Ksat [um/s]
+    "awc_r",  # AWC [cm/cm]
+    "dbthirdbar_r",  # Db 0.33 bar H2O [g/cm3]
+    # --- Ecological context ---
+    "drainagecl",  # Drainage Class
+    "taxorder",  # Order
 ]
 
 # ---------------------------------------------------------------------------

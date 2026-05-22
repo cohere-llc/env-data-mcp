@@ -37,6 +37,26 @@ _SDA_URL = "https://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService/post.r
 # ---------------------------------------------------------------------------
 
 
+_MOCK_GEOMETRY: dict = {
+    "type": "Polygon",
+    "coordinates": [
+        [[-119.5, 46.2], [-119.4, 46.2], [-119.4, 46.3], [-119.5, 46.3], [-119.5, 46.2]]
+    ],
+}
+
+
+@pytest.fixture(autouse=True)
+def _mock_mukey_geometries(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Patch _fetch_mukey_geometries in tools to avoid real network calls in unit tests."""
+    import env_data_mcp.sources.ssurgo.tools as _tools_mod
+
+    monkeypatch.setattr(
+        _tools_mod,
+        "_fetch_mukey_geometries",
+        lambda mukeys, bbox: {mk: _MOCK_GEOMETRY for mk in mukeys},
+    )
+
+
 @pytest.fixture(autouse=True)
 def _clear_ssurgo_caches() -> object:
     """Reset all SSURGO module-level caches around each unit test."""
