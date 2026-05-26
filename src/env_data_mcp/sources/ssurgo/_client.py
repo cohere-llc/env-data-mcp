@@ -250,48 +250,6 @@ def _get_variable_info(query_type: _QueryType) -> dict[str, dict[str, str]]:
     return info
 
 
-def _parse_ring(ring_str: str) -> list[list[float]]:
-    """Parse a WKT coordinate sequence into a list of [lon, lat] pairs."""
-    result: list[list[float]] = []
-    for pair in ring_str.split(","):
-        xy = pair.strip().split()
-        if len(xy) >= 2:
-            result.append([float(xy[0]), float(xy[1])])
-    return result
-
-
-def _wkt_to_geojson_geometry(wkt: str) -> dict[str, Any] | None:
-    """Convert a WKT POLYGON or MULTIPOLYGON string to a GeoJSON geometry dict.
-
-    Coordinates are [longitude, latitude] as in both WKT and GeoJSON conventions.
-    Returns None if the WKT cannot be parsed.
-    """
-    try:
-        wkt = wkt.strip()
-        if wkt.upper().startswith("MULTIPOLYGON"):
-            body = re.match(r"MULTIPOLYGON\s*\(\s*(.*)\s*\)\s*$", wkt, re.I | re.S)
-            if not body:
-                return None
-            polys: list[list[list[list[float]]]] = []
-            for poly_m in re.finditer(
-                r"\(\s*(\([^()]+\)(?:\s*,\s*\([^()]+\))*)\s*\)", body.group(1)
-            ):
-                rings = [
-                    _parse_ring(m.group(1)) for m in re.finditer(r"\(([^()]+)\)", poly_m.group(1))
-                ]
-                polys.append(rings)
-            return {"type": "MultiPolygon", "coordinates": polys} if polys else None
-        elif wkt.upper().startswith("POLYGON"):
-            body = re.match(r"POLYGON\s*\(\s*(.*)\s*\)\s*$", wkt, re.I | re.S)
-            if not body:
-                return None
-            rings = [_parse_ring(m.group(1)) for m in re.finditer(r"\(([^()]+)\)", body.group(1))]
-            return {"type": "Polygon", "coordinates": rings} if rings else None
-    except Exception:
-        pass
-    return None
-
-
 _WFS_URL = "https://sdmdataaccess.sc.egov.usda.gov/Spatial/SDMWGS84Geographic.wfs"
 _WFS_MAX_FEATURES = 500
 

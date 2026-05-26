@@ -34,7 +34,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_profile_available_variables,
     ssurgo_soil_profile_bbox_query,
     ssurgo_soil_profile_query,
-    ssurgo_soil_suitability_available_variables,
+    ssurgo_soil_suitability_available_rule_names,
     ssurgo_soil_suitability_bbox_query,
     ssurgo_soil_suitability_query,
     ssurgo_soil_temperature_available_variables,
@@ -155,7 +155,7 @@ _QUERY_CASES = [
             label="soil_suitability",
             point_fn=ssurgo_soil_suitability_query,
             bbox_fn=ssurgo_soil_suitability_bbox_query,
-            avail_fn=ssurgo_soil_suitability_available_variables,
+            avail_fn=ssurgo_soil_suitability_available_rule_names,
             default_rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
             uses_rule_names=True,
             primary_col="mrulename",
@@ -255,18 +255,18 @@ class TestAvailableVariables:
 
     def test_returns_nonempty(self, qc: _QueryCase):
         result = qc.avail_fn()
-        key = "rule_names" if qc.uses_rule_names else "data"
+        key = "data"
         assert len(result[key]) > 0, f"{qc.label}: avail result is empty"
 
     def test_result_key_present(self, qc: _QueryCase):
         result = qc.avail_fn()
-        key = "rule_names" if qc.uses_rule_names else "data"
+        key = "data"
         assert key in result, f"{qc.label}: expected key '{key}' missing from avail result"
 
     def test_primary_col_listed(self, qc: _QueryCase):
         result = qc.avail_fn()
         if qc.uses_rule_names:
-            rule_names = result["rule_names"]
+            rule_names = result["data"]
             assert any(r in rule_names for r in qc.default_rule_names), (
                 f"{qc.label}: none of the default rule names found in SDA cointerp"
             )
@@ -417,7 +417,7 @@ class TestNonDefaultVariable:
             # Dynamically pick a non-default rule from the available list
             avail = qc.avail_fn()
             custom = next(
-                (r for r in avail["rule_names"] if r not in qc.default_rule_names),
+                (r for r in avail["data"] if r not in qc.default_rule_names),
                 None,
             )
             if custom is None:
@@ -595,7 +595,7 @@ class TestBboxQuery:
         if qc.uses_rule_names:
             avail = qc.avail_fn()
             custom = next(
-                (r for r in avail["rule_names"] if r not in qc.default_rule_names),
+                (r for r in avail["data"] if r not in qc.default_rule_names),
                 None,
             )
             if custom is None:
