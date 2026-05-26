@@ -53,7 +53,10 @@ def _resolve_rule_names(rule_names: list[str]) -> list[str]:
 
 def _build_soil_profile_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → chorizon."""
-    select_vars = ",\n            ".join(_qualify(v) for v in variables)
+    # Always include these context columns so callers can interpret each row.
+    _PROFILE_CONTEXT = ["compname", "comppct_r", "hzname", "hzdept_r", "hzdepb_r"]
+    all_vars = _PROFILE_CONTEXT + [v for v in variables if v not in _PROFILE_CONTEXT]
+    select_vars = ",\n            ".join(_qualify(v) for v in all_vars)
     return f"""\
         SELECT
             {select_vars}
@@ -85,7 +88,9 @@ def _build_area_summary_sql(wkt: str, variables: list[str]) -> str:
 
 def _build_subsurface_barriers_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → corestrictions."""
-    select_vars = ",\n            ".join(_qualify(v) for v in variables)
+    _BARRIERS_CONTEXT = ["compname", "comppct_r", "reskind", "resdept_r", "resdepb_r"]
+    all_vars = _BARRIERS_CONTEXT + [v for v in variables if v not in _BARRIERS_CONTEXT]
+    select_vars = ",\n            ".join(_qualify(v) for v in all_vars)
     return f"""\
         SELECT
             {select_vars}
@@ -102,7 +107,9 @@ def _build_subsurface_barriers_sql(wkt: str, variables: list[str]) -> str:
 
 def _build_seasonal_hydrology_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → comonth → cosoilmoist."""
-    select_vars = ",\n            ".join(_qualify(v) for v in variables)
+    _HYDROLOGY_CONTEXT = ["compname", "comppct_r", "monthseq", "soimoistdept_r", "soimoistdepb_r"]
+    all_vars = _HYDROLOGY_CONTEXT + [v for v in variables if v not in _HYDROLOGY_CONTEXT]
+    select_vars = ",\n            ".join(_qualify(v) for v in all_vars)
     return f"""\
         SELECT
             {select_vars}
@@ -146,7 +153,9 @@ def _build_soil_suitability_sql(wkt: str, rule_names: list[str]) -> str:
 
 def _build_ecological_site_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → coecoclass."""
-    select_vars = ",\n            ".join(_qualify(v) for v in variables)
+    _ECOCLASS_CONTEXT = ["compname", "comppct_r", "ecoclassid", "ecoclassname"]
+    all_vars = _ECOCLASS_CONTEXT + [v for v in variables if v not in _ECOCLASS_CONTEXT]
+    select_vars = ",\n            ".join(_qualify(v) for v in all_vars)
     return f"""\
         SELECT
             {select_vars}
@@ -163,7 +172,9 @@ def _build_ecological_site_sql(wkt: str, variables: list[str]) -> str:
 
 def _build_parent_material_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → copmgrp → copm."""
-    select_vars = ",\n            ".join(_qualify(v) for v in variables)
+    _PARENT_MAT_CONTEXT = ["compname", "comppct_r", "pmgroupname", "pmkind", "pmorigin"]
+    all_vars = _PARENT_MAT_CONTEXT + [v for v in variables if v not in _PARENT_MAT_CONTEXT]
+    select_vars = ",\n            ".join(_qualify(v) for v in all_vars)
     return f"""\
         SELECT
             {select_vars}
@@ -182,7 +193,9 @@ def _build_parent_material_sql(wkt: str, variables: list[str]) -> str:
 
 def _build_soil_temperature_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → comonth → cosoiltemp."""
-    select_vars = ",\n            ".join(_qualify(v) for v in variables)
+    _SOIL_TEMP_CONTEXT = ["compname", "comppct_r", "monthseq", "soitempdept_r", "soitempdepb_r"]
+    all_vars = _SOIL_TEMP_CONTEXT + [v for v in variables if v not in _SOIL_TEMP_CONTEXT]
+    select_vars = ",\n            ".join(_qualify(v) for v in all_vars)
     return f"""\
         SELECT
             {select_vars}

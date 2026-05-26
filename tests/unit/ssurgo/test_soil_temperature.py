@@ -117,7 +117,6 @@ def test_soil_temperature_query_variable_info_in_meta(httpx_mock):
 
 def test_soil_temperature_default_variables_contains_expected():
     assert "month" in DEFAULT_SOIL_TEMPERATURE_VARIABLES
-    assert "soitempdept_r" in DEFAULT_SOIL_TEMPERATURE_VARIABLES
     assert "soitempmm" in DEFAULT_SOIL_TEMPERATURE_VARIABLES
 
 

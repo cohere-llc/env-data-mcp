@@ -173,12 +173,18 @@ def _point_query(
             for mk, info in grouped.items()
         ]
         total_records = sum(len(g["records"]) for g in data)
+        # Derive vinfo from actual result columns so always-included context
+        # columns (compname, hzname, depth bounds, etc.) appear in the metadata.
+        result_cols = next(
+            (list(rows["rows"][0].keys()) for rows in grouped.values() if rows["rows"]),
+            user_vars,
+        )
         vinfo = {
             v: {
                 "description": full_info[v].get("label", ""),
                 "units": full_info[v].get("units", ""),
             }
-            for v in user_vars
+            for v in result_cols
             if v in full_info
         }
         return {
@@ -274,12 +280,18 @@ def _bbox_query(
             for mk, info in grouped.items()
         ]
         total_records = sum(len(g["records"]) for g in data)
+        # Derive vinfo from actual result columns so always-included context
+        # columns (compname, hzname, depth bounds, etc.) appear in the metadata.
+        result_cols = next(
+            (list(rows["rows"][0].keys()) for rows in grouped.values() if rows["rows"]),
+            user_vars,
+        )
         vinfo = {
             v: {
                 "description": full_info[v].get("label", ""),
                 "units": full_info[v].get("units", ""),
             }
-            for v in user_vars
+            for v in result_cols
             if v in full_info
         }
         return {
@@ -645,7 +657,7 @@ def ssurgo_seasonal_hydrology_bbox_query(
 
 
 @mcp.tool()
-def ssurgo_soil_suitability_available_variables() -> dict[str, Any]:
+def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
     """Return all available interpretation rule names for SSURGO soil suitability queries.
 
     Queries ``cointerp`` for distinct ``mrulename`` values.  Use these names
@@ -654,14 +666,14 @@ def ssurgo_soil_suitability_available_variables() -> dict[str, Any]:
     """
     t0 = time.perf_counter()
     try:
-        with httpx.Client(timeout=90.0) as client:
+        with httpx.Client(timeout=120.0) as client:
             resp = client.post(_SDA_URL, data={"query": _SOIL_SUITABILITY_RULES_SQL})
             resp.raise_for_status()
         latency = time.perf_counter() - t0
         records = _parse_xml(resp.text)
         rule_names = [r["mrulename"] for r in records if r.get("mrulename")]
         return {
-            "rule_names": rule_names,
+            "data": rule_names,
             "_meta": build_meta(
                 source="ssurgo",
                 query_params={"query_type": "soil_suitability"},
@@ -673,7 +685,7 @@ def ssurgo_soil_suitability_available_variables() -> dict[str, Any]:
     except Exception as exc:
         latency = time.perf_counter() - t0
         return {
-            "rule_names": [],
+            "data": [],
             "_meta": build_meta(
                 source="ssurgo",
                 query_params={"query_type": "soil_suitability"},
@@ -705,7 +717,7 @@ def ssurgo_soil_suitability_query(
         rule_names: Interpretation rule names to query.  Defaults to a set
             covering construction suitability, septic systems, agricultural
             capability, and hydric soil status.  Call
-            ``ssurgo_soil_suitability_available_variables()`` for all rules.
+            ``ssurgo_soil_suitability_available_rule_names()`` for all rules.
         max_runtime_s: Optional request timeout in seconds.
     """
     if warn := check_runtime("ssurgo", 0, 0.0, max_runtime_s):
