@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 import pdfplumber
 
-from .constants import _AVAIL_SQL_TABLES, _COLUMN_TABLE_PRIORITY, _QueryType, _SDA_URL, _XS_NS
+from .constants import _AVAIL_SQL_TABLES, _COLUMN_TABLE_PRIORITY, _SDA_URL, _XS_NS, _QueryType
 
 # ---------------------------------------------------------------------------
 # Session-level caches

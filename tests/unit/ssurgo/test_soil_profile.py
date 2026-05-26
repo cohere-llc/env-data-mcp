@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from env_data_mcp.models import AvailableVariablesResponse, GroupedGeometryResponse
+from env_data_mcp.models import GroupedGeometryResponse
 from env_data_mcp.sources.ssurgo import (
     _NO_COVERAGE_MSG,
     LICENSE_INFO,

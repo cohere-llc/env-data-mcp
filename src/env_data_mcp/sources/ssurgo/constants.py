@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 # ---------------------------------------------------------------------------
 # Licence and metadata
@@ -40,15 +40,15 @@ DEFAULT_SOIL_PROFILE_VARIABLES: list[str] = [
     "claytotal_r",  # Total Clay [percent]
     # --- Biogeochemistry ---
     "ph1to1h2o_r",  # pH H2O
-    "om_r",         # OM [percent]
-    "cec7_r",       # CEC-7 [cmol(+)/kg]
+    "om_r",  # OM [percent]
+    "cec7_r",  # CEC-7 [cmol(+)/kg]
     # --- Physical / hydraulic ---
-    "ksat_r",       # Ksat [um/s]
-    "awc_r",        # AWC [cm/cm]
-    "dbthirdbar_r", # Db 0.33 bar H2O [g/cm3]
+    "ksat_r",  # Ksat [um/s]
+    "awc_r",  # AWC [cm/cm]
+    "dbthirdbar_r",  # Db 0.33 bar H2O [g/cm3]
     # --- Ecological context ---
-    "drainagecl",   # Drainage Class
-    "taxorder",     # Order
+    "drainagecl",  # Drainage Class
+    "taxorder",  # Order
 ]
 
 # ---------------------------------------------------------------------------
@@ -58,22 +58,27 @@ DEFAULT_SOIL_PROFILE_VARIABLES: list[str] = [
 DEFAULT_AREA_SUMMARY_VARIABLES: list[str] = [
     # mukey and muname are always present at the group level
     # --- Water regime (primary driver of redox → microbial community structure) ---
-    "drclassdcd",      # Drainage class: controls aerobic/anaerobic niches and redox potential
-    "hydgrpdcd",       # Hydrologic group: infiltration/runoff; sets water residence time in profile
-    "wtdepannmin",     # Annual minimum water table depth: extent of permanently anaerobic zone
-    "wtdepaprjunmin",  # April–June minimum water table: growing-season saturation, peak bio activity
-    "flodfreqdcd",     # Flooding frequency: episodic anaerobic pulses that reshape microbial communities
-    "pondfreqprs",     # Ponding presence: surface saturation events affect surface-horizon decomposition
+    "drclassdcd",  # Drainage class: controls aerobic/anaerobic niches and redox potential
+    "hydgrpdcd",  # Hydrologic group: infiltration/runoff; sets water residence time in profile
+    "wtdepannmin",  # Annual minimum water table depth: extent of permanently anaerobic zone
+    # April–June minimum water table: growing-season saturation, peak bio activity
+    "wtdepaprjunmin",
+    # Flooding frequency: episodic anaerobic pulses that reshape microbial communities
+    "flodfreqdcd",
+    # Ponding presence: surface saturation events affect surface-horizon decomposition
+    "pondfreqprs",
     # --- Plant-available water / primary productivity ---
-    "aws0150wta",      # Available water storage 0–150 cm: limits plant productivity → organic C inputs
+    "aws0150wta",  # Available water storage 0–150 cm: limits plant productivity → organic C inputs
     # --- Physical constraints on rooting and C pool depth ---
-    "brockdepmin",     # Minimum bedrock depth: caps rooting depth and total soil volume for microbial activity
-    "slopegradwta",    # Weighted-average slope: erosion risk; affects organic matter retention
+    # Minimum bedrock depth: caps rooting depth and total soil volume for microbial activity
+    "brockdepmin",
+    "slopegradwta",  # Weighted-average slope: erosion risk; affects organic matter retention
     # --- Wetland / carbon sequestration indicators ---
-    "hydclprs",        # Hydric soil presence: predicts methanogenic potential and anaerobic C transformation
+    # Hydric soil presence: predicts methanogenic potential and anaerobic C transformation
+    "hydclprs",
     # --- Land-use context ---
-    "farmlndcl",       # Farmland classification: distinguishes prime farmland from marginal land
-    "niccdcd",         # Non-irrigated capability class: overall productivity rating for site comparison
+    "farmlndcl",  # Farmland classification: distinguishes prime farmland from marginal land
+    "niccdcd",  # Non-irrigated capability class: overall productivity rating for site comparison
 ]
 
 # ---------------------------------------------------------------------------
@@ -83,14 +88,18 @@ DEFAULT_AREA_SUMMARY_VARIABLES: list[str] = [
 DEFAULT_SUBSURFACE_BARRIERS_VARIABLES: list[str] = [
     # compname, comppct_r, reskind, resdept_r, resdepb_r are always present
     # --- Restriction physical properties ---
-    "reshard",      # Hardness: determines root/organism penetrability and water impedance strength
-    "resthk_r",     # Thickness: thicker restrictions form more persistent barriers to water/gas movement
+    "reshard",  # Hardness: determines root/organism penetrability and water impedance strength
+    # Thickness: thicker restrictions form more persistent barriers to water/gas movement
+    "resthk_r",
     # --- Resulting soil conditions (component table) ---
-    "drainagecl",   # Drainage class: whether the barrier creates a perched water table → anaerobic zone
-    "hydricrating", # Hydric rating: indicator of anaerobic C transformation and methanogenic potential above barrier
+    # Drainage class: whether the barrier creates a perched water table → anaerobic zone
+    "drainagecl",
+    # Hydric rating: anaerobic C transformation and methanogenic potential above the barrier
+    "hydricrating",
     # --- Taxonomic / site context ---
-    "taxsubgrp",    # Soil subgroup: taxonomic classification that encodes restriction type and moisture regime
-    "slope_r",      # Slope gradient: with a subsurface barrier, controls lateral flow of perched water
+    # Soil subgroup: taxonomic classification that encodes restriction type and moisture regime
+    "taxsubgrp",
+    "slope_r",  # Slope gradient: with a subsurface barrier, controls lateral flow of perched water
 ]
 
 # ---------------------------------------------------------------------------
@@ -100,18 +109,24 @@ DEFAULT_SUBSURFACE_BARRIERS_VARIABLES: list[str] = [
 DEFAULT_SEASONAL_HYDROLOGY_VARIABLES: list[str] = [
     # compname, comppct_r, monthseq, soimoistdept_r, soimoistdepb_r are always present
     # --- Temporal label ---
-    "month",            # Month name: human-readable label for monthseq integer
+    "month",  # Month name: human-readable label for monthseq integer
     # --- Moisture status (cosoilmoist): core output per depth interval per month ---
-    "soimoiststat",     # Moisture status (wet/dry/moist/saturated): directly indicates anaerobic conditions by depth/season
+    # Moisture status: wet/moist/saturated; indicates anaerobic conditions by depth/season
+    "soimoiststat",
     # --- Flooding (comonth): episodic deep anaerobic pulses ---
-    "flodfreqcl",       # Flooding frequency: how often flooding occurs → episodic community-resetting anaerobic events
-    "floddurcl",        # Flooding duration: how long flood events persist → magnitude and severity of anaerobic pulse
+    # Flooding frequency: how often flooding occurs → episodic community-resetting anaerobic events
+    "flodfreqcl",
+    # Flooding duration: how long flood events persist → magnitude and severity of anaerobic pulse
+    "floddurcl",
     # --- Ponding (comonth): surface saturation and O2 depletion ---
-    "pondfreqcl",       # Ponding frequency: recurrence of surface water accumulation
-    "ponddurcl",        # Ponding duration: how long surface water persists → extended surface O2 depletion
+    "pondfreqcl",  # Ponding frequency: recurrence of surface water accumulation
+    # Ponding duration: how long surface water persists → extended surface O2 depletion
+    "ponddurcl",
     # --- Water balance drivers (comonth) ---
-    "dlyavgprecip_r",   # Daily precipitation [mm]: monthly moisture input that drives saturation events
-    "dlyavgpotet_r",    # Daily potential ET [mm]: monthly moisture loss; net precip–ET balance sets saturation duration
+    # Daily precipitation [mm]: monthly moisture input that drives saturation events
+    "dlyavgprecip_r",
+    # Daily potential ET [mm]: monthly moisture loss; net precip–ET balance sets saturation duration
+    "dlyavgpotet_r",
 ]
 
 # ---------------------------------------------------------------------------
@@ -123,16 +138,23 @@ DEFAULT_SEASONAL_HYDROLOGY_VARIABLES: list[str] = [
 
 DEFAULT_SOIL_SUITABILITY_RULE_NAMES: list[str] = [
     # --- Soil carbon stocks (C cycling, bioenergy C budgets) ---
-    "CLASS RULE - Soil Organic Carbon kg/m2 to 2m (NPS)",    # Quantified SOC to 2 m: primary C substrate driving microbial community composition
-    "CLASS RULE - Soil Inorganic Carbon kg/m2 to 2m (NPS)",  # Inorganic C stock: completes C budget; carbonate-cycling microbial pathways and pH buffering
+    # Quantified SOC to 2 m: primary C substrate driving microbial community composition
+    "CLASS RULE - Soil Organic Carbon kg/m2 to 2m (NPS)",
+    # Inorganic C stock: completes C budget; carbonate-cycling microbial pathways and pH buffering
+    "CLASS RULE - Soil Inorganic Carbon kg/m2 to 2m (NPS)",
     # --- Soil health / biological habitat ---
-    "SOH - Limitations for Aerobic Soil Organisms",           # USDA rating of aerobic-biota habitat: integrates drainage, aeration, and OM into one index
-    "SOH - Organic Matter Depletion",                         # Risk of OM loss under land use change: predicts vulnerability of microbial C substrate pool
-    "SOH - Soil Susceptibility to Compaction",                # Compaction reduces macroporosity and O2 diffusion: shifts aerobic → anaerobic communities
+    # USDA rating of aerobic-biota habitat: integrates drainage, aeration, and OM into one index
+    "SOH - Limitations for Aerobic Soil Organisms",
+    # Risk of OM loss under land use change: predicts vulnerability of microbial C substrate pool
+    "SOH - Organic Matter Depletion",
+    # Compaction reduces macroporosity and O2 diffusion: shifts aerobic → anaerobic communities
+    "SOH - Soil Susceptibility to Compaction",
     # --- Bioenergy feedstock productivity ---
-    "NCCPI - National Commodity Crop Productivity Index (Ver 3.0)",  # National standardized index: benchmarks bioenergy feedstock potential across CONUS
+    # National standardized index: benchmarks bioenergy feedstock potential across CONUS
+    "NCCPI - National Commodity Crop Productivity Index (Ver 3.0)",
     # --- Nutrient / organic compound mobility ---
-    "AGR - Pesticide Loss Potential-Leaching",                # Organic compound mobility to groundwater: proxy for DOC and nutrient leaching to subsurface
+    # Organic compound mobility to groundwater: proxy for DOC and nutrient leaching to subsurface
+    "AGR - Pesticide Loss Potential-Leaching",
 ]
 
 # ---------------------------------------------------------------------------
@@ -142,12 +164,17 @@ DEFAULT_SOIL_SUITABILITY_RULE_NAMES: list[str] = [
 DEFAULT_ECOLOGICAL_SITE_VARIABLES: list[str] = [
     # compname, comppct_r, ecoclassid, ecoclassname are always present
     # --- Ecological classification metadata ---
-    "ecoclasstypename",  # Classification type (rangeland/forest/non-site): sets vegetation community context for C input interpretation
-    "ecoclassref",       # Reference key to ESIS description: enables look-up of plant community, production, and disturbance pathway data
-    "ecositestatus",     # Status (approved/draft): indicates reliability of the ecological site description
+    # Classification type (rangeland/forest/non-site): sets vegetation community context for C input
+    "ecoclasstypename",
+    # Reference to ESIS description: look-up of plant community, production, and disturbance data
+    "ecoclassref",
+    # Status (approved/draft): indicates reliability of the ecological site description
+    "ecositestatus",
     # --- Component-level context ---
-    "majcompflag",       # Major component flag: identifies dominant soil in map unit; used to filter to most representative classification
-    "drainagecl",        # Drainage class: aerobic/anaerobic status; links ecological site to microbial redox regime
+    # Major component flag: identifies dominant soil in the map unit (most representative)
+    "majcompflag",
+    # Drainage class: aerobic/anaerobic status; links ecological site to microbial redox regime
+    "drainagecl",
 ]
 
 # ---------------------------------------------------------------------------
@@ -157,12 +184,17 @@ DEFAULT_ECOLOGICAL_SITE_VARIABLES: list[str] = [
 DEFAULT_PARENT_MATERIAL_VARIABLES: list[str] = [
     # compname, comppct_r, pmgroupname, pmkind, pmorigin are always present
     # --- Layer geometry ---
-    "pmorder",      # Vertical stacking order: distinguishes topmost from deeper PM layers in multi-parent-material profiles
-    "pmdept_r",     # Top depth [cm]: upper bound of this PM layer's mineral weathering and nutrient-release zone
-    "pmdepb_r",     # Bottom depth [cm]: lower bound → full thickness of PM influence on rooting zone and microbial habitat
+    # Vertical stacking order: distinguishes topmost from deeper PM layers in multi-PM profiles
+    "pmorder",
+    # Top depth [cm]: upper bound of this PM layer's mineral weathering and nutrient-release zone
+    "pmdept_r",
+    # Bottom depth [cm]: lower bound; full thickness of PM influence on rooting, microbial habitat
+    "pmdepb_r",
     # --- Textural/compositional refinement ---
-    "pmmodifier",   # Textural modifier (gravelly, silty, etc.): refines pore size distribution, water retention, and habitat heterogeneity
-    "pmgenmod",     # General modifier: broader compositional descriptor (e.g. organic vs mineral character of PM)
+    # Textural modifier (gravelly/silty/etc.): pore size, water retention, and habitat heterogeneity
+    "pmmodifier",
+    # General modifier: broader compositional descriptor (e.g. organic vs mineral character of PM)
+    "pmgenmod",
 ]
 
 # ---------------------------------------------------------------------------
@@ -171,12 +203,17 @@ DEFAULT_PARENT_MATERIAL_VARIABLES: list[str] = [
 
 DEFAULT_SOIL_TEMPERATURE_VARIABLES: list[str] = [
     # compname, comppct_r, monthseq, soitempdept_r, soitempdepb_r are always present
-    "month",          # Month name: human-readable label for monthseq integer
-    "soitempmm",      # Monthly soil temperature [°C]: primary measurement driving microbial activity rates (Q10/Arrhenius)
-    "soiltempa_r",    # MAST [°C]: Mean Annual Soil Temperature → taxonomic temperature regime boundary marker (cryic/mesic/thermic)
-    "taxtempregime",  # Temperature regime: strongly predicts microbial community composition and C decomposition rates
-    "airtempa_r",     # MAAT [°C]: air-soil coupling; offset from MAST indicates organic/snow insulation of the soil profile
-    "ffd_r",          # Frost-free days: proxy for freeze-thaw cycle intensity, a major driver of labile C release
+    "month",  # Month name: human-readable label for monthseq integer
+    # Monthly soil temperature [°C]: primary driver of microbial activity rates (Q10/Arrhenius)
+    "soitempmm",
+    # MAST [°C]: Mean Annual Soil Temperature; temperature regime boundary (cryic/mesic/thermic)
+    "soiltempa_r",
+    # Temperature regime: predicts microbial community composition and C decomposition rates
+    "taxtempregime",
+    # MAAT [°C]: air-soil coupling; MAST offset indicates organic/snow insulation of soil profile
+    "airtempa_r",
+    # Frost-free days: proxy for freeze-thaw cycle intensity, a major driver of labile C release
+    "ffd_r",
 ]
 
 # ---------------------------------------------------------------------------
@@ -209,7 +246,8 @@ _COLUMN_TABLE_PRIORITY: tuple[str, ...] = (
 # Per-type query identifier (used as a cache key in _VARIABLE_INFO_CACHE)
 # ---------------------------------------------------------------------------
 
-class _QueryType(str, Enum):
+
+class _QueryType(StrEnum):
     """Identifier for each SSURGO data query type; doubles as a cache key."""
 
     SOIL_PROFILE = "soil_profile"

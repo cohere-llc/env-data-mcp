@@ -12,8 +12,8 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_temperature_query,
 )
 from env_data_mcp.sources.ssurgo.constants import (
-    _QueryType,
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
+    _QueryType,
 )
 
 from .conftest import (

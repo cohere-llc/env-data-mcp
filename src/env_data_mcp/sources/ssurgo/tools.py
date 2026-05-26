@@ -14,7 +14,6 @@ from env_data_mcp.server import mcp
 from ._client import _fetch_mukey_geometries, _fetch_sda, _get_variable_info, _parse_xml
 from .constants import (
     _NO_COVERAGE_MSG,
-    _QueryType,
     _SDA_URL,
     _SOIL_SUITABILITY_RULES_SQL,
     DEFAULT_AREA_SUMMARY_VARIABLES,
@@ -26,6 +25,7 @@ from .constants import (
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
     DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
     LICENSE_INFO,
+    _QueryType,
 )
 from .sql import (
     _build_area_summary_sql,

@@ -301,7 +301,7 @@ TABLE_SCHEMA_XMLS: dict[str, str] = {
 }
 
 
-def add_schema_responses(httpx_mock: object, avail_sql: str) -> None:
+def add_schema_responses(httpx_mock: object, avail_sql: _QueryType) -> None:
     """Register one mock schema response per table for the given avail_sql key."""
     for table in _AVAIL_SQL_TABLES[avail_sql]:
         httpx_mock.add_response(  # type: ignore[attr-defined]
