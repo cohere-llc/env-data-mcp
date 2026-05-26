@@ -124,3 +124,48 @@ def test_soil_suitability_bbox_query_returns_data(httpx_mock):
     GroupedGeometryResponse.model_validate(result)
     assert result["_meta"]["success"] is True
     assert len(result["data"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Edge-case / error paths (cover previously uncovered lines)
+# ---------------------------------------------------------------------------
+
+
+def test_soil_suitability_query_runtime_guard_returns_slow_query_warning():
+    result = ssurgo_soil_suitability_query(latitude=_LAT, longitude=_LON, max_runtime_s=0)
+    assert result["_meta"]["success"] is False
+    assert result["_meta"].get("slow_query_warning") is True
+
+
+def test_soil_suitability_query_non_finite_lat_raises_value_error():
+    with pytest.raises(ValueError, match="finite"):
+        ssurgo_soil_suitability_query(latitude=float("inf"), longitude=_LON)
+
+
+def test_soil_suitability_bbox_query_runtime_guard_returns_slow_query_warning():
+    result = ssurgo_soil_suitability_bbox_query(
+        min_lat=_MIN_LAT, max_lat=_MAX_LAT, min_lon=_MIN_LON, max_lon=_MAX_LON, max_runtime_s=0
+    )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"].get("slow_query_warning") is True
+
+
+def test_soil_suitability_bbox_query_invalid_rule_name_returns_error():
+    result = ssurgo_soil_suitability_bbox_query(
+        min_lat=_MIN_LAT,
+        max_lat=_MAX_LAT,
+        min_lon=_MIN_LON,
+        max_lon=_MAX_LON,
+        rule_names=["ENG - Dwellings\x00; DROP TABLE component"],
+    )
+    assert result["_meta"]["success"] is False
+    assert "Invalid rule name" in result["_meta"]["error"]
+
+
+def test_soil_suitability_bbox_query_http_error_returns_failure(httpx_mock):
+    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
+    result = ssurgo_soil_suitability_bbox_query(
+        min_lat=_MIN_LAT, max_lat=_MAX_LAT, min_lon=_MIN_LON, max_lon=_MAX_LON
+    )
+    assert result["_meta"]["success"] is False
+    assert result["_meta"]["error"] is not None
