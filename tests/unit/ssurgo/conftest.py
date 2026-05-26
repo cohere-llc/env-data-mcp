@@ -13,14 +13,8 @@ from env_data_mcp.sources.ssurgo._client import (
     _VARIABLE_INFO_CACHE,
 )
 from env_data_mcp.sources.ssurgo.constants import (
-    _AREA_SUMMARY_AVAIL_SQL,
     _AVAIL_SQL_TABLES,
-    _ECOLOGICAL_SITE_AVAIL_SQL,
-    _PARENT_MATERIAL_AVAIL_SQL,
-    _SEASONAL_HYDROLOGY_AVAIL_SQL,
-    _SOIL_PROFILE_AVAIL_SQL,
-    _SOIL_TEMPERATURE_AVAIL_SQL,
-    _SUBSURFACE_BARRIERS_AVAIL_SQL,
+    _QueryType,
 )
 
 # ---------------------------------------------------------------------------
@@ -535,14 +529,6 @@ def _reset_ssurgo_caches(request):
     # Tests for available_variables functions are excluded: they register HTTP
     # mocks specifically to exercise the fetch path, so the cache must be cold.
     if "available_variables" not in request.node.name:
-        for _avail_sql in (
-            _SOIL_PROFILE_AVAIL_SQL,
-            _AREA_SUMMARY_AVAIL_SQL,
-            _SUBSURFACE_BARRIERS_AVAIL_SQL,
-            _SEASONAL_HYDROLOGY_AVAIL_SQL,
-            _ECOLOGICAL_SITE_AVAIL_SQL,
-            _PARENT_MATERIAL_AVAIL_SQL,
-            _SOIL_TEMPERATURE_AVAIL_SQL,
-        ):
-            _VARIABLE_INFO_CACHE[_avail_sql] = {}
+        for _qt in _QueryType:
+            _VARIABLE_INFO_CACHE[_qt] = {}
     yield

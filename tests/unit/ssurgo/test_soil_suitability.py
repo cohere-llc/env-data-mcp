@@ -7,7 +7,7 @@ import pytest
 from env_data_mcp.models import GroupedGeometryResponse, SuitabilityRulesResponse
 from env_data_mcp.sources.ssurgo import (
     _NO_COVERAGE_MSG,
-    ssurgo_soil_suitability_available_variables,
+    ssurgo_soil_suitability_available_rule_names,
     ssurgo_soil_suitability_bbox_query,
     ssurgo_soil_suitability_query,
 )
@@ -29,27 +29,27 @@ from .conftest import (
 def test_soil_suitability_available_variables_returns_rule_names(httpx_mock):
     """available_variables for suitability returns flat 'rule_names' list, not 'variables'."""
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=RULES_XML)
-    result = ssurgo_soil_suitability_available_variables()
+    result = ssurgo_soil_suitability_available_rule_names()
     SuitabilityRulesResponse.model_validate(result)
-    assert "rule_names" in result
+    assert "data" in result
     assert "variables" not in result
     assert "_meta" in result
-    assert len(result["rule_names"]) == 3
-    assert "ENG - Dwellings Without Basements" in result["rule_names"]
+    assert len(result["data"]) == 3
+    assert "ENG - Dwellings Without Basements" in result["data"]
 
 
 def test_soil_suitability_available_variables_meta_success(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=RULES_XML)
-    result = ssurgo_soil_suitability_available_variables()
+    result = ssurgo_soil_suitability_available_rule_names()
     assert result["_meta"]["success"] is True
     assert result["_meta"]["rows_returned"] == 3
 
 
 def test_soil_suitability_available_variables_http_error(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_soil_suitability_available_variables()
+    result = ssurgo_soil_suitability_available_rule_names()
     assert result["_meta"]["success"] is False
-    assert result["rule_names"] == []
+    assert result["data"] == []
 
 
 def test_soil_suitability_query_success_structure(httpx_mock):

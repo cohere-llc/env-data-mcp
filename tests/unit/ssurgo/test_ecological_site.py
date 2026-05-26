@@ -11,7 +11,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_ecological_site_bbox_query,
     ssurgo_ecological_site_query,
 )
-from env_data_mcp.sources.ssurgo.constants import _ECOLOGICAL_SITE_AVAIL_SQL
+from env_data_mcp.sources.ssurgo.constants import _QueryType
 
 from .conftest import (
     _LAT,
@@ -32,7 +32,7 @@ from .conftest import (
 
 
 def test_ecological_site_available_variables_returns_variables_key(httpx_mock):
-    add_schema_responses(httpx_mock, _ECOLOGICAL_SITE_AVAIL_SQL)
+    add_schema_responses(httpx_mock, _QueryType.ECOLOGICAL_SITE)
     result = ssurgo_ecological_site_available_variables()
     AvailableVariablesResponse.model_validate(result)
     assert "data" in result

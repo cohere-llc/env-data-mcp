@@ -11,7 +11,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_seasonal_hydrology_bbox_query,
     ssurgo_seasonal_hydrology_query,
 )
-from env_data_mcp.sources.ssurgo.constants import _SEASONAL_HYDROLOGY_AVAIL_SQL
+from env_data_mcp.sources.ssurgo.constants import _QueryType
 
 from .conftest import (
     _LAT,
@@ -28,7 +28,7 @@ from .conftest import (
 
 
 def test_seasonal_hydrology_available_variables_returns_variables_key(httpx_mock):
-    add_schema_responses(httpx_mock, _SEASONAL_HYDROLOGY_AVAIL_SQL)
+    add_schema_responses(httpx_mock, _QueryType.SEASONAL_HYDROLOGY)
     result = ssurgo_seasonal_hydrology_available_variables()
     AvailableVariablesResponse.model_validate(result)
     assert "data" in result

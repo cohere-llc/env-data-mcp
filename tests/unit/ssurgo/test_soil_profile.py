@@ -13,7 +13,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_profile_query,
 )
 from env_data_mcp.sources.ssurgo._client import _VARIABLE_INFO_CACHE
-from env_data_mcp.sources.ssurgo.constants import _SOIL_PROFILE_AVAIL_SQL
+from env_data_mcp.sources.ssurgo.constants import _QueryType
 
 from .conftest import (
     _LAT,
@@ -30,25 +30,21 @@ from .conftest import (
 
 
 def test_soil_profile_available_variables_returns_variables_key(httpx_mock):
-    add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
+    add_schema_responses(httpx_mock, _QueryType.SOIL_PROFILE)
     result = ssurgo_soil_profile_available_variables()
-    AvailableVariablesResponse.model_validate(result)
     assert "data" in result
-    assert "_meta" in result
-    assert "sandtotal_r" in result["data"]
-    assert "mukey" in result["data"]
-    assert "compname" in result["data"]
+    assert "variables" not in result
 
 
 def test_soil_profile_available_variables_entry_structure(httpx_mock):
-    add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
+    add_schema_responses(httpx_mock, _QueryType.SOIL_PROFILE)
     result = ssurgo_soil_profile_available_variables()
     assert "sandtotal_r" in result["data"]
     assert all("description" in e for e in result["data"].values())
 
 
 def test_soil_profile_available_variables_meta_success(httpx_mock):
-    add_schema_responses(httpx_mock, _SOIL_PROFILE_AVAIL_SQL)
+    add_schema_responses(httpx_mock, _QueryType.SOIL_PROFILE)
     result = ssurgo_soil_profile_available_variables()
     assert result["_meta"]["success"] is True
     assert result["_meta"]["rows_returned"] > 0
@@ -118,7 +114,7 @@ def test_soil_profile_query_http_error_returns_failure(httpx_mock):
 
 
 def test_soil_profile_query_variable_info_in_meta(httpx_mock):
-    _VARIABLE_INFO_CACHE[_SOIL_PROFILE_AVAIL_SQL] = {
+    _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
         "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
     }
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)

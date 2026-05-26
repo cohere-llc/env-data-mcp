@@ -12,7 +12,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_temperature_query,
 )
 from env_data_mcp.sources.ssurgo.constants import (
-    _SOIL_TEMPERATURE_AVAIL_SQL,
+    _QueryType,
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
 )
 
@@ -35,7 +35,7 @@ from .conftest import (
 
 
 def test_soil_temperature_available_variables_structure(httpx_mock):
-    add_schema_responses(httpx_mock, _SOIL_TEMPERATURE_AVAIL_SQL)
+    add_schema_responses(httpx_mock, _QueryType.SOIL_TEMPERATURE)
     result = ssurgo_soil_temperature_available_variables()
     AvailableVariablesResponse.model_validate(result)
     assert "data" in result
@@ -43,7 +43,7 @@ def test_soil_temperature_available_variables_structure(httpx_mock):
 
 
 def test_soil_temperature_available_variables_meta_query_type(httpx_mock):
-    add_schema_responses(httpx_mock, _SOIL_TEMPERATURE_AVAIL_SQL)
+    add_schema_responses(httpx_mock, _QueryType.SOIL_TEMPERATURE)
     result = ssurgo_soil_temperature_available_variables()
     assert result["_meta"]["query_params"]["query_type"] == "soil_temperature"
 

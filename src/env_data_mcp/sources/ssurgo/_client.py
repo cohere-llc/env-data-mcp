@@ -9,14 +9,14 @@ from typing import Any
 import httpx
 import pdfplumber
 
-from .constants import _AVAIL_SQL_TABLES, _COLUMN_TABLE_PRIORITY, _SDA_URL, _XS_NS
+from .constants import _AVAIL_SQL_TABLES, _COLUMN_TABLE_PRIORITY, _QueryType, _SDA_URL, _XS_NS
 
 # ---------------------------------------------------------------------------
 # Session-level caches
 # ---------------------------------------------------------------------------
 
-# avail_sql → {colphyname: {"table": str, "label": str, "units": str}}
-_VARIABLE_INFO_CACHE: dict[str, dict[str, dict[str, str]]] = {}
+# query type → {colphyname: {"table": str, "label": str, "units": str}}
+_VARIABLE_INFO_CACHE: dict[_QueryType, dict[str, dict[str, str]]] = {}
 
 # physical column name → owning table; populated lazily by _get_column_table_map()
 _COLUMN_TABLE_CACHE: dict[str, str] = {}
@@ -210,20 +210,20 @@ def _sda_table_columns(table: str) -> list[str]:
     ]
 
 
-def _get_variable_info(avail_sql: str) -> dict[str, dict[str, str]]:
-    """Discover available columns for the tables associated with *avail_sql*.
+def _get_variable_info(query_type: _QueryType) -> dict[str, dict[str, str]]:
+    """Discover available columns for the tables associated with *query_type*.
 
     Column names are discovered by parsing the XSD schema embedded in a
     ``SELECT TOP 1 *`` response for each relevant table, then enriched with
     human-readable ``label`` and ``units`` from the SDA Tables and Columns
     Report PDF.  Results are cached for the lifetime of the process.
     """
-    if avail_sql in _VARIABLE_INFO_CACHE:
-        return _VARIABLE_INFO_CACHE[avail_sql]
+    if query_type in _VARIABLE_INFO_CACHE:
+        return _VARIABLE_INFO_CACHE[query_type]
     info: dict[str, dict[str, str]] = {}
     last_exc: Exception | None = None
     col_metadata = _load_column_metadata()
-    for table in _AVAIL_SQL_TABLES.get(avail_sql, ()):
+    for table in _AVAIL_SQL_TABLES.get(query_type, ()):
         try:
             table_meta = col_metadata.get(table, {})
             for col in _sda_table_columns(table):
@@ -245,8 +245,8 @@ def _get_variable_info(avail_sql: str) -> dict[str, dict[str, str]]:
     if not info:
         if last_exc is not None:
             raise last_exc
-        raise RuntimeError(f"No tables configured for avail_sql key: {avail_sql!r}")
-    _VARIABLE_INFO_CACHE[avail_sql] = info
+        raise RuntimeError(f"No tables configured for query type: {query_type!r}")
+    _VARIABLE_INFO_CACHE[query_type] = info
     return info
 
 

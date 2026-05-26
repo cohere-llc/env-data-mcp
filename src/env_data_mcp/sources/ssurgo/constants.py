@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from enum import Enum
+
 # ---------------------------------------------------------------------------
 # Licence and metadata
 # ---------------------------------------------------------------------------
@@ -204,64 +206,34 @@ _COLUMN_TABLE_PRIORITY: tuple[str, ...] = (
 )
 
 # ---------------------------------------------------------------------------
-# Per-type available-variables SQL (queries SDA built-in column catalogue)
+# Per-type query identifier (used as a cache key in _VARIABLE_INFO_CACHE)
 # ---------------------------------------------------------------------------
 
-_SOIL_PROFILE_AVAIL_SQL = """\
-SELECT mc.tabphyname, mc.colphyname, mc.collogname, mc.coldesc, mc.uomabbrev
-FROM mdstatcolmas mc
-WHERE mc.tabphyname IN ('mapunit', 'component', 'chorizon')
-ORDER BY mc.tabphyname, mc.colsequence"""
+class _QueryType(str, Enum):
+    """Identifier for each SSURGO data query type; doubles as a cache key."""
 
-_AREA_SUMMARY_AVAIL_SQL = """\
-SELECT mc.tabphyname, mc.colphyname, mc.collogname, mc.coldesc, mc.uomabbrev
-FROM mdstatcolmas mc
-WHERE mc.tabphyname IN ('mapunit', 'muaggatt')
-ORDER BY mc.tabphyname, mc.colsequence"""
+    SOIL_PROFILE = "soil_profile"
+    AREA_SUMMARY = "area_summary"
+    SUBSURFACE_BARRIERS = "subsurface_barriers"
+    SEASONAL_HYDROLOGY = "seasonal_hydrology"
+    ECOLOGICAL_SITE = "ecological_site"
+    PARENT_MATERIAL = "parent_material"
+    SOIL_TEMPERATURE = "soil_temperature"
 
-_SUBSURFACE_BARRIERS_AVAIL_SQL = """\
-SELECT mc.tabphyname, mc.colphyname, mc.collogname, mc.coldesc, mc.uomabbrev
-FROM mdstatcolmas mc
-WHERE mc.tabphyname IN ('mapunit', 'component', 'corestrictions')
-ORDER BY mc.tabphyname, mc.colsequence"""
-
-_SEASONAL_HYDROLOGY_AVAIL_SQL = """\
-SELECT mc.tabphyname, mc.colphyname, mc.collogname, mc.coldesc, mc.uomabbrev
-FROM mdstatcolmas mc
-WHERE mc.tabphyname IN ('mapunit', 'component', 'comonth', 'cosoilmoist')
-ORDER BY mc.tabphyname, mc.colsequence"""
 
 _SOIL_SUITABILITY_RULES_SQL = """\
 SELECT DISTINCT mrulename
 FROM cointerp
 ORDER BY mrulename"""
 
-_ECOLOGICAL_SITE_AVAIL_SQL = """\
-SELECT mc.tabphyname, mc.colphyname, mc.collogname, mc.coldesc, mc.uomabbrev
-FROM mdstatcolmas mc
-WHERE mc.tabphyname IN ('mapunit', 'component', 'coecoclass')
-ORDER BY mc.tabphyname, mc.colsequence"""
-
-_PARENT_MATERIAL_AVAIL_SQL = """\
-SELECT mc.tabphyname, mc.colphyname, mc.collogname, mc.coldesc, mc.uomabbrev
-FROM mdstatcolmas mc
-WHERE mc.tabphyname IN ('mapunit', 'component', 'copmgrp', 'copm')
-ORDER BY mc.tabphyname, mc.colsequence"""
-
-_SOIL_TEMPERATURE_AVAIL_SQL = """\
-SELECT mc.tabphyname, mc.colphyname, mc.collogname, mc.coldesc, mc.uomabbrev
-FROM mdstatcolmas mc
-WHERE mc.tabphyname IN ('mapunit', 'component', 'comonth', 'cosoiltemp')
-ORDER BY mc.tabphyname, mc.colsequence"""
-
-# Mapping from avail-variables cache key → data tables to query as a fallback
-# when the mdstatcolmas catalogue is unavailable in SDA.
-_AVAIL_SQL_TABLES: dict[str, tuple[str, ...]] = {
-    _SOIL_PROFILE_AVAIL_SQL: ("mapunit", "component", "chorizon"),
-    _AREA_SUMMARY_AVAIL_SQL: ("mapunit", "muaggatt"),
-    _SUBSURFACE_BARRIERS_AVAIL_SQL: ("mapunit", "component", "corestrictions"),
-    _SEASONAL_HYDROLOGY_AVAIL_SQL: ("mapunit", "component", "comonth", "cosoilmoist"),
-    _ECOLOGICAL_SITE_AVAIL_SQL: ("mapunit", "component", "coecoclass"),
-    _PARENT_MATERIAL_AVAIL_SQL: ("mapunit", "component", "copmgrp", "copm"),
-    _SOIL_TEMPERATURE_AVAIL_SQL: ("mapunit", "component", "comonth", "cosoiltemp"),
+# Mapping from query type → SDA tables whose XSD schemas are introspected to
+# discover available column names.
+_AVAIL_SQL_TABLES: dict[_QueryType, tuple[str, ...]] = {
+    _QueryType.SOIL_PROFILE: ("mapunit", "component", "chorizon"),
+    _QueryType.AREA_SUMMARY: ("mapunit", "muaggatt"),
+    _QueryType.SUBSURFACE_BARRIERS: ("mapunit", "component", "corestrictions"),
+    _QueryType.SEASONAL_HYDROLOGY: ("mapunit", "component", "comonth", "cosoilmoist"),
+    _QueryType.ECOLOGICAL_SITE: ("mapunit", "component", "coecoclass"),
+    _QueryType.PARENT_MATERIAL: ("mapunit", "component", "copmgrp", "copm"),
+    _QueryType.SOIL_TEMPERATURE: ("mapunit", "component", "comonth", "cosoiltemp"),
 }

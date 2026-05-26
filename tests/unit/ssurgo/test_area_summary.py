@@ -12,7 +12,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_area_summary_bbox_query,
     ssurgo_area_summary_query,
 )
-from env_data_mcp.sources.ssurgo.constants import _AREA_SUMMARY_AVAIL_SQL
+from env_data_mcp.sources.ssurgo.constants import _QueryType
 
 from .conftest import (
     _LAT,
@@ -29,7 +29,7 @@ from .conftest import (
 
 
 def test_area_summary_available_variables_returns_variables_key(httpx_mock):
-    add_schema_responses(httpx_mock, _AREA_SUMMARY_AVAIL_SQL)
+    add_schema_responses(httpx_mock, _QueryType.AREA_SUMMARY)
     result = ssurgo_area_summary_available_variables()
     AvailableVariablesResponse.model_validate(result)
     assert "data" in result

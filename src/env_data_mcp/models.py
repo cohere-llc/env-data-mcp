@@ -197,13 +197,9 @@ class AvailableVariablesResponse(BaseModel):
 
 
 class SuitabilityRulesResponse(BaseModel):
-    """Response schema for ``ssurgo_soil_suitability_available_variables()``.
-
-    This tool returns interpretation rule names rather than column metadata,
-    so it uses ``rule_names: list[str]`` instead of the standard ``data`` key.
-    """
+    """Response schema for ``ssurgo_soil_suitability_available_rule_names()``."""
 
     model_config = ConfigDict(populate_by_name=True)
 
-    rule_names: list[str]
+    data: list[str]
     meta: ResponseMeta = Field(alias="_meta")
