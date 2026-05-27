@@ -155,19 +155,19 @@ class TestPointQueryStructure:
         assert baseline_daily["_meta"]["success"] is True
 
     def test_returns_one_row(self, baseline_daily: dict):
-        assert len(baseline_daily["data"]) == 1
+        assert len(baseline_daily["data"][0]["records"]) == 1
 
     def test_date_matches_query(self, baseline_daily: dict):
-        assert baseline_daily["data"][0]["date"] == _DATE
+        assert baseline_daily["data"][0]["records"][0]["date"] == _DATE
 
     def test_primary_var_present_in_row(self, dc: _DatasetCase, baseline_daily: dict):
-        assert dc.primary_var in baseline_daily["data"][0]
+        assert dc.primary_var in baseline_daily["data"][0]["records"][0]
 
     def test_primary_var_units_present(self, dc: _DatasetCase, baseline_daily: dict):
-        assert f"{dc.primary_var}_units" in baseline_daily["data"][0]
+        assert f"{dc.primary_var}_units" in baseline_daily["data"][0]["records"][0]
 
     def test_primary_var_plausible(self, dc: _DatasetCase, baseline_daily: dict):
-        val = baseline_daily["data"][0][dc.primary_var]
+        val = baseline_daily["data"][0]["records"][0][dc.primary_var]
         assert dc.plausible_lo <= val <= dc.plausible_hi, (
             f"{dc.label}: {dc.primary_var}={val} outside expected range "
             f"[{dc.plausible_lo}, {dc.plausible_hi}]"
@@ -209,7 +209,7 @@ class TestPointQueryStructure:
             max_runtime_s=60.0,
         )
         assert result["_meta"]["success"] is True
-        row = result["data"][0]
+        row = result["data"][0]["records"][0]
         found = [v for v in dc.default_vars if v in row]
         assert len(found) > 0, f"{dc.label}: no default variables present in output row"
 
@@ -253,9 +253,9 @@ class TestTemporalResolution:
         assert result["_meta"]["success"] is True, (
             f"{dc.label}/{resolution.value}: query failed — {result['_meta'].get('error')}"
         )
-        assert len(result["data"]) == expected_n, (
+        assert len(result["data"][0]["records"]) == expected_n, (
             f"{dc.label}/{resolution.value}: expected {expected_n} records, "
-            f"got {len(result['data'])}"
+            f"got {len(result['data'][0]['records'])}"
         )
 
     @pytest.mark.parametrize("resolution,start,end,expected_n,max_rt", _TEMPORAL_CASES)
@@ -295,11 +295,12 @@ class TestHourlyDetails:
             max_runtime_s=120.0,
         )
         assert result["_meta"]["success"] is True
-        assert len(result["data"]) == 24, (
-            f"{dc.label}: expected 24 hourly records, got {len(result['data'])} — "
+        records = result["data"][0]["records"]
+        assert len(records) == 24, (
+            f"{dc.label}: expected 24 hourly records, got {len(records)} — "
             "may indicate int64 truncation in _get_coordinates"
         )
-        dates = [row["date"] for row in result["data"]]
+        dates = [row["date"] for row in records]
         assert len(set(dates)) == 24, (
             f"{dc.label}: 24 hourly records but only {len(set(dates))} distinct date strings — "
             "time axis still truncating to daily resolution"
@@ -316,7 +317,7 @@ class TestHourlyDetails:
             max_runtime_s=120.0,
         )
         assert result["_meta"]["success"] is True
-        first_date = result["data"][0]["date"]
+        first_date = result["data"][0]["records"][0]["date"]
         assert "T" in first_date, (
             f"{dc.label}: hourly date '{first_date}' missing time component — expected ISO datetime"
         )
@@ -353,9 +354,8 @@ class TestClimatologyProbe:
         assert result["_meta"]["success"] is True, (
             f"{dc.label}: climatology query failed — {result['_meta'].get('error')}"
         )
-        assert len(result["data"]) == 13, (
-            f"{dc.label}: expected 13 climatology records (full year), got {len(result['data'])}"
-        )
+        n = len(result["data"][0]["records"])
+        assert n == 13, f"{dc.label}: expected 13 climatology records (full year), got {n}"
 
     def test_climatology_single_month_returns_2_records(self, dc: _DatasetCase):
         """Single-month range → 1 month + annual = 2 records."""
@@ -371,10 +371,11 @@ class TestClimatologyProbe:
         assert result["_meta"]["success"] is True, (
             f"{dc.label}: climatology single-month query failed — {result['_meta'].get('error')}"
         )
-        assert len(result["data"]) == 2, (
-            f"{dc.label}: expected 2 records (month-08 + annual), got {len(result['data'])}"
+        records = result["data"][0]["records"]
+        assert len(records) == 2, (
+            f"{dc.label}: expected 2 records (month-08 + annual), got {len(records)}"
         )
-        dates = {r["date"] for r in result["data"]}
+        dates = {r["date"] for r in records}
         assert "month-08" in dates, f"{dc.label}: 'month-08' missing from {dates}"
         assert "annual" in dates, f"{dc.label}: 'annual' missing from {dates}"
 
@@ -392,10 +393,11 @@ class TestClimatologyProbe:
         assert result["_meta"]["success"] is True, (
             f"{dc.label}: climatology multi-month query failed — {result['_meta'].get('error')}"
         )
-        assert len(result["data"]) == 4, (
-            f"{dc.label}: expected 4 records (months 6-8 + annual), got {len(result['data'])}"
+        records = result["data"][0]["records"]
+        assert len(records) == 4, (
+            f"{dc.label}: expected 4 records (months 6-8 + annual), got {len(records)}"
         )
-        dates = {r["date"] for r in result["data"]}
+        dates = {r["date"] for r in records}
         for expected in ("month-06", "month-07", "month-08", "annual"):
             assert expected in dates, f"{dc.label}: '{expected}' missing from {dates}"
 
@@ -411,7 +413,7 @@ class TestClimatologyProbe:
             max_runtime_s=60.0,
         )
         assert result["_meta"]["success"] is True
-        dates = {r["date"] for r in result["data"]}
+        dates = {r["date"] for r in result["data"][0]["records"]}
         expected = {f"month-{m:02d}" for m in range(1, 13)} | {"annual"}
         assert dates == expected, f"{dc.label}: date labels mismatch — got {sorted(dates)}"
 
@@ -434,7 +436,7 @@ class TestNonDefaultVariable:
             max_runtime_s=60.0,
         )
         assert result["_meta"]["success"] is True
-        assert extra in result["data"][0], (
+        assert extra in result["data"][0]["records"][0], (
             f"{dc.label}: non-default variable '{extra}' absent from output row"
         )
 
@@ -467,7 +469,7 @@ class TestUnavailableVariable:
             variables=[dc.primary_var, "DOES_NOT_EXIST_XYZ"],
             max_runtime_s=60.0,
         )
-        assert "DOES_NOT_EXIST_XYZ" not in result["data"][0]
+        assert "DOES_NOT_EXIST_XYZ" not in result["data"][0]["records"][0]
 
 
 class TestMaxRuntimeGate:
@@ -620,19 +622,19 @@ class TestSchemaStability:
     """Detects upstream variable renames, unit changes, and missing meta fields."""
 
     def test_primary_var_field_present(self, dc: _DatasetCase, baseline_daily: dict):
-        row = baseline_daily["data"][0]
+        row = baseline_daily["data"][0]["records"][0]
         assert dc.primary_var in row, (
             f"{dc.label}: {dc.primary_var} missing — upstream may have renamed it"
         )
 
     def test_primary_var_units_field_present(self, dc: _DatasetCase, baseline_daily: dict):
-        row = baseline_daily["data"][0]
+        row = baseline_daily["data"][0]["records"][0]
         assert f"{dc.primary_var}_units" in row, (
             f"{dc.label}: {dc.primary_var}_units missing — units no longer echoed"
         )
 
     def test_primary_var_physical_range(self, dc: _DatasetCase, baseline_daily: dict):
-        val = baseline_daily["data"][0][dc.primary_var]
+        val = baseline_daily["data"][0]["records"][0][dc.primary_var]
         assert dc.plausible_lo - 5 <= val <= dc.plausible_hi + 5, (
             f"{dc.label}: {dc.primary_var}={val} outside physical range — "
             "fill value leaked or unit changed?"
@@ -648,4 +650,4 @@ class TestSchemaStability:
         assert baseline_daily["_meta"]["license"] != ""
 
     def test_meta_rows_returned_consistent(self, baseline_daily: dict):
-        assert baseline_daily["_meta"]["rows_returned"] == len(baseline_daily["data"])
+        assert baseline_daily["_meta"]["rows_returned"] == len(baseline_daily["data"][0]["records"])

@@ -164,6 +164,12 @@ def _record(
     location: str = "yakima_wa",
 ) -> None:
     """Append a timing observation to the in-memory accumulator."""
+    data = result.get("data", [])
+    if data and isinstance(data[0], dict) and "records" in data[0]:
+        n_records = sum(len(group.get("records", [])) for group in data)
+    else:
+        n_records = len(data)
+
     _TIMING.setdefault(source, []).append(
         {
             "scenario": scenario_name,
@@ -172,7 +178,7 @@ def _record(
             "location": location,
             "latency_s": result["_meta"].get("latency_s", 0.0),
             "success": result["_meta"].get("success", False),
-            "n_records": len(result.get("data", [])),
+            "n_records": n_records,
         }
     )
 
@@ -489,7 +495,7 @@ def test_nasa_power_point_bbox_consistent():
     )
     _assert_or_skip(pt, "nasa_power/point")
     _assert_or_skip(bx, "nasa_power/bbox")
-    pt_t2m = pt["data"][0]["T2M"]
+    pt_t2m = pt["data"][0]["records"][0]["T2M"]
     # Both point and bbox snap to the same nearest MERRA-2 grid cell
     nearest = min(
         bx["data"],
