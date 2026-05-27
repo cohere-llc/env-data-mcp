@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import zarr
+import zarr.storage
 from pydantic import ValidationError
 
 import env_data_mcp.sources.nasa_power as _nasa_power_mod
@@ -67,7 +68,7 @@ def _make_mock_group(variable_defs: dict[str, tuple[float, str, str]]) -> zarr.G
     """Build a minimal in-memory Zarr group mirroring the NASA POWER layout.
 
     Args:
-        variable_defs: ``{name: (fill_value, units, long_name)}``
+        variable_defs: ``{name: (fill_value, units, description)}``
     Grid: 3 lat × 3 lon. Time: 5 daily steps starting 2019-08-17.
     """
     store = zarr.storage.MemoryStore()
@@ -78,10 +79,10 @@ def _make_mock_group(variable_defs: dict[str, tuple[float, str, str]]) -> zarr.G
     time_arr = g.create_array("time", data=np.array(_TIME_VALS, dtype="i4"))
     time_arr.attrs["units"] = "days since 1970-01-01"
 
-    for name, (fill, units, long_name) in variable_defs.items():
+    for name, (fill, units, description) in variable_defs.items():
         arr = g.create_array(name, data=np.full((5, 3, 3), fill, dtype="f4"))
         arr.attrs["units"] = units
-        arr.attrs["long_name"] = long_name
+        arr.attrs["long_name"] = description
 
     return g
 
@@ -194,7 +195,7 @@ def test_get_variable_info_keys():
 def test_get_variable_info_structure():
     info = _get_variable_info(_MOCK_MERRA2_STORE)
     assert info["T2M"]["units"] == "C"
-    assert info["T2M"]["long_name"] == "Temperature at 2 Meters"
+    assert info["T2M"]["description"] == "Temperature at 2 Meters"
 
 
 def test_get_variable_info_cached():
@@ -590,7 +591,7 @@ def test_merra2_query_variable_info_in_meta():
     assert "T2M" in info
     assert "PRECTOTCORR" in info
     assert info["T2M"]["units"] == "C"
-    assert info["T2M"]["long_name"] == "Temperature at 2 Meters"
+    assert info["T2M"]["description"] == "Temperature at 2 Meters"
 
 
 def test_merra2_query_variable_info_only_requested_vars():
@@ -948,7 +949,7 @@ def test_merra2_available_variables_returns_dict():
         result = nasa_power_merra2_available_variables()
     assert "T2M" in result["data"]
     assert "units" in result["data"]["T2M"]
-    assert "long_name" in result["data"]["T2M"]
+    assert "description" in result["data"]["T2M"]
 
 
 def test_syn1deg_available_variables_returns_dict():
@@ -956,7 +957,7 @@ def test_syn1deg_available_variables_returns_dict():
         result = nasa_power_syn1deg_available_variables()
     assert "ALLSKY_SFC_SW_DWN" in result["data"]
     assert "units" in result["data"]["ALLSKY_SFC_SW_DWN"]
-    assert "long_name" in result["data"]["ALLSKY_SFC_SW_DWN"]
+    assert "description" in result["data"]["ALLSKY_SFC_SW_DWN"]
 
 
 # ---------------------------------------------------------------------------
@@ -982,7 +983,7 @@ def _make_hourly_group(time_vals, units: str) -> zarr.Group:
     t_arr.attrs["units"] = units
     v_arr = g.create_array("T2M", data=np.arange(24, dtype="f4").reshape(24, 1, 1))
     v_arr.attrs["units"] = "C"
-    v_arr.attrs["long_name"] = "Temperature at 2 Meters"
+    v_arr.attrs["description"] = "Temperature at 2 Meters"
     return g
 
 
@@ -1158,7 +1159,7 @@ def _make_clim_group() -> zarr.Group:
         data=np.arange(13 * 3 * 3, dtype="f4").reshape(13, 3, 3),
     )
     arr.attrs["units"] = "C"
-    arr.attrs["long_name"] = "Temperature at 2 Meters"
+    arr.attrs["description"] = "Temperature at 2 Meters"
     return g
 
 
@@ -1170,20 +1171,20 @@ class TestClimDateLabel:
 
     def test_january(self):
         t = pd.Timestamp("1970-01-02")  # day=2 → slot 1 = January
-        assert _clim_date_label(t) == "month-01"
+        assert _clim_date_label(t) == "month-01"  # type: ignore[arg-type]
 
     def test_december(self):
         t = pd.Timestamp("1970-01-13")  # day=13 → slot 12 = December
-        assert _clim_date_label(t) == "month-12"
+        assert _clim_date_label(t) == "month-12"  # type: ignore[arg-type]
 
     def test_annual(self):
         t = pd.Timestamp("1970-01-14")  # day=14 → slot 13 = annual
-        assert _clim_date_label(t) == "annual"
+        assert _clim_date_label(t) == "annual"  # type: ignore[arg-type]
 
     def test_all_monthly_slots(self):
         for slot in range(1, 13):
             t = pd.Timestamp("1970-01-01") + pd.Timedelta(days=slot)
-            assert _clim_date_label(t) == f"month-{slot:02d}"
+            assert _clim_date_label(t) == f"month-{slot:02d}"  # type: ignore[arg-type]
 
 
 class TestClimTimeMask:

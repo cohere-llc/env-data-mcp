@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import sqrt
 from pathlib import Path
@@ -39,7 +41,25 @@ from env_data_mcp.sources.oco2 import oco2_bbox_query, oco2_query
 from env_data_mcp.sources.openaq import openaq_bbox_query, openaq_query
 from env_data_mcp.sources.sentinel5p import sentinel5p_bbox_query, sentinel5p_query
 from env_data_mcp.sources.soilgrids import soilgrids_bbox_query, soilgrids_query
-from env_data_mcp.sources.ssurgo import ssurgo_bbox_query, ssurgo_query
+from env_data_mcp.sources.ssurgo import (
+    ssurgo_area_summary_bbox_query,
+    ssurgo_area_summary_query,
+    ssurgo_ecological_site_bbox_query,
+    ssurgo_ecological_site_query,
+    ssurgo_parent_material_bbox_query,
+    ssurgo_parent_material_query,
+    ssurgo_seasonal_hydrology_bbox_query,
+    ssurgo_seasonal_hydrology_query,
+    ssurgo_soil_profile_bbox_query,
+    ssurgo_soil_profile_query,
+    ssurgo_soil_suitability_bbox_query,
+    ssurgo_soil_suitability_query,
+    ssurgo_soil_temperature_bbox_query,
+    ssurgo_soil_temperature_query,
+    ssurgo_subsurface_barriers_bbox_query,
+    ssurgo_subsurface_barriers_query,
+)
+from env_data_mcp.sources.ssurgo.constants import DEFAULT_SOIL_SUITABILITY_RULE_NAMES
 
 # ---------------------------------------------------------------------------
 # Reference location & time windows
@@ -183,11 +203,15 @@ def _fit_and_write_model() -> None:
     biasing coefficients with API-overhead-only (empty-result) timings.
     All fitted coefficients are floored at 0 — latency cannot physically
     decrease as n_days or area grows; negative values are noise artefacts.
-    Centroid-based sources (SoilGrids, SSURGO) have beta_area_deg2 forced
-    to 0.0 before the floor since their implementation ignores bbox extent.
+    SoilGrids has beta_area_deg2 forced to 0 since it uses a centroid lookup
+    and ignores bbox extent.  SSURGO bbox latency scales with area (~0.2 s/deg²)
+    so it is fitted normally.
     """
     # Sources whose implementation queries a single centroid regardless of bbox.
-    _CENTROID_SOURCES = {"soilgrids", "ssurgo"}
+    # SoilGrids uses a centroid lookup so bbox size doesn't affect latency.
+    # SSURGO is NOT centroid-based: bbox queries return all intersecting map units
+    # and latency scales strongly with area (~0.2 s/deg²), so it is excluded here.
+    _CENTROID_SOURCES = {"soilgrids"}
 
     if not _TIMING:
         return  # Nothing to write if no benchmarks ran
@@ -310,7 +334,7 @@ def _fit_and_write_model() -> None:
             "alpha + beta_n_days\u00b7n_days + beta_area_deg2\u00b7area_deg2 (seconds). "
             "Fit uses only observations with n_records > 0. "
             "All coefficients floored at 0 (latency cannot decrease with more data). "
-            "Centroid-based sources (soilgrids, ssurgo) have "
+            "Centroid-based sources (soilgrids only) have "
             "beta_area_deg2 forced to 0 before the floor. "
             "Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration"
         ),
@@ -528,47 +552,121 @@ def test_soilgrids_point_bbox_consistent():
 # ===========================================================================
 
 
+@dataclass
+class _SsurgoConfig:
+    """Per-query-type configuration for SSURGO benchmark tests."""
+
+    label: str
+    point_fn: Callable[..., dict[str, Any]]
+    bbox_fn: Callable[..., dict[str, Any]]
+    extra_kwargs: dict[str, Any]
+
+
+_SSURGO_QUERY_CONFIGS: list[_SsurgoConfig] = [
+    _SsurgoConfig(
+        label="area_summary",
+        point_fn=ssurgo_area_summary_query,
+        bbox_fn=ssurgo_area_summary_bbox_query,
+        extra_kwargs={},
+    ),
+    _SsurgoConfig(
+        label="ecological_site",
+        point_fn=ssurgo_ecological_site_query,
+        bbox_fn=ssurgo_ecological_site_bbox_query,
+        extra_kwargs={},
+    ),
+    _SsurgoConfig(
+        label="parent_material",
+        point_fn=ssurgo_parent_material_query,
+        bbox_fn=ssurgo_parent_material_bbox_query,
+        extra_kwargs={},
+    ),
+    _SsurgoConfig(
+        label="seasonal_hydrology",
+        point_fn=ssurgo_seasonal_hydrology_query,
+        bbox_fn=ssurgo_seasonal_hydrology_bbox_query,
+        extra_kwargs={},
+    ),
+    _SsurgoConfig(
+        label="soil_profile",
+        point_fn=ssurgo_soil_profile_query,
+        bbox_fn=ssurgo_soil_profile_bbox_query,
+        extra_kwargs={},
+    ),
+    _SsurgoConfig(
+        label="soil_suitability",
+        point_fn=ssurgo_soil_suitability_query,
+        bbox_fn=ssurgo_soil_suitability_bbox_query,
+        extra_kwargs={"rule_names": DEFAULT_SOIL_SUITABILITY_RULE_NAMES},
+    ),
+    _SsurgoConfig(
+        label="soil_temperature",
+        point_fn=ssurgo_soil_temperature_query,
+        bbox_fn=ssurgo_soil_temperature_bbox_query,
+        extra_kwargs={},
+    ),
+    _SsurgoConfig(
+        label="subsurface_barriers",
+        point_fn=ssurgo_subsurface_barriers_query,
+        bbox_fn=ssurgo_subsurface_barriers_bbox_query,
+        extra_kwargs={},
+    ),
+]
+
+# 4 sizes — larger bboxes skip gracefully if SDA returns 400 (too many map units)
+_SSURGO_BBOX_SIZES: list[dict[str, Any]] = [
+    {"name": "0.5x0.5", "half": 0.25, "area_deg2": 0.25},
+    {"name": "2x2", "half": 1.0, "area_deg2": 4.0},
+    {"name": "5x5", "half": 2.5, "area_deg2": 25.0},
+    {"name": "10x10", "half": 5.0, "area_deg2": 100.0},
+]
+
+# US-only locations: Manaus/Frankfurt are outside SSURGO coverage
+_SSURGO_US_LOCATIONS: list[dict[str, Any]] = [
+    {"name": "phoenix_az", "lat": 33.4484, "lon": -112.0740, "label": "Phoenix AZ (arid desert)"},
+    {"name": "atlanta_ga", "lat": 33.7490, "lon": -84.3880, "label": "Atlanta GA (humid piedmont)"},
+    {
+        "name": "chicago_il",
+        "lat": 41.8781,
+        "lon": -87.6298,
+        "label": "Chicago IL (mollisol/prairie)",
+    },
+]
+
+
 @pytest.mark.integration
 @pytest.mark.benchmark
-def test_ssurgo_timing():
-    result = ssurgo_query(latitude=_LAT, longitude=_LON)
+@pytest.mark.parametrize("qc", _SSURGO_QUERY_CONFIGS, ids=lambda q: q.label)
+def test_ssurgo_point_timing(qc: _SsurgoConfig):
+    result = qc.point_fn(latitude=_LAT, longitude=_LON, **qc.extra_kwargs)
     if not result["_meta"].get("success"):
-        pytest.skip(f"SSURGO query failed: {result['_meta'].get('error')}")
-    _record("ssurgo", "point", 0, result)
+        pytest.skip(f"ssurgo/{qc.label}: {result['_meta'].get('error')}")
+    _record("ssurgo", qc.label, 0, result)
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
-@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
-def test_ssurgo_bbox_timing(bz):
-    result = ssurgo_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]))
+@pytest.mark.parametrize("bz", _SSURGO_BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("qc", _SSURGO_QUERY_CONFIGS, ids=lambda q: q.label)
+def test_ssurgo_bbox_timing(qc: _SsurgoConfig, bz: dict[str, Any]):
+    result = qc.bbox_fn(**_make_bbox(_LAT, _LON, bz["half"]), **qc.extra_kwargs)
     if not result["_meta"].get("success"):
-        pytest.skip(f"ssurgo/bbox/{bz['name']}: {result['_meta'].get('error')}")
-    _record("ssurgo", f"bbox/{bz['name']}", 0, result, area_deg2=bz["area_deg2"])
+        pytest.skip(f"ssurgo/{qc.label}/bbox/{bz['name']}: {result['_meta'].get('error')}")
+    _record("ssurgo", f"{qc.label}/bbox/{bz['name']}", 0, result, area_deg2=bz["area_deg2"])
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
-@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
-def test_ssurgo_extra_location_timing(loc):
-    result = ssurgo_query(latitude=loc["lat"], longitude=loc["lon"])
+@pytest.mark.parametrize("loc", _SSURGO_US_LOCATIONS, ids=lambda loc: loc["name"])
+@pytest.mark.parametrize("qc", _SSURGO_QUERY_CONFIGS, ids=lambda q: q.label)
+def test_ssurgo_extra_us_location_timing(qc: _SsurgoConfig, loc: dict[str, Any]):
+    result = qc.point_fn(latitude=loc["lat"], longitude=loc["lon"], **qc.extra_kwargs)
     if not result["_meta"].get("success"):
-        pytest.skip(f"ssurgo/{loc['name']}: no data (US-only)")
-    _record("ssurgo", "point", 0, result, location=loc["name"])
+        pytest.skip(f"ssurgo/{qc.label}/{loc['name']}: no data")
+    _record("ssurgo", qc.label, 0, result, location=loc["name"])
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
-
-
-@pytest.mark.integration
-@pytest.mark.benchmark
-def test_ssurgo_point_bbox_consistent():
-    """Centroid-based: small bbox must return identical records to point query."""
-    pt = ssurgo_query(latitude=_LAT, longitude=_LON)
-    bx = ssurgo_bbox_query(**_BBOX)
-    if not pt["_meta"].get("success") or not bx["_meta"].get("success"):
-        pytest.skip("SSURGO returned no data for this location")
-    assert pt["data"] == bx["data"], "ssurgo point/bbox results differ (centroid-based)"
 
 
 # ===========================================================================
