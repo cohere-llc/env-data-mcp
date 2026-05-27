@@ -7,8 +7,16 @@ import time
 from typing import Any
 
 import httpx
+from pydantic import ValidationError
 
 from env_data_mcp.helpers import bbox_to_wkt_polygon, build_meta, check_runtime
+from env_data_mcp.models import (
+    AvailableVariablesResponse,
+    BboxInput,
+    GroupedGeometryResponse,
+    PointInput,
+    SuitabilityRulesResponse,
+)
 from env_data_mcp.server import mcp
 
 from ._client import _fetch_mukey_geometries, _fetch_sda, _get_variable_info, _parse_xml
@@ -66,6 +74,21 @@ def _group_by_mukey(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return grouped
 
 
+def _validate_available_variables_response(response: dict[str, Any]) -> dict[str, Any]:
+    """Validate and normalize available_variables responses."""
+    return AvailableVariablesResponse.model_validate(response).model_dump(by_alias=True)
+
+
+def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, Any]:
+    """Validate and normalize grouped map-unit responses."""
+    return GroupedGeometryResponse.model_validate(response).model_dump(by_alias=True)
+
+
+def _validate_suitability_rules_response(response: dict[str, Any]) -> dict[str, Any]:
+    """Validate and normalize soil suitability rule-name responses."""
+    return SuitabilityRulesResponse.model_validate(response).model_dump(by_alias=True)
+
+
 def _available_vars_response(query_type: _QueryType) -> dict[str, Any]:
     """Discover available columns via XSD schema introspection.
 
@@ -83,30 +106,34 @@ def _available_vars_response(query_type: _QueryType) -> dict[str, Any]:
             }
             for col, meta in info.items()
         }
-        return {
-            "data": flat,
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params={"query_type": query_type},
-                rows_returned=len(info),
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-            ),
-        }
+        return _validate_available_variables_response(
+            {
+                "data": flat,
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={"query_type": query_type},
+                    rows_returned=len(info),
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                ),
+            }
+        )
     except Exception as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": {},
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params={"query_type": query_type},
-                rows_returned=0,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
+        return _validate_available_variables_response(
+            {
+                "data": {},
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={"query_type": query_type},
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
 
 
 def _point_query(
@@ -119,30 +146,49 @@ def _point_query(
 ) -> dict[str, Any]:
     """Shared implementation for all point-query MCP tools."""
     if warn := check_runtime("ssurgo", 0, 0.0, max_runtime_s):
-        return warn
+        return _validate_grouped_geometry_response(warn)
     if not (math.isfinite(latitude) and math.isfinite(longitude)):
         raise ValueError(f"latitude and longitude must be finite; got {latitude!r}, {longitude!r}")
     try:
+        point = PointInput(latitude=latitude, longitude=longitude)
+    except ValidationError as exc:
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={"latitude": latitude, "longitude": longitude},
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
+    try:
         vars_ = _resolve_variables(variables)
     except ValueError as exc:
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params={"latitude": latitude, "longitude": longitude},
-                rows_returned=0,
-                latency_s=0.0,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={"latitude": latitude, "longitude": longitude},
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
     user_vars = vars_
     sql_vars = ["mukey", "muname"] + [v for v in vars_ if v not in ("mukey", "muname")]
-    wkt = f"POINT({float(longitude)} {float(latitude)})"
+    wkt = f"POINT({point.longitude} {point.latitude})"
     query_params: dict[str, Any] = {
-        "latitude": latitude,
-        "longitude": longitude,
+        "latitude": point.latitude,
+        "longitude": point.longitude,
         "variables": user_vars,
         "max_runtime_s": max_runtime_s,
         "query_type": query_type,
@@ -154,7 +200,12 @@ def _point_query(
         records, latency = _fetch_sda(sql)
         grouped = _group_by_mukey(records)
         _buf = _GEOM_BBOX_BUFFER_DEG
-        geo_bbox = (longitude - _buf, latitude - _buf, longitude + _buf, latitude + _buf)
+        geo_bbox = (
+            point.longitude - _buf,
+            point.latitude - _buf,
+            point.longitude + _buf,
+            point.latitude + _buf,
+        )
         geometries = _fetch_mukey_geometries(list(grouped.keys()), geo_bbox)
         data = [
             {
@@ -180,33 +231,37 @@ def _point_query(
             for v in result_cols
             if v in full_info
         }
-        return {
-            "data": data,
-            "_meta": build_meta(
-                source="ssurgo",
-                variables=user_vars,
-                query_params=query_params,
-                rows_returned=total_records,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                variable_info=vinfo,
-                error=_NO_COVERAGE_MSG if not data else None,
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="ssurgo",
+                    variables=user_vars,
+                    query_params=query_params,
+                    rows_returned=total_records,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    variable_info=vinfo,
+                    error=_NO_COVERAGE_MSG if not data else None,
+                ),
+            }
+        )
     except Exception as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params=query_params,
-                rows_returned=0,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
 
 
 def _bbox_query(
@@ -220,34 +275,57 @@ def _bbox_query(
     query_type: _QueryType,
 ) -> dict[str, Any]:
     """Shared implementation for all bbox-query MCP tools."""
-    bbox = {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
-    area_deg2 = (max_lat - min_lat) * (max_lon - min_lon)
+    try:
+        bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
+    except ValidationError as exc:
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={
+                        "min_lat": min_lat,
+                        "max_lat": max_lat,
+                        "min_lon": min_lon,
+                        "max_lon": max_lon,
+                    },
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
+    area_deg2 = (bbox.max_lat - bbox.min_lat) * (bbox.max_lon - bbox.min_lon)
     if warn := check_runtime("ssurgo", 0, area_deg2, max_runtime_s):
-        return warn
+        return _validate_grouped_geometry_response(warn)
     base_params: dict[str, Any] = {
-        "min_lat": min_lat,
-        "max_lat": max_lat,
-        "min_lon": min_lon,
-        "max_lon": max_lon,
+        "min_lat": bbox.min_lat,
+        "max_lat": bbox.max_lat,
+        "min_lon": bbox.min_lon,
+        "max_lon": bbox.max_lon,
     }
     try:
         vars_ = _resolve_variables(variables)
     except ValueError as exc:
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params=base_params,
-                rows_returned=0,
-                latency_s=0.0,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params=base_params,
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
     user_vars = vars_
     sql_vars = ["mukey", "muname"] + [v for v in vars_ if v not in ("mukey", "muname")]
-    wkt = bbox_to_wkt_polygon(bbox)
+    wkt = bbox_to_wkt_polygon(bbox.model_dump())
     query_params: dict[str, Any] = {
         **base_params,
         "variables": user_vars,
@@ -260,7 +338,7 @@ def _bbox_query(
         sql = sql_builder(wkt, sql_vars)
         records, latency = _fetch_sda(sql)
         grouped = _group_by_mukey(records)
-        geo_bbox = (min_lon, min_lat, max_lon, max_lat)
+        geo_bbox = (bbox.min_lon, bbox.min_lat, bbox.max_lon, bbox.max_lat)
         geometries = _fetch_mukey_geometries(list(grouped.keys()), geo_bbox)
         data = [
             {
@@ -286,33 +364,37 @@ def _bbox_query(
             for v in result_cols
             if v in full_info
         }
-        return {
-            "data": data,
-            "_meta": build_meta(
-                source="ssurgo",
-                variables=user_vars,
-                query_params=query_params,
-                rows_returned=total_records,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                variable_info=vinfo,
-                error=_NO_COVERAGE_MSG if not data else None,
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="ssurgo",
+                    variables=user_vars,
+                    query_params=query_params,
+                    rows_returned=total_records,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    variable_info=vinfo,
+                    error=_NO_COVERAGE_MSG if not data else None,
+                ),
+            }
+        )
     except Exception as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params=query_params,
-                rows_returned=0,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -656,30 +738,34 @@ def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
         latency = time.perf_counter() - t0
         records = _parse_xml(resp.text)
         rule_names = [r["mrulename"] for r in records if r.get("mrulename")]
-        return {
-            "data": rule_names,
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params={"query_type": "soil_suitability"},
-                rows_returned=len(rule_names),
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-            ),
-        }
+        return _validate_suitability_rules_response(
+            {
+                "data": rule_names,
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={"query_type": "soil_suitability"},
+                    rows_returned=len(rule_names),
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                ),
+            }
+        )
     except Exception as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params={"query_type": "soil_suitability"},
-                rows_returned=0,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
+        return _validate_suitability_rules_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={"query_type": "soil_suitability"},
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
 
 
 @mcp.tool()
@@ -705,28 +791,47 @@ def ssurgo_soil_suitability_query(
         max_runtime_s: Optional request timeout in seconds.
     """
     if warn := check_runtime("ssurgo", 0, 0.0, max_runtime_s):
-        return warn
+        return _validate_grouped_geometry_response(warn)
     if not (math.isfinite(latitude) and math.isfinite(longitude)):
         raise ValueError(f"latitude and longitude must be finite; got {latitude!r}, {longitude!r}")
     try:
+        point = PointInput(latitude=latitude, longitude=longitude)
+    except ValidationError as exc:
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={"latitude": latitude, "longitude": longitude},
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
+    try:
         names = _resolve_rule_names(rule_names)
     except ValueError as exc:
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params={"latitude": latitude, "longitude": longitude},
-                rows_returned=0,
-                latency_s=0.0,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
-    wkt = f"POINT({float(longitude)} {float(latitude)})"
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={"latitude": latitude, "longitude": longitude},
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
+    wkt = f"POINT({point.longitude} {point.latitude})"
     query_params: dict[str, Any] = {
-        "latitude": latitude,
-        "longitude": longitude,
+        "latitude": point.latitude,
+        "longitude": point.longitude,
         "rule_names": names,
         "max_runtime_s": max_runtime_s,
         "query_type": "soil_suitability",
@@ -737,7 +842,12 @@ def ssurgo_soil_suitability_query(
         records, latency = _fetch_sda(sql)
         grouped = _group_by_mukey(records)
         _buf = _GEOM_BBOX_BUFFER_DEG
-        geo_bbox = (longitude - _buf, latitude - _buf, longitude + _buf, latitude + _buf)
+        geo_bbox = (
+            point.longitude - _buf,
+            point.latitude - _buf,
+            point.longitude + _buf,
+            point.latitude + _buf,
+        )
         geometries = _fetch_mukey_geometries(list(grouped.keys()), geo_bbox)
         data = [
             {
@@ -749,31 +859,35 @@ def ssurgo_soil_suitability_query(
             for mk, info in grouped.items()
         ]
         total_records = sum(len(g["records"]) for g in data)
-        return {
-            "data": data,
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params=query_params,
-                rows_returned=total_records,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                error=_NO_COVERAGE_MSG if not data else None,
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params=query_params,
+                    rows_returned=total_records,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    error=_NO_COVERAGE_MSG if not data else None,
+                ),
+            }
+        )
     except Exception as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params=query_params,
-                rows_returned=0,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
 
 
 @mcp.tool()
@@ -796,32 +910,56 @@ def ssurgo_soil_suitability_bbox_query(
             set as ``ssurgo_soil_suitability_query``.
         max_runtime_s: Optional request timeout in seconds.
     """
-    bbox = {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
-    area_deg2 = (max_lat - min_lat) * (max_lon - min_lon)
+    try:
+        bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
+    except ValidationError as exc:
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params={
+                        "min_lat": min_lat,
+                        "max_lat": max_lat,
+                        "min_lon": min_lon,
+                        "max_lon": max_lon,
+                    },
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
+
+    area_deg2 = (bbox.max_lat - bbox.min_lat) * (bbox.max_lon - bbox.min_lon)
     if warn := check_runtime("ssurgo", 0, area_deg2, max_runtime_s):
-        return warn
+        return _validate_grouped_geometry_response(warn)
     base_params: dict[str, Any] = {
-        "min_lat": min_lat,
-        "max_lat": max_lat,
-        "min_lon": min_lon,
-        "max_lon": max_lon,
+        "min_lat": bbox.min_lat,
+        "max_lat": bbox.max_lat,
+        "min_lon": bbox.min_lon,
+        "max_lon": bbox.max_lon,
     }
     try:
         names = _resolve_rule_names(rule_names)
     except ValueError as exc:
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params=base_params,
-                rows_returned=0,
-                latency_s=0.0,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
-    wkt = bbox_to_wkt_polygon(bbox)
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params=base_params,
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
+    wkt = bbox_to_wkt_polygon(bbox.model_dump())
     query_params: dict[str, Any] = {
         **base_params,
         "rule_names": names,
@@ -833,7 +971,7 @@ def ssurgo_soil_suitability_bbox_query(
         sql = _build_soil_suitability_sql(wkt, names)
         records, latency = _fetch_sda(sql)
         grouped = _group_by_mukey(records)
-        geo_bbox = (min_lon, min_lat, max_lon, max_lat)
+        geo_bbox = (bbox.min_lon, bbox.min_lat, bbox.max_lon, bbox.max_lat)
         geometries = _fetch_mukey_geometries(list(grouped.keys()), geo_bbox)
         data = [
             {
@@ -845,31 +983,35 @@ def ssurgo_soil_suitability_bbox_query(
             for mk, info in grouped.items()
         ]
         total_records = sum(len(g["records"]) for g in data)
-        return {
-            "data": data,
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params=query_params,
-                rows_returned=total_records,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                error=_NO_COVERAGE_MSG if not data else None,
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params=query_params,
+                    rows_returned=total_records,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    error=_NO_COVERAGE_MSG if not data else None,
+                ),
+            }
+        )
     except Exception as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="ssurgo",
-                query_params=query_params,
-                rows_returned=0,
-                latency_s=latency,
-                license_info=LICENSE_INFO,
-                success=False,
-                error=str(exc),
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="ssurgo",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(exc),
+                ),
+            }
+        )
 
 
 # ---------------------------------------------------------------------------

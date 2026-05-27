@@ -5,8 +5,16 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from pydantic import ValidationError
+
 from env_data_mcp.helpers import bbox_area_deg2, build_meta, parse_date
-from env_data_mcp.models import BboxInput
+from env_data_mcp.models import (
+    AvailableVariablesResponse,
+    BboxInput,
+    DateRange,
+    GroupedGeometryResponse,
+    PointInput,
+)
 from env_data_mcp.server import mcp
 
 from ._client import _get_variable_info, _open_store
@@ -22,21 +30,33 @@ from .constants import (
 )
 
 
+def _validate_available_variables_response(response: dict[str, Any]) -> dict[str, Any]:
+    """Validate and normalize available_variables tool responses."""
+    return AvailableVariablesResponse.model_validate(response).model_dump(by_alias=True)
+
+
+def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, Any]:
+    """Validate and normalize grouped geometry query responses."""
+    return GroupedGeometryResponse.model_validate(response).model_dump(by_alias=True)
+
+
 @mcp.tool()
 def nasa_power_merra2_available_variables() -> dict[str, Any]:
     """Return a list of available NASA POWER MERRA-2 variables with descriptions and units."""
     store = _open_store(DatasetType.MERRA2, TemporalResolution.DAILY)
     variable_info = _get_variable_info(store)
-    return {
-        "data": variable_info,
-        "_meta": build_meta(
-            source="nasa_power",
-            query_params={},
-            rows_returned=len(variable_info),
-            latency_s=0.0,
-            license_info=SOURCE_INFO | MERRA2_INFO,
-        ),
-    }
+    return _validate_available_variables_response(
+        {
+            "data": variable_info,
+            "_meta": build_meta(
+                source="nasa_power",
+                query_params={},
+                rows_returned=len(variable_info),
+                latency_s=0.0,
+                license_info=SOURCE_INFO | MERRA2_INFO,
+            ),
+        }
+    )
 
 
 @mcp.tool()
@@ -44,16 +64,18 @@ def nasa_power_syn1deg_available_variables() -> dict[str, Any]:
     """Return a list of available NASA POWER SYN1deg variables with descriptions and units."""
     store = _open_store(DatasetType.SYN1DEG, TemporalResolution.DAILY)
     variable_info = _get_variable_info(store)
-    return {
-        "data": variable_info,
-        "_meta": build_meta(
-            source="nasa_power",
-            query_params={},
-            rows_returned=len(variable_info),
-            latency_s=0.0,
-            license_info=SOURCE_INFO | SYN1DEG_INFO,
-        ),
-    }
+    return _validate_available_variables_response(
+        {
+            "data": variable_info,
+            "_meta": build_meta(
+                source="nasa_power",
+                query_params={},
+                rows_returned=len(variable_info),
+                latency_s=0.0,
+                license_info=SOURCE_INFO | SYN1DEG_INFO,
+            ),
+        }
+    )
 
 
 @mcp.tool()
@@ -93,57 +115,65 @@ def nasa_power_merra2_query(
         "temporal_resolution": temporal_resolution.value,
         "max_runtime_s": max_runtime_s,
     }
-    full_var_info = _get_variable_info(_open_store(DatasetType.MERRA2, temporal_resolution))
-    var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
-
     t0 = time.perf_counter()
+    var_info: dict[str, dict[str, str]] = {}
     try:
+        point = PointInput(latitude=latitude, longitude=longitude)
+        date_range = DateRange(start_date=start_date, end_date=end_date)
+
+        full_var_info = _get_variable_info(_open_store(DatasetType.MERRA2, temporal_resolution))
+        var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
+
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
         if warn := _estimate_query_runtime_s(
             n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s
         ):
-            return warn
+            return _validate_grouped_geometry_response(warn)
         data, unavailable = _query_point(
-            latitude,
-            longitude,
-            start_date,
-            end_date,
+            point.latitude,
+            point.longitude,
+            date_range.start_date,
+            date_range.end_date,
             DatasetType.MERRA2,
             temporal_resolution,
             variables,
         )
         latency = time.perf_counter() - t0
-        return {
-            "data": data,
-            "_meta": build_meta(
-                source="nasa_power",
-                query_params=query_params,
-                rows_returned=len(data[0]["records"]) if data else 0,
-                latency_s=latency,
-                license_info=SOURCE_INFO | MERRA2_INFO,
-                variables=variables,
-                variable_info=var_info,
-                unavailable_variables=unavailable if unavailable else None,
-            ),
-        }
-    except Exception as exc:
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="nasa_power",
+                    query_params=query_params,
+                    rows_returned=len(data[0]["records"]) if data else 0,
+                    latency_s=latency,
+                    license_info=SOURCE_INFO | MERRA2_INFO,
+                    variables=variables,
+                    variable_info=var_info,
+                    unavailable_variables=unavailable if unavailable else None,
+                ),
+            }
+        )
+    except (ValidationError, ValueError, Exception) as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="nasa_power",
-                query_params=query_params,
-                rows_returned=0,
-                latency_s=latency,
-                license_info=SOURCE_INFO | MERRA2_INFO,
-                success=False,
-                error=str(exc),
-                variables=variables,
-                variable_info=var_info,
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="nasa_power",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=SOURCE_INFO | MERRA2_INFO,
+                    success=False,
+                    error=str(exc),
+                    variables=variables,
+                    variable_info=var_info,
+                ),
+            }
+        )
 
 
 @mcp.tool()
@@ -182,57 +212,65 @@ def nasa_power_syn1deg_query(
         "variables": variables,
         "max_runtime_s": max_runtime_s,
     }
-    full_var_info = _get_variable_info(_open_store(DatasetType.SYN1DEG, temporal_resolution))
-    var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
-
     t0 = time.perf_counter()
+    var_info: dict[str, dict[str, str]] = {}
     try:
+        point = PointInput(latitude=latitude, longitude=longitude)
+        date_range = DateRange(start_date=start_date, end_date=end_date)
+
+        full_var_info = _get_variable_info(_open_store(DatasetType.SYN1DEG, temporal_resolution))
+        var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
+
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
         if warn := _estimate_query_runtime_s(
             n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s
         ):
-            return warn
+            return _validate_grouped_geometry_response(warn)
         data, unavailable = _query_point(
-            latitude,
-            longitude,
-            start_date,
-            end_date,
+            point.latitude,
+            point.longitude,
+            date_range.start_date,
+            date_range.end_date,
             DatasetType.SYN1DEG,
             temporal_resolution,
             variables,
         )
         latency = time.perf_counter() - t0
-        return {
-            "data": data,
-            "_meta": build_meta(
-                source="nasa_power",
-                query_params=query_params,
-                rows_returned=len(data[0]["records"]) if data else 0,
-                latency_s=latency,
-                license_info=SOURCE_INFO | SYN1DEG_INFO,
-                variables=variables,
-                variable_info=var_info,
-                unavailable_variables=unavailable if unavailable else None,
-            ),
-        }
-    except Exception as exc:
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="nasa_power",
+                    query_params=query_params,
+                    rows_returned=len(data[0]["records"]) if data else 0,
+                    latency_s=latency,
+                    license_info=SOURCE_INFO | SYN1DEG_INFO,
+                    variables=variables,
+                    variable_info=var_info,
+                    unavailable_variables=unavailable if unavailable else None,
+                ),
+            }
+        )
+    except (ValidationError, ValueError, Exception) as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="nasa_power",
-                query_params=query_params,
-                rows_returned=0,
-                latency_s=latency,
-                license_info=SOURCE_INFO | SYN1DEG_INFO,
-                success=False,
-                error=str(exc),
-                variables=variables,
-                variable_info=var_info,
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="nasa_power",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=SOURCE_INFO | SYN1DEG_INFO,
+                    success=False,
+                    error=str(exc),
+                    variables=variables,
+                    variable_info=var_info,
+                ),
+            }
+        )
 
 
 @mcp.tool()
@@ -265,12 +303,7 @@ def nasa_power_merra2_bbox_query(
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
-    bbox = BboxInput(
-        min_lat=min_lat,
-        max_lat=max_lat,
-        min_lon=min_lon,
-        max_lon=max_lon,
-    )  # validation and ordering checks
+    bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
 
     query_params: dict[str, Any] = {
         "min_lat": min_lat,
@@ -283,11 +316,14 @@ def nasa_power_merra2_bbox_query(
         "temporal_resolution": temporal_resolution.value,
         "max_runtime_s": max_runtime_s,
     }
-
-    full_var_info = _get_variable_info(_open_store(DatasetType.MERRA2, temporal_resolution))
-    var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
     t0 = time.perf_counter()
+    var_info: dict[str, dict[str, str]] = {}
     try:
+        date_range = DateRange(start_date=start_date, end_date=end_date)
+
+        full_var_info = _get_variable_info(_open_store(DatasetType.MERRA2, temporal_resolution))
+        var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
+
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
@@ -298,48 +334,52 @@ def nasa_power_merra2_bbox_query(
             area_deg2=bbox_area_deg2(bbox.model_dump()),
             max_runtime_s=max_runtime_s,
         ):
-            return warn
+            return _validate_grouped_geometry_response(warn)
         data, unavailable = _query_bbox(
-            min_lat,
-            max_lat,
-            min_lon,
-            max_lon,
-            start_date,
-            end_date,
+            bbox.min_lat,
+            bbox.max_lat,
+            bbox.min_lon,
+            bbox.max_lon,
+            date_range.start_date,
+            date_range.end_date,
             DatasetType.MERRA2,
             temporal_resolution,
             variables,
         )
         latency = time.perf_counter() - t0
-        return {
-            "data": data,
-            "_meta": build_meta(
-                source="nasa_power",
-                query_params=query_params,
-                rows_returned=sum(len(r["records"]) for r in data),
-                latency_s=latency,
-                license_info=SOURCE_INFO | MERRA2_INFO,
-                variables=variables,
-                variable_info=var_info,
-                unavailable_variables=unavailable if unavailable else None,
-            ),
-        }
-    except Exception as exc:
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="nasa_power",
+                    query_params=query_params,
+                    rows_returned=sum(len(r["records"]) for r in data),
+                    latency_s=latency,
+                    license_info=SOURCE_INFO | MERRA2_INFO,
+                    variables=variables,
+                    variable_info=var_info,
+                    unavailable_variables=unavailable if unavailable else None,
+                ),
+            }
+        )
+    except (ValidationError, ValueError, Exception) as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="nasa_power",
-                query_params=query_params,
-                rows_returned=0,
-                latency_s=latency,
-                license_info=SOURCE_INFO | MERRA2_INFO,
-                success=False,
-                error=str(exc),
-                variables=variables,
-                variable_info=var_info,
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="nasa_power",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=SOURCE_INFO | MERRA2_INFO,
+                    success=False,
+                    error=str(exc),
+                    variables=variables,
+                    variable_info=var_info,
+                ),
+            }
+        )
 
 
 @mcp.tool()
@@ -372,12 +412,7 @@ def nasa_power_syn1deg_bbox_query(
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
-    bbox = BboxInput(
-        min_lat=min_lat,
-        max_lat=max_lat,
-        min_lon=min_lon,
-        max_lon=max_lon,
-    )  # validation and ordering checks
+    bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
 
     query_params: dict[str, Any] = {
         "min_lat": min_lat,
@@ -390,11 +425,14 @@ def nasa_power_syn1deg_bbox_query(
         "temporal_resolution": temporal_resolution.value,
         "max_runtime_s": max_runtime_s,
     }
-
-    full_var_info = _get_variable_info(_open_store(DatasetType.SYN1DEG, temporal_resolution))
-    var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
     t0 = time.perf_counter()
+    var_info: dict[str, dict[str, str]] = {}
     try:
+        date_range = DateRange(start_date=start_date, end_date=end_date)
+
+        full_var_info = _get_variable_info(_open_store(DatasetType.SYN1DEG, temporal_resolution))
+        var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
+
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
@@ -405,45 +443,49 @@ def nasa_power_syn1deg_bbox_query(
             area_deg2=bbox_area_deg2(bbox.model_dump()),
             max_runtime_s=max_runtime_s,
         ):
-            return warn
+            return _validate_grouped_geometry_response(warn)
         data, unavailable = _query_bbox(
-            min_lat,
-            max_lat,
-            min_lon,
-            max_lon,
-            start_date,
-            end_date,
+            bbox.min_lat,
+            bbox.max_lat,
+            bbox.min_lon,
+            bbox.max_lon,
+            date_range.start_date,
+            date_range.end_date,
             DatasetType.SYN1DEG,
             temporal_resolution,
             variables,
         )
         latency = time.perf_counter() - t0
-        return {
-            "data": data,
-            "_meta": build_meta(
-                source="nasa_power",
-                query_params=query_params,
-                rows_returned=sum(len(r["records"]) for r in data),
-                latency_s=latency,
-                license_info=SOURCE_INFO | SYN1DEG_INFO,
-                variables=variables,
-                variable_info=var_info,
-                unavailable_variables=unavailable if unavailable else None,
-            ),
-        }
-    except Exception as exc:
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="nasa_power",
+                    query_params=query_params,
+                    rows_returned=sum(len(r["records"]) for r in data),
+                    latency_s=latency,
+                    license_info=SOURCE_INFO | SYN1DEG_INFO,
+                    variables=variables,
+                    variable_info=var_info,
+                    unavailable_variables=unavailable if unavailable else None,
+                ),
+            }
+        )
+    except (ValidationError, ValueError, Exception) as exc:
         latency = time.perf_counter() - t0
-        return {
-            "data": [],
-            "_meta": build_meta(
-                source="nasa_power",
-                query_params=query_params,
-                rows_returned=0,
-                latency_s=latency,
-                license_info=SOURCE_INFO | SYN1DEG_INFO,
-                success=False,
-                error=str(exc),
-                variables=variables,
-                variable_info=var_info,
-            ),
-        }
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="nasa_power",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=SOURCE_INFO | SYN1DEG_INFO,
+                    success=False,
+                    error=str(exc),
+                    variables=variables,
+                    variable_info=var_info,
+                ),
+            }
+        )
