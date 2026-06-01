@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import BaseModel, Field, ValidationError
 
 from env_data_mcp.models import GroupedGeometryResponse, SuitabilityRulesResponse
 from env_data_mcp.sources.ssurgo import (
@@ -142,12 +143,31 @@ def test_soil_suitability_query_non_finite_lat_raises_value_error():
         ssurgo_soil_suitability_query(latitude=float("inf"), longitude=_LON)
 
 
+def test_soil_suitability_query_out_of_range_lat_returns_error_response():
+    result = ssurgo_soil_suitability_query(latitude=-95.0, longitude=_LON)
+    assert result["_meta"]["success"] is False
+    assert result["data"] == []
+    assert "greater than or equal to -90" in result["_meta"]["error"]
+
+
 def test_soil_suitability_bbox_query_runtime_guard_returns_slow_query_warning():
     result = ssurgo_soil_suitability_bbox_query(
         min_lat=_MIN_LAT, max_lat=_MAX_LAT, min_lon=_MIN_LON, max_lon=_MAX_LON, max_runtime_s=0
     )
     assert result["_meta"]["success"] is False
     assert result["_meta"].get("slow_query_warning") is True
+
+
+def test_soil_suitability_bbox_query_invalid_bbox_returns_error_response():
+    result = ssurgo_soil_suitability_bbox_query(
+        min_lat=_MIN_LAT,
+        max_lat=_MAX_LAT,
+        min_lon=_MAX_LON,
+        max_lon=_MIN_LON,
+    )
+    assert result["_meta"]["success"] is False
+    assert result["data"] == []
+    assert "min_lon" in result["_meta"]["error"]
 
 
 def test_soil_suitability_bbox_query_invalid_rule_name_returns_error():
@@ -169,3 +189,40 @@ def test_soil_suitability_bbox_query_http_error_returns_failure(httpx_mock):
     )
     assert result["_meta"]["success"] is False
     assert result["_meta"]["error"] is not None
+
+
+def test_soil_suitability_query_pointinput_validationerror_branch_is_covered(monkeypatch):
+    class _FailingPointModel(BaseModel):
+        latitude: float = Field(le=90.0)
+
+    def _raise_validation_error(**_kwargs):
+        try:
+            _FailingPointModel(latitude=91.0)
+        except ValidationError as exc:
+            raise exc
+
+    monkeypatch.setattr("env_data_mcp.sources.ssurgo.tools.PointInput", _raise_validation_error)
+    result = ssurgo_soil_suitability_query(latitude=46.0, longitude=-119.0)
+    assert result["_meta"]["success"] is False
+    assert result["data"] == []
+
+
+def test_soil_suitability_bbox_query_bboxinput_validationerror_branch_is_covered(monkeypatch):
+    class _FailingBboxModel(BaseModel):
+        min_lat: float = Field(le=0.0)
+
+    def _raise_validation_error(**_kwargs):
+        try:
+            _FailingBboxModel(min_lat=1.0)
+        except ValidationError as exc:
+            raise exc
+
+    monkeypatch.setattr("env_data_mcp.sources.ssurgo.tools.BboxInput", _raise_validation_error)
+    result = ssurgo_soil_suitability_bbox_query(
+        min_lat=46.0,
+        max_lat=46.5,
+        min_lon=-120.0,
+        max_lon=-119.5,
+    )
+    assert result["_meta"]["success"] is False
+    assert result["data"] == []
