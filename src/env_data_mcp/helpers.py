@@ -12,7 +12,22 @@ import math
 import pathlib
 import re
 from collections.abc import Mapping
+from functools import reduce
+from operator import getitem
 from typing import Any
+
+# ---------------------------------------------------------------------------
+# dict helpers
+# ---------------------------------------------------------------------------
+
+
+def get_by_path(data: dict, path: str, default: Any = None, sep: str = "."):
+    """Access a nested element by a string path."""
+    try:
+        return reduce(getitem, path.split(sep), data)
+    except (KeyError, TypeError):
+        return default
+
 
 # ---------------------------------------------------------------------------
 # Runtime estimation
