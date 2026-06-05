@@ -211,6 +211,22 @@ def parse_date(date_str: str) -> datetime.date:
 # ---------------------------------------------------------------------------
 
 
+def point_to_bbox(latitude: float, longitude: float, radius_km: float) -> dict[str, float]:
+    """Return bounding box dimensions for a given point and radius (rough approximation).
+
+    This is a rough approximation. We could improve this if it seems worthwhile.
+    """
+    _KM_TO_DEG = 1.0 / 111.1
+    delta_lat = radius_km * _KM_TO_DEG
+    delta_lon = radius_km * _KM_TO_DEG / max(math.cos(latitude * math.pi / 180.0), 1.0e-5)
+    return {
+        "min_lat": min(max(latitude - delta_lat, -90.0), 90.0),
+        "max_lat": min(max(latitude + delta_lat, -90.0), 90.0),
+        "min_lon": min(max(longitude - delta_lon, -180.0), 180.0),
+        "max_lon": min(max(longitude + delta_lon, -180.0), 180.0),
+    }
+
+
 def bbox_centroid(bbox: dict[str, float]) -> tuple[float, float]:
     """Return the (lat, lon) centroid of a bounding-box dict.
 

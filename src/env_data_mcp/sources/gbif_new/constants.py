@@ -89,3 +89,5 @@ _QUERY_RESULT_SCHEMAS: dict[_QueryType, dict[str, str]] = {
         "path": "components.schemas.Occurrence.properties",
     },
 }
+
+_API_PAGE_SIZE = 300  # max records that can be returned for a single query
