@@ -81,7 +81,7 @@ def dc(request) -> _DatasetCase:
 # ---------------------------------------------------------------------------
 
 
-def test_gbif_result_schema_injest():
+def test_gbif_result_schema_ingest():
     """Ensure every GBIF query type has available variables with descriptions."""
     for query_type in _QueryType:
         var_info = _get_variable_info(query_type)
@@ -224,8 +224,8 @@ def test_gbif_schema_lat_lon_physical_range():
         max_runtime_s=9999,
     )
     for rec in result["data"]:
-        lat = rec.get("decimalLatitude")
-        lon = rec.get("decimalLongitude")
+        lat = rec["records"][0].get("decimalLatitude")
+        lon = rec["records"][0].get("decimalLongitude")
         if lat is not None:
             assert -90.0 <= lat <= 90.0, (
                 f"GBIF: decimalLatitude={lat} outside physical range — fill value or unit change?"
@@ -266,5 +266,5 @@ def test_gbif_schema_license_present():
         max_runtime_s=9999,
     )
     meta = result["_meta"]
-    assert meta["license"] != "", "GBIF: _meta.license_url is empty"
+    assert meta["license"] != "", "GBIF: _meta.license is empty"
     assert "latitude" in meta["query_params"], "GBIF: query_params missing latitude"

@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from env_data_mcp.helpers import build_meta, parse_date
+from env_data_mcp.helpers import build_meta, parse_date, point_to_bbox
 from env_data_mcp.models import (
     AvailableVariablesResponse,
     BboxInput,
@@ -22,13 +22,13 @@ _KM_TO_DEG = 0.01  # approximate conversion of km to degrees for runtime estimat
 
 
 def _validate_available_variables_response(response: dict[str, Any]) -> dict[str, Any]:
-    """Validate and normalize available variables tool reponses."""
+    """Validate and normalize available variables tool responses."""
     return AvailableVariablesResponse.model_validate(response).model_dump(by_alias=True)
 
 
-def _validate_grouped_geometry_response(resonse: dict[str, Any]) -> dict[str, Any]:
+def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, Any]:
     """Validate and normalize grouped geometry responses."""
-    return GroupedGeometryResponse.model_validate(resonse).model_dump(by_alias=True)
+    return GroupedGeometryResponse.model_validate(response).model_dump(by_alias=True)
 
 
 @mcp.tool()
@@ -104,6 +104,7 @@ def gbif_occurrence_query(
         "radius_km": radius_km,
         "taxon_key": taxon_key,
         "limit": limit,
+        "max_runtime_s": max_runtime_s,
     }
     t0 = time.perf_counter()
     var_info: dict[str, dict[str, str]] = {}
@@ -118,7 +119,10 @@ def gbif_occurrence_query(
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
-        area_deg2 = (radius_km * _KM_TO_DEG) ** 2
+        bbox = point_to_bbox(
+            latitude=point.latitude, longitude=point.longitude, radius_km=radius_km
+        )
+        area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
         if warn := _estimate_query_runtime_s(n_days, area_deg2, max_runtime_s):
             return _validate_grouped_geometry_response(warn)
         data, unique_licenses = _query_point(
@@ -133,7 +137,7 @@ def gbif_occurrence_query(
             limit=limit,
         )
         latency = time.perf_counter() - t0
-        license_info = LICENSE_INFO
+        license_info = {**LICENSE_INFO}
         if unique_licenses:
             license_info["license"] = ", ".join(unique_licenses)
         return _validate_grouped_geometry_response(
@@ -244,7 +248,7 @@ def gbif_occurrence_bbox_query(
             limit=limit,
         )
         latency = time.perf_counter() - t0
-        license_info = LICENSE_INFO
+        license_info = {**LICENSE_INFO}
         if unique_licenses:
             license_info["license"] = ", ".join(unique_licenses)
         return _validate_grouped_geometry_response(

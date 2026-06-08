@@ -245,7 +245,7 @@ class TestQuery:
             ),
             patch(
                 "env_data_mcp.sources.gbif.tools._query_point",
-                side_effects=_make_mock_query_point(),
+                side_effect=_make_mock_query_point(),
             ),
         ):
             results = gbif_occurrence_query(
@@ -403,7 +403,7 @@ class TestBboxQuery:
             ),
             patch(
                 "env_data_mcp.sources.gbif.tools._query_bbox",
-                side_effects=_make_mock_query_bbox(),
+                side_effect=_make_mock_query_bbox(),
             ),
         ):
             results = gbif_occurrence_bbox_query(
