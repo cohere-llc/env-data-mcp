@@ -7,6 +7,7 @@ All tests are offline — no network calls are made.
 from __future__ import annotations
 
 import datetime
+import math
 
 import pytest
 
@@ -19,6 +20,7 @@ from env_data_mcp.helpers import (
     check_runtime,
     estimate_runtime,
     parse_date,
+    point_to_bbox,
 )
 
 # Minimal license_info dict used as a stand-in across tests.
@@ -67,6 +69,41 @@ class TestParseDate:
 
     def test_earliest_reasonable_date(self) -> None:
         assert parse_date("1981-01-01") == datetime.date(1981, 1, 1)
+
+
+# ---------------------------------------------------------------------------
+# point_to_bbox
+# ---------------------------------------------------------------------------
+
+
+class TestPointToBbox:
+    def get_deg2_from_bbox(self, bbox: dict[str, float]) -> float:
+        return (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
+
+    def test_at_equator(self) -> None:
+        assert self.get_deg2_from_bbox(point_to_bbox(0.0, 75.0, 111.1 / 2.0)) == pytest.approx(1.0)
+
+    def test_at_mid_latitudes(self) -> None:
+        assert self.get_deg2_from_bbox(point_to_bbox(45.0, 90.0, 111.1 / 2.0)) == pytest.approx(
+            1.0 / 0.7, rel=0.1
+        )
+        assert self.get_deg2_from_bbox(point_to_bbox(-45.0, -150.0, 111.1 / 2.0)) == pytest.approx(
+            1.0 / 0.7, rel=0.1
+        )
+
+    def test_at_poles(self) -> None:
+        # bbox cannot exceed one full revolution
+        assert self.get_deg2_from_bbox(point_to_bbox(90.0, 180.0, 111.1 / 2.0)) == pytest.approx(
+            180.0
+        )
+        assert self.get_deg2_from_bbox(point_to_bbox(-90.0, -180.0, 111.1 / 2.0)) == pytest.approx(
+            180.0
+        )
+
+    def test_scale_radius(self) -> None:
+        big_area = self.get_deg2_from_bbox(point_to_bbox(35.4, -84.5, 100.0))
+        small_area = self.get_deg2_from_bbox(point_to_bbox(35.4, -84.5, 50.0))
+        assert math.sqrt(big_area) - 2.0 * math.sqrt(small_area) == pytest.approx(0.0)
 
 
 # ---------------------------------------------------------------------------

@@ -30,7 +30,7 @@ import pytest
 
 from env_data_mcp.sources.emit import emit_bbox_query, emit_query
 from env_data_mcp.sources.essdive import essdive_bbox_query, essdive_query
-from env_data_mcp.sources.gbif import gbif_bbox_occurrences, gbif_occurrences
+from env_data_mcp.sources.gbif import gbif_occurrence_bbox_query, gbif_occurrence_query
 from env_data_mcp.sources.nasa_power import (
     TemporalResolution,
     _clear_store_cache,
@@ -686,7 +686,7 @@ _GBIF_SCENARIOS = _SCENARIOS  # fragment cap bounds latency regardless of date r
 @pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _GBIF_SCENARIOS, ids=lambda s: s["name"])
 def test_gbif_timing(sc):
-    result = gbif_occurrences(
+    result = gbif_occurrence_query(
         latitude=_LAT,
         longitude=_LON,
         radius_km=50.0,
@@ -704,7 +704,7 @@ def test_gbif_timing(sc):
 @pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _GBIF_SCENARIOS, ids=lambda s: s["name"])
 def test_gbif_bbox_timing(sc, bz):
-    result = gbif_bbox_occurrences(
+    result = gbif_occurrence_bbox_query(
         **_make_bbox(_LAT, _LON, bz["half"]),
         start_date=sc["start"],
         end_date=sc["end"],
@@ -725,7 +725,7 @@ def test_gbif_bbox_timing(sc, bz):
 @pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_gbif_extra_location_timing(loc):
-    result = gbif_occurrences(
+    result = gbif_occurrence_query(
         latitude=loc["lat"],
         longitude=loc["lon"],
         radius_km=50.0,
@@ -742,7 +742,7 @@ def test_gbif_extra_location_timing(loc):
 @pytest.mark.benchmark
 def test_gbif_point_bbox_consistent():
     """Small bbox should contain records near the point and counts should agree ±20 %."""
-    pt = gbif_occurrences(
+    pt = gbif_occurrence_query(
         latitude=_LAT,
         longitude=_LON,
         radius_km=10.0,
@@ -750,7 +750,7 @@ def test_gbif_point_bbox_consistent():
         end_date="2019-08-19",
         limit=200,
     )
-    bx = gbif_bbox_occurrences(
+    bx = gbif_occurrence_bbox_query(
         **_BBOX,
         start_date="2019-08-19",
         end_date="2019-08-19",
