@@ -134,12 +134,12 @@ See [Credential setup](#environment-variables) for how to obtain each token.
 | `nasa_power_merra2_bbox_query` | NASA POWER MERRA-2 | none | Atmospheric data over a bounding box |
 | `nasa_power_syn1deg_query` | NASA POWER CERES SYN1deg | none | Radiation fluxes at a point |
 | `nasa_power_syn1deg_bbox_query` | NASA POWER CERES SYN1deg | none | Radiation fluxes over a bounding box |
-| `ssurgo_query` | USDA SSURGO | none | Soil map unit and properties for a US point |
-| `ssurgo_bbox_query` | USDA SSURGO | none | Soil map units within a bounding box |
+| `ssurgo_*_query` | USDA SSURGO | none | Soil properties for a US point |
+| `ssurgo_*_bbox_query` | USDA SSURGO | none | Soil properties within a bounding box |
+| `gbif_occurrence_query` | GBIF | none | Species occurrence records within a radius |
+| `gbif_occurrence_bbox_query` | GBIF | none | Species occurrence records within a bounding box |
 | `soilgrids_query` | ISRIC SoilGrids v2 | none | Global soil properties at a point |
 | `soilgrids_bbox_query` | ISRIC SoilGrids v2 | none | Global soil properties over a bounding box |
-| `gbif_occurrences` | GBIF | none | Species occurrence records within a radius |
-| `gbif_bbox_occurrences` | GBIF | none | Species occurrence records within a bounding box |
 | `sentinel5p_query` | Sentinel-5P TROPOMI | none | Atmospheric column at a point (CO / NO₂ / CH₄) |
 | `sentinel5p_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric column mean over a bounding box |
 | `oco2_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column at a point |
@@ -150,6 +150,8 @@ See [Credential setup](#environment-variables) for how to obtain each token.
 | `essdive_bbox_query` | ESS-DIVE | ESS-DIVE token (free) | DOE environmental field datasets within a bounding box |
 | `openaq_query` | OpenAQ v3 | API key (free) | Surface air quality measurements near a point |
 | `openaq_bbox_query` | OpenAQ v3 | API key (free) | Surface air quality measurements within a bounding box |
+
+\* For SSURGO tools, replace the (`*`) with one of: `area_summary`, `ecological_site`, `parent_material`, `seasonal_hydrology`, `soil_profile`, `soil_suitability`, `soil_temperature`, or `subsurface_barriers`.
 
 ### Environment variables
 
