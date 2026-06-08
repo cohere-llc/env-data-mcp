@@ -6,13 +6,38 @@ from typing import Any
 
 import httpx
 
-from env_data_mcp.helpers import check_runtime, point_to_bbox
+from env_data_mcp.helpers import check_runtime, get_by_path, point_to_bbox
 
-from .constants import _API_PAGE_SIZE, _QUERY_ENDPOINTS, _QueryType
+from .constants import _API_PAGE_SIZE, _QUERY_ENDPOINTS, _QUERY_RESULT_SCHEMAS, _QueryType
+
+# ---------------------------------------------------------------------------
+# Session-level caches
+# ---------------------------------------------------------------------------
+
+# available variables by query type -> { query_type: { variable: {" description": str } }
+_VARIABLE_INFO_CACHE: dict[_QueryType, dict[str, dict[str, str]]] = {}
 
 # ---------------------------------------------------------------------------
 # Core query logic
 # ---------------------------------------------------------------------------
+
+
+def _get_variable_info(query_type: _QueryType) -> dict[str, dict[str, str]]:
+    """Discover available variables for a specific GBIF query type.
+
+    :param query_type: GBIF query type
+    :return: dict keyed on variable with `description`
+    """
+    if query_type in _VARIABLE_INFO_CACHE:
+        return _VARIABLE_INFO_CACHE[query_type]
+    with httpx.Client(timeout=30) as client:
+        resp = client.get(_QUERY_RESULT_SCHEMAS[query_type]["url"])
+        resp.raise_for_status()
+        info = get_by_path(resp.json(), _QUERY_RESULT_SCHEMAS[query_type]["path"], {})
+    _VARIABLE_INFO_CACHE[query_type] = {
+        key: {"description": val.get("description", ""), "units": ""} for key, val in info.items()
+    }
+    return _VARIABLE_INFO_CACHE[query_type]
 
 
 def _query_point(

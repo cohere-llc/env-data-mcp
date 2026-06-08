@@ -15,8 +15,7 @@ from env_data_mcp.models import (
 )
 from env_data_mcp.server import mcp
 
-from ._client import _get_variable_info
-from ._query import _estimate_query_runtime_s, _query_bbox, _query_point
+from ._query import _estimate_query_runtime_s, _get_variable_info, _query_bbox, _query_point
 from .constants import _DEFAULT_OCCURRENCE_VARIABLES, LICENSE_INFO, _QueryType
 
 _KM_TO_DEG = 0.01  # approximate conversion of km to degrees for runtime estimates
@@ -35,19 +34,35 @@ def _validate_grouped_geometry_response(resonse: dict[str, Any]) -> dict[str, An
 @mcp.tool()
 def gbif_occurrence_available_variables() -> dict[str, Any]:
     """Return a list of available GBIF Occurrence variables with descriptions."""
-    variable_info = _get_variable_info(_QueryType.OCCURRENCE)
-    return _validate_available_variables_response(
-        {
-            "data": variable_info,
-            "_meta": build_meta(
-                source="gbif",
-                query_params={},
-                rows_returned=len(variable_info),
-                latency_s=0.0,
-                license_info=LICENSE_INFO,
-            ),
-        }
-    )
+    try:
+        variable_info = _get_variable_info(_QueryType.OCCURRENCE)
+        return _validate_available_variables_response(
+            {
+                "data": variable_info,
+                "_meta": build_meta(
+                    source="gbif",
+                    query_params={},
+                    rows_returned=len(variable_info),
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                ),
+            }
+        )
+    except Exception as e:
+        return _validate_available_variables_response(
+            {
+                "data": {},
+                "_meta": build_meta(
+                    source="gbif",
+                    query_params={},
+                    rows_returned=0,
+                    latency_s=0.0,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(e),
+                ),
+            }
+        )
 
 
 @mcp.tool()

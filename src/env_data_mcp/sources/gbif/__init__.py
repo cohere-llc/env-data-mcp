@@ -14,8 +14,12 @@ Future improvements:
 
 from .tools import (
     gbif_occurrence_available_variables,
+    gbif_occurrence_bbox_query,
+    gbif_occurrence_query,
 )
 
 __all__ = [
     "gbif_occurrence_available_variables",
+    "gbif_occurrence_bbox_query",
+    "gbif_occurrence_query",
 ]
