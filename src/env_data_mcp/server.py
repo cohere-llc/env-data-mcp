@@ -23,6 +23,7 @@ mcp = FastMCP(
 # Each import has side-effects: tool functions are decorated with @mcp.tool().
 from env_data_mcp.sources import nasa_power
 from env_data_mcp.sources import soilgrids
+from env_data_mcp.sources import soilgrids_new
 from env_data_mcp.sources import ssurgo
 from env_data_mcp.sources import gbif
 from env_data_mcp.sources import openaq
