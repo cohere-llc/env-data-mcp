@@ -2,6 +2,19 @@
 
 from __future__ import annotations
 
+DEFAULT_VARIABLES = [
+    "soc_0-5cm_mean",  # Soil organic carbon
+    "nitrogen_0-5cm_mean",  # Total nitrogen
+    "phh2o_0-5cm_mean",  # pH
+    "cec_0-5cm_mean",  # Cation exchange capacity
+    "clay_0-5cm_mean",  # Clay content
+    "sand_0-5cm_mean",  # Sand fraction
+    "bdod_0-5cm_mean",  # Bulk density
+    "wv1500_0-5cm_mean",  # Permanent wilting point water content
+    "wv0010_0-5cm_mean",  # Field capacity water content
+    "cfvo_0-5cm_mean",  # Coarse fragment volume
+]
+
 LICENSE_INFO: dict[str, str] = {
     "citation": (
         "Common soil chemical and physical properties: "
@@ -36,3 +49,12 @@ _QUANTILES: dict[str, str] = {
     "mean": "mean",
     "uncertainty": "uncertainty",
 }
+
+# Coordinate systems
+
+_REQUEST_CRS: str = "EPSG:54012"
+_TRANSFORM_CRS: str = "ESRI:54012"
+_RESPONSE_CRS: str = "EPSG:4326"
+
+# Horizontal Resolution of SoilGrids data
+_CELL_SIZE_METERS = 250.0

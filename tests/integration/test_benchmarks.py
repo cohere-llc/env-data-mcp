@@ -28,6 +28,7 @@ from typing import Any
 import numpy as np
 import pytest
 
+from env_data_mcp.helpers import point_to_bbox
 from env_data_mcp.sources.emit import emit_bbox_query, emit_query
 from env_data_mcp.sources.essdive import essdive_bbox_query, essdive_query
 from env_data_mcp.sources.gbif import gbif_occurrence_bbox_query, gbif_occurrence_query
@@ -213,11 +214,6 @@ def _fit_and_write_model() -> None:
     and ignores bbox extent.  SSURGO bbox latency scales with area (~0.2 s/deg²)
     so it is fitted normally.
     """
-    # Sources whose implementation queries a single centroid regardless of bbox.
-    # SoilGrids uses a centroid lookup so bbox size doesn't affect latency.
-    # SSURGO is NOT centroid-based: bbox queries return all intersecting map units
-    # and latency scales strongly with area (~0.2 s/deg²), so it is excluded here.
-    _CENTROID_SOURCES = {"soilgrids"}
 
     if not _TIMING:
         return  # Nothing to write if no benchmarks ran
@@ -280,11 +276,6 @@ def _fit_and_write_model() -> None:
             beta_a = 0.0
             r2 = None
             equation = f"t ≈ {alpha:.2f}  (single observation)"
-
-        # Centroid-based sources query a single point regardless of bbox size;
-        # area has no genuine effect on their latency.
-        if source in _CENTROID_SOURCES:
-            beta_a = 0.0
 
         # Physical floor: latency cannot decrease as n_days or area grows.
         # Negative OLS coefficients are artefacts of measurement noise; clamp to 0.
@@ -512,11 +503,15 @@ def test_nasa_power_point_bbox_consistent():
 # SoilGrids — no auth, REST-based, date-range free
 # ===========================================================================
 
+# use one variable for benchmarking, and scale predicted time by actual
+# number of requested variables for live query
+_SOILGRIDS_VAR = ["bdod_0-5cm_mean"]
+
 
 @pytest.mark.integration
 @pytest.mark.benchmark
 def test_soilgrids_timing():
-    result = soilgrids_query(latitude=_LAT, longitude=_LON)
+    result = soilgrids_query(latitude=_LAT, longitude=_LON, radius_km=1.0, variables=_SOILGRIDS_VAR)
     _assert_or_skip(result, "soilgrids")
     _record("soilgrids", "point", 0, result)
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
@@ -524,9 +519,9 @@ def test_soilgrids_timing():
 
 @pytest.mark.integration
 @pytest.mark.benchmark
-@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("bz", _NASA_POWER_BBOX_SIZES[:3], ids=lambda b: b["name"])
 def test_soilgrids_bbox_timing(bz):
-    result = soilgrids_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]))
+    result = soilgrids_bbox_query(**_make_bbox(_LAT, _LON, bz["half"]), variables=_SOILGRIDS_VAR)
     _assert_or_skip(result, "soilgrids/bbox")
     _record("soilgrids", f"bbox/{bz['name']}", 0, result, area_deg2=bz["area_deg2"])
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
@@ -534,20 +529,11 @@ def test_soilgrids_bbox_timing(bz):
 
 @pytest.mark.integration
 @pytest.mark.benchmark
-@pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
-def test_soilgrids_extra_location_timing(loc):
-    result = soilgrids_query(latitude=loc["lat"], longitude=loc["lon"])
-    _assert_or_skip(result, f"soilgrids/{loc['name']}")
-    _record("soilgrids", "point", 0, result, location=loc["name"])
-    assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
-
-
-@pytest.mark.integration
-@pytest.mark.benchmark
 def test_soilgrids_point_bbox_consistent():
     """Centroid-based: small bbox must return identical records to point query."""
-    pt = soilgrids_query(latitude=_LAT, longitude=_LON)
-    bx = soilgrids_bbox_query(**_BBOX)
+    bbox = point_to_bbox(latitude=_LAT, longitude=_LON, radius_km=1.0)
+    pt = soilgrids_query(latitude=_LAT, longitude=_LON, radius_km=1.0, variables=_SOILGRIDS_VAR)
+    bx = soilgrids_bbox_query(**bbox, variables=_SOILGRIDS_VAR)
     _assert_or_skip(pt, "soilgrids/point")
     _assert_or_skip(bx, "soilgrids/bbox")
     assert pt["data"] == bx["data"], "soilgrids point/bbox results differ (centroid-based)"

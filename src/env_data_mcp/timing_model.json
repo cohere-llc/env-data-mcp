@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T22:33:09.970466+00:00",
+  "generated_at": "2026-06-17T18:44:41.549541+00:00",
   "note": "Phase 3 \u2014 multiple locations (Yakima WA, Manaus BR, Frankfurt DE), point + bbox queries. Model: t_est(n_days, area_deg2) = alpha + beta_n_days\u00b7n_days + beta_area_deg2\u00b7area_deg2 (seconds). Fit uses only observations with n_records > 0. All coefficients floored at 0 (latency cannot decrease with more data). Centroid-based sources (soilgrids only) have beta_area_deg2 forced to 0 before the floor. Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration",
   "locations": [
     {
@@ -72,11 +72,11 @@
       "equation": "t \u2248 3.83 + 0.091\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "soilgrids": {
-      "alpha": 1.724,
+      "alpha": 4.813,
       "beta_n_days": 0.0,
-      "beta_area_deg2": 0.0,
-      "r2": 0.0742,
-      "equation": "t \u2248 1.72 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
+      "beta_area_deg2": 1.1947,
+      "r2": 0.9857,
+      "equation": "t \u2248 4.81 + 0.000\u00b7n_days + 1.1947\u00b7area_deg2"
     },
     "ssurgo": {
       "alpha": 1.396,
@@ -431,49 +431,31 @@
     ],
     "soilgrids": [
       {
-        "scenario": "point",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "yakima_wa",
-        "latency_s": 2.28,
-        "success": true,
-        "n_records": 12
-      },
-      {
         "scenario": "bbox/0.5x0.5",
         "n_days": 0,
         "area_deg2": 0.25,
         "location": "yakima_wa",
-        "latency_s": 0.936,
+        "latency_s": 6.858,
         "success": true,
-        "n_records": 12
+        "n_records": 57231
       },
       {
         "scenario": "bbox/2x2",
         "n_days": 0,
         "area_deg2": 4.0,
         "location": "yakima_wa",
-        "latency_s": 1.396,
+        "latency_s": 7.533,
         "success": true,
-        "n_records": 12
+        "n_records": 953280
       },
       {
-        "scenario": "point",
+        "scenario": "bbox/5x5",
         "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "manaus_br",
-        "latency_s": 2.285,
+        "area_deg2": 25.0,
+        "location": "yakima_wa",
+        "latency_s": 34.993,
         "success": true,
-        "n_records": 12
-      },
-      {
-        "scenario": "point",
-        "n_days": 0,
-        "area_deg2": 0.0,
-        "location": "frankfurt_de",
-        "latency_s": 1.324,
-        "success": true,
-        "n_records": 12
+        "n_records": 5587045
       }
     ],
     "ssurgo": [

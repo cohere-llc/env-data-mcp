@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from owslib.coverage.wcs100 import WebCoverageService_1_0_0
 
-from env_data_mcp.sources.soilgrids_new._client import get_client, get_specific_variable_info
+from env_data_mcp.sources.soilgrids._client import get_client, get_specific_variable_info
 
 
 def _get_mock_contents() -> WebCoverageService_1_0_0:
@@ -27,9 +27,9 @@ def _get_mock_contents() -> WebCoverageService_1_0_0:
 def test_get_client():
     """Tests that get_client returns a client."""
     with (
-        patch("env_data_mcp.sources.soilgrids_new._client._clients", {}),
+        patch("env_data_mcp.sources.soilgrids._client._clients", {}),
         patch(
-            "env_data_mcp.sources.soilgrids_new._client.WebCoverageService",
+            "env_data_mcp.sources.soilgrids._client.WebCoverageService",
             return_value=_get_mock_contents(),
         ),
     ):
@@ -45,7 +45,7 @@ def test_get_client():
 def test_get_specific_variable_info():
     """Tests that get_specifc_variable_info returns results."""
     with patch(
-        "env_data_mcp.sources.soilgrids_new._client.WebCoverageService",
+        "env_data_mcp.sources.soilgrids._client.WebCoverageService",
         return_value=_get_mock_contents(),
     ):
         var_info = get_specific_variable_info("bdod")
