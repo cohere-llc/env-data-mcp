@@ -78,7 +78,10 @@ def get_base_variable_list() -> dict[str, BaseVariableInfo]:
         rows = table.find_all("tr")
         for row in rows:
             cells = [td.get_text(strip=True) for td in row.find_all("td")]
-            if len(cells) == 5 and cells[0] and not cells[0].startswith("Top"):
+            # skip the table about depth intervals
+            if len(cells) > 0 and cells[0] and cells[0].startswith("Top"):
+                break
+            if len(cells) == 5 and cells[0]:
                 code, description, mapped_units, conversion_factor, conventional_units = cells
                 try:
                     float(conversion_factor)

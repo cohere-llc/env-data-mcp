@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+from env_data_mcp.helpers import check_runtime
+from env_data_mcp.sources.soilgrids._query import VariableInfo
 from env_data_mcp.sources.soilgrids.tools import (
     soilgrids_available_variables,
     soilgrids_bbox_query,
@@ -86,9 +88,53 @@ def test_soilgrids_available_variables() -> None:
     assert "_meta" in results
 
 
+def test_soil_grids_available_variables_handles_single_failure() -> None:
+    """Tests a single raised exception from get_variable_info is silently handled."""
+
+    def mock_get_variable_info(base: str) -> dict[str, VariableInfo]:
+        if base == "foo":
+            msg = "Some error"
+            raise ValueError(msg)
+        mock_info = MagicMock()
+        mock_info.description = "the bar var"
+        mock_info.units = "bars"
+        return {"bar_var": mock_info}
+
+    with (
+        patch(
+            "env_data_mcp.sources.soilgrids.tools.get_base_variable_list",
+            return_value=["foo", "bar"],
+        ),
+        patch(
+            "env_data_mcp.sources.soilgrids.tools.get_variable_info",
+            side_effect=mock_get_variable_info,
+        ),
+    ):
+        results = soilgrids_available_variables()
+    assert "data" in results
+    assert len(results["data"])
+    assert "bar_var" in results["data"]
+
+
+def test_soil_grids_available_variables_handles_empty_base_list() -> None:
+    """Tests than an empty base list is sliently handled."""
+    with (
+        patch("env_data_mcp.sources.soilgrids.tools.get_base_variable_list", return_value=[]),
+        patch("env_data_mcp.sources.soilgrids.tools.get_variable_info") as mock_get_info,
+    ):
+        results = soilgrids_available_variables()
+    assert "data" in results
+    assert len(results["data"]) == 0
+    mock_get_info.assert_not_called()
+
+
 # ---------------------------------------------------------------------------
 # soilgrids_query
 # ---------------------------------------------------------------------------
+
+# test coordinates
+_LAT: float = 33.8105
+_LON: float = -116.6850
 
 
 def test_soilgrids_query() -> None:
@@ -105,8 +151,8 @@ def test_soilgrids_query() -> None:
         ),
     ):
         results = soilgrids_query(
-            latitude=33.8105,
-            longitude=-116.6850,
+            latitude=_LAT,
+            longitude=_LON,
             radius_km=1.0,
             variables=variables,
         )
@@ -114,13 +160,82 @@ def test_soilgrids_query() -> None:
     assert "data" in results
     assert len(results["data"]) > 0
     assert "_meta" in results
-    assert "unavailable_variables" in results["_meta"]
+    assert results["_meta"]["variables"] == variables
     assert results["_meta"]["unavailable_variables"] == ["oops"]
+    assert "oops" not in results["_meta"]["variable_info"]
+    for var in [v for v in variables if v != "oops"]:
+        assert var in results["_meta"]["variable_info"]
+
+
+def test_soilgrids_query_handles_query_exception() -> None:
+    """Tests that exceptions raised by query_bbox() are handled."""
+    with (
+        patch(
+            "env_data_mcp.sources.soilgrids.tools.soilgrids_available_variables",
+            return_value=_MOCK_AVAILABLE_RESPONSE,
+        ),
+        patch("env_data_mcp.sources.soilgrids.tools.check_runtime", return_value=None),
+        patch("env_data_mcp.sources.soilgrids.tools.query_bbox", side_effect=RuntimeError("boom")),
+    ):
+        results = soilgrids_query(
+            latitude=_LAT,
+            longitude=_LON,
+            radius_km=1.0,
+        )
+    assert "data" in results
+    assert len(results["data"]) == 0
+    assert "_meta" in results
+    assert not results["_meta"]["success"]
+    assert results["_meta"]["error"] == "boom"
+
+
+_SLOW_WARN = check_runtime("_test", n_days=1, area_deg2=1.0e9, max_runtime_s=0.001)
+assert _SLOW_WARN is not None
+
+
+def test_soilgrids_query_handles_slow_query() -> None:
+    """Tests that a slow-query returns expected results and doesn't call query_bbox()."""
+    with (
+        patch(
+            "env_data_mcp.sources.soilgrids.tools.soilgrids_available_variables",
+            return_value=_MOCK_AVAILABLE_RESPONSE,
+        ),
+        patch("env_data_mcp.sources.soilgrids.tools.check_runtime", return_value=_SLOW_WARN),
+        patch("env_data_mcp.sources.soilgrids.tools.query_bbox") as mock_qbbox,
+    ):
+        results = soilgrids_query(latitude=_LAT, longitude=_LON, radius_km=1.0)
+    mock_qbbox.assert_not_called()
+    assert results["_meta"]["success"] is False
+    assert results["_meta"]["slow_query_warning"] is True
+    assert results["data"] == []
+
+
+def test_soilgrids_query_handles_invalid_coordinate() -> None:
+    """Tests that an invalid coordinate is handled."""
+    with (
+        patch(
+            "env_data_mcp.sources.soilgrids.tools.soilgrids_available_variables",
+            return_value=_MOCK_AVAILABLE_RESPONSE,
+        ),
+        patch("env_data_mcp.sources.soilgrids.tools.check_runtime", return_value=None),
+        patch("env_data_mcp.sources.soilgrids.tools.query_bbox") as mock_qbbox,
+    ):
+        results = soilgrids_query(latitude=_LAT, longitude=999, radius_km=1.0)
+    mock_qbbox.assert_not_called()
+    assert results["_meta"]["success"] is False
+    assert results["data"] == []
 
 
 # ---------------------------------------------------------------------------
 # soilgrids_bbox_query
 # ---------------------------------------------------------------------------
+
+_BBOX = {
+    "min_lat": 33.8105,
+    "max_lat": 33.8136,
+    "min_lon": -116.6900,
+    "max_lon": -116.6850,
+}
 
 
 def test_soilgrids_bbox_query() -> None:
@@ -137,15 +252,72 @@ def test_soilgrids_bbox_query() -> None:
         ),
     ):
         results = soilgrids_bbox_query(
-            min_lat=33.8105,
-            max_lat=33.8136,
-            min_lon=-116.6900,
-            max_lon=-116.6850,
+            **_BBOX,
             variables=variables,
         )
 
     assert "data" in results
     assert len(results["data"]) > 0
     assert "_meta" in results
-    assert "unavailable_variables" in results["_meta"]
+    assert results["_meta"]["variables"] == variables
     assert results["_meta"]["unavailable_variables"] == ["oops"]
+    assert "oops" not in results["_meta"]["variable_info"]
+    for var in [v for v in variables if v != "oops"]:
+        assert var in results["_meta"]["variable_info"]
+
+
+def test_soilgrids_bbox_query_handles_query_exception() -> None:
+    """Tests that exceptions raised by query_bbox() are handled."""
+    with (
+        patch(
+            "env_data_mcp.sources.soilgrids.tools.soilgrids_available_variables",
+            return_value=_MOCK_AVAILABLE_RESPONSE,
+        ),
+        patch("env_data_mcp.sources.soilgrids.tools.check_runtime", return_value=None),
+        patch("env_data_mcp.sources.soilgrids.tools.query_bbox", side_effect=RuntimeError("boom")),
+    ):
+        results = soilgrids_bbox_query(
+            **_BBOX,
+        )
+    assert "data" in results
+    assert len(results["data"]) == 0
+    assert "_meta" in results
+    assert not results["_meta"]["success"]
+    assert results["_meta"]["error"] == "boom"
+
+
+_SLOW_WARN = check_runtime("_test", n_days=1, area_deg2=1.0e9, max_runtime_s=0.001)
+assert _SLOW_WARN is not None
+
+
+def test_soilgrids_bbox_query_handles_slow_query() -> None:
+    """Tests that a slow-query returns expected results and doesn't call query_bbox()."""
+    with (
+        patch(
+            "env_data_mcp.sources.soilgrids.tools.soilgrids_available_variables",
+            return_value=_MOCK_AVAILABLE_RESPONSE,
+        ),
+        patch("env_data_mcp.sources.soilgrids.tools.check_runtime", return_value=_SLOW_WARN),
+        patch("env_data_mcp.sources.soilgrids.tools.query_bbox") as mock_qbbox,
+    ):
+        results = soilgrids_bbox_query(**_BBOX)
+    mock_qbbox.assert_not_called()
+    assert results["_meta"]["success"] is False
+    assert results["_meta"]["slow_query_warning"] is True
+    assert results["data"] == []
+
+
+def test_soilgrids_bbox_query_handles_invalid_coordinate() -> None:
+    """Tests that an invalid coordinate is handled."""
+    with (
+        patch(
+            "env_data_mcp.sources.soilgrids.tools.soilgrids_available_variables",
+            return_value=_MOCK_AVAILABLE_RESPONSE,
+        ),
+        patch("env_data_mcp.sources.soilgrids.tools.check_runtime", return_value=None),
+        patch("env_data_mcp.sources.soilgrids.tools.query_bbox") as mock_qbbox,
+    ):
+        results = soilgrids_bbox_query(**{**_BBOX, "min_lat": 82.0})
+    mock_qbbox.assert_not_called()
+    assert results["_meta"]["success"] is False
+    assert results["data"] == []

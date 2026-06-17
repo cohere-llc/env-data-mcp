@@ -48,7 +48,7 @@ def _require_soilgrids_available():
 # ---------------------------------------------------------------------------
 
 
-def test_returns_expected():
+def test_soilgrids_available_variables_returns_expected():
     """soil_data_available_variables tool returns expected results."""
     var_info = soilgrids_available_variables()
 

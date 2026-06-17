@@ -28,7 +28,7 @@ def get_specific_variable_info(base_variable: str) -> dict[str, tuple[str, str]]
     for var in list(client.contents):
         parts = var.split("_")
         if len(parts) != 3:
-            msg = f"Error parsing variable: {var}"
+            msg = f"Invalid coverage name: {var}"
             raise ValueError(msg)
         result[var] = parts[1], _QUANTILES.get(parts[2]) or parts[2]
     return result

@@ -113,7 +113,7 @@ def soilgrids_query(
             max_runtime_s=max_runtime_s,
             scale_factor=len(variables),
         ):
-            return _validate_available_variable_response(warn)
+            return _validate_grouped_geometry_response(warn)
         data, unavailable_variables = query_bbox(
             min_lat=bbox["min_lat"],
             max_lat=bbox["max_lat"],
