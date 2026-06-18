@@ -2,7 +2,7 @@
 
 Data source: SoilGrids map service (https://maps.isric.org/mapserv)
 Coverage: Global 250-m resolution, present time
-Auth requried: No
+Auth required: No
 License: CC BY 4.0
 
 Future improvements:
