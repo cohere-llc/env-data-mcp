@@ -296,7 +296,7 @@ _BBOX_CASES: list[_BBoxCase] = [
         "Idalia, Australia", None, DEFAULT_VARIABLES, [], bbox=(-24.98, -24.97, 144.67, 144.68)
     ),
     _BBoxCase(
-        "slow query warning", None, [], [], bbox=(62.0, 50.0, -30.0, 10.0), expect_slow_warn=True
+        "slow query warning", None, [], [], bbox=(50.0, 62.0, -30.0, 10.0), expect_slow_warn=True
     ),
     _BBoxCase("single variable", ["soc_0-5cm_mean"], ["soc_0-5cm_mean"], []),
     _BBoxCase(
