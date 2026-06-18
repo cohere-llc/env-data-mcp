@@ -6,6 +6,7 @@ These tests call the real SoilGrids web services and require network access.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any
@@ -122,9 +123,9 @@ _LON = -119.4768203
 @dataclass(frozen=True)
 class _PointCase:
     name: str
-    requested_vars: list[str] | None
-    expected_vars: list[str]
-    unavailable_vars: list[str]
+    requested_vars: Sequence[str] | None
+    expected_vars: Sequence[str]
+    unavailable_vars: Sequence[str]
     lat_lon: tuple[float, float] = (_LAT, _LON)
     radius_km: float = 1.0
     expect_slow_warn: bool = False
@@ -155,7 +156,7 @@ def point_case(request) -> _PointCase:
 
 @pytest.fixture(scope="module")
 def point_result(point_case: _PointCase) -> dict[str, Any]:
-    kwargs: dict[str, float | list[str]] = {
+    kwargs: dict[str, float | Sequence[str]] = {
         "latitude": _LAT,
         "longitude": _LON,
         "radius_km": 1.0,
@@ -167,7 +168,9 @@ def point_result(point_case: _PointCase) -> dict[str, Any]:
 
 @pytest.fixture(scope="module")
 def requested_vars_effective(point_case: _PointCase) -> list[str]:
-    return DEFAULT_VARIABLES if point_case.requested_vars is None else point_case.requested_vars
+    return list(
+        DEFAULT_VARIABLES if point_case.requested_vars is None else point_case.requested_vars
+    )
 
 
 class TestSoilgridsQuery:
@@ -271,9 +274,9 @@ _MAX_LON = -119.463
 @dataclass(frozen=True)
 class _BBoxCase:
     name: str
-    requested_vars: list[str] | None
-    expected_vars: list[str]
-    unavailable_vars: list[str]
+    requested_vars: Sequence[str] | None
+    expected_vars: Sequence[str]
+    unavailable_vars: Sequence[str]
     bbox: tuple[float, float, float, float] = (_MIN_LAT, _MAX_LAT, _MIN_LON, _MAX_LON)
     expect_slow_warn: bool = False
 
@@ -313,7 +316,7 @@ def bbox_case(request) -> _BBoxCase:
 
 @pytest.fixture(scope="module")
 def bbox_result(bbox_case: _BBoxCase) -> dict[str, Any]:
-    kwargs: dict[str, float | list[str]] = {
+    kwargs: dict[str, float | Sequence[str]] = {
         "min_lat": _MIN_LAT,
         "max_lat": _MAX_LAT,
         "min_lon": _MIN_LON,
@@ -326,7 +329,7 @@ def bbox_result(bbox_case: _BBoxCase) -> dict[str, Any]:
 
 @pytest.fixture(scope="module")
 def requested_vars_effective_bbox(bbox_case: _BBoxCase) -> list[str]:
-    return DEFAULT_VARIABLES if bbox_case.requested_vars is None else bbox_case.requested_vars
+    return list(DEFAULT_VARIABLES if bbox_case.requested_vars is None else bbox_case.requested_vars)
 
 
 class TestSoilgridsBBoxQuery:

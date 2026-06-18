@@ -1,11 +1,12 @@
 """SoilGrids data adapter.
 
-Data source:
-Coverage:
+Data source: SoilGrids map service (https://maps.isric.org/mapserv)
+Coverage: Global 250-m resolution, present time
 Auth requried: No
-License:
+License: CC BY 4.0
 
 Future improvements:
+ - Could optionally return GeoTIFF images
 """
 
 from .tools import (

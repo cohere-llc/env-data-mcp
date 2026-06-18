@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 from httpx import HTTPStatusError
+from owslib.coverage.wcs100 import WebCoverageService_1_0_0
 from rasterio.io import MemoryFile
 from rasterio.transform import from_origin
 
@@ -16,6 +17,7 @@ from env_data_mcp.sources.soilgrids._query import (
     VariableInfo,
     _get_client_for_coverage,
     _get_coverage_format,
+    _get_specific_variable_info,
     _query_one_coverage,
     get_base_variable_list,
     get_variable_info,
@@ -153,6 +155,16 @@ def _get_mock_httpx_client_status_errors() -> MagicMock:
     return mock_client
 
 
+def _get_mock_contents(contents: dict[str, Any] | None = None) -> WebCoverageService_1_0_0:
+    # spec makes isinstance(mock, WebCoverageService_1_0_0) evaluate True.
+    mock = MagicMock(spec=WebCoverageService_1_0_0)
+    mock.contents = contents or {
+        "bdod_15-30cm_mean": {},
+        "bdod_30-60cm_Q0.5": {},
+    }
+    return mock
+
+
 def _mock_get_specific_variable_info(base: str) -> dict[str, tuple[str, str]]:
     if base == "bdod":
         return {
@@ -248,6 +260,47 @@ def test_get_base_variable_list_uses_cache():
 
 
 # ---------------------------------------------------------------------------
+# _get_specific_variable_info
+# ---------------------------------------------------------------------------
+
+
+def test_get_specific_variable_info():
+    """Tests that get_specifc_variable_info returns results."""
+    with patch(
+        "env_data_mcp.sources.soilgrids._client.WebCoverageService",
+        return_value=_get_mock_contents(),
+    ):
+        var_info = _get_specific_variable_info("bdod")
+    assert len(var_info) > 0
+    assert "bdod_15-30cm_mean" in var_info
+    assert var_info["bdod_15-30cm_mean"] == ("15-30cm", "mean")
+    assert "bdod_30-60cm_Q0.5" in var_info
+    assert var_info["bdod_30-60cm_Q0.5"] == ("30-60cm", "median")
+
+
+@pytest.mark.parametrize(
+    "contents",
+    [
+        pytest.param({"invalid_coverage": {}}, id="too short"),
+        pytest.param({"in_valid_cover_age": {}}, id="too long"),
+        pytest.param({"": {}}, id="empty"),
+        pytest.param({"foo": {}, "bar": {}}, id="multiple"),
+        pytest.param({"valid_coverage_name": {}, "baz": {}}, id="mix"),
+    ],
+)
+def test_get_specific_variable_info_raises_value_error(contents: dict[str, Any]):
+    """Tests that malformed base variable names throw a ValueError."""
+    with (
+        patch(
+            "env_data_mcp.sources.soilgrids._client.WebCoverageService",
+            return_value=_get_mock_contents(contents),
+        ),
+        pytest.raises(ValueError, match="Invalid coverage name"),
+    ):
+        _ = _get_specific_variable_info("foo")
+
+
+# ---------------------------------------------------------------------------
 # get_variable_info
 # ---------------------------------------------------------------------------
 
@@ -260,7 +313,7 @@ def test_get_variable_info_test():
             return_value=_get_mock_httpx_client(),
         ),
         patch(
-            "env_data_mcp.sources.soilgrids._query.get_specific_variable_info",
+            "env_data_mcp.sources.soilgrids._query._get_specific_variable_info",
             side_effect=_mock_get_specific_variable_info,
         ),
     ):

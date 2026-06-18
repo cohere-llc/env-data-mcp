@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
 from typing import Any
@@ -30,7 +31,10 @@ def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, A
 
 @mcp.tool()
 def soilgrids_available_variables() -> dict[str, Any]:
-    """Return a list of available SoilGrids variables with descriptions and units."""
+    """Return a list of available SoilGrids variables with descriptions and units.
+
+    Creating the clients is slow, so we try to create them in parallel.
+    """
     base_info = get_base_variable_list()
     var_info_raw: dict[str, VariableInfo] = {}
 
@@ -66,7 +70,7 @@ def soilgrids_query(
     latitude: float,
     longitude: float,
     radius_km: float,
-    variables: list[str] = DEFAULT_VARIABLES,
+    variables: Sequence[str] | None = None,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a point location.
@@ -89,6 +93,7 @@ def soilgrids_query(
             exceed this, a warning is returned instead of data. If not provided, assumed
             to be 30 s.
     """
+    variables = list(DEFAULT_VARIABLES if variables is None else variables)
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
@@ -163,7 +168,7 @@ def soilgrids_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: list[str] = DEFAULT_VARIABLES,
+    variables: Sequence[str] | None = None,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a bounding box region.
@@ -171,7 +176,7 @@ def soilgrids_bbox_query(
     Returns common soil properties grouped by GeoJSON Point geometry, from the SoilGrids
     WebCoverageService. Global coverage at 250 m resolution, present time.
 
-    Note: if you bounding box is smaller than the 250 m resoltion of the SoilGrids data,
+    Note: if your bounding box is smaller than the 250 m resoltion of the SoilGrids data,
     no results may be returned.
 
     Args:
@@ -186,6 +191,7 @@ def soilgrids_bbox_query(
             exceed this, a warning is returned instead of data. If not provided, assumed
             to be 30 s.
     """
+    variables = list(DEFAULT_VARIABLES if variables is None else variables)
     query_params: dict[str, Any] = {
         "min_lat": min_lat,
         "max_lat": max_lat,

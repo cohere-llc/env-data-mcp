@@ -1,14 +1,23 @@
-"""WCS Client for accessing SoilGrids data."""
+"""WCS Client for accessing SoilGrids data.
+
+Clients are used to interact with coverage classes (soil density, pH, silt content, etc.)
+and give access to specific coverages (for specific depth ranges and quantiles). So, a
+client for `bdod` (soil density) would give access to coverages like:
+`bdod_0-5cm_mean` (mean soil density at 0-5cm depth)
+`bdod_15-30cm_Q0.5` (median soil density at 15-30cm depth)
+"""
 
 from owslib.wcs import WebCoverageService
 
 from ._types import Client
-from .constants import _QUANTILES, _WEB_MAP_SERVICE_URL
+from .constants import _WEB_MAP_SERVICE_URL
 
+# Global cache for WCS clients by coverage class
 _clients: dict[str, Client] = {}
 
 
 def get_client(base_variable: str) -> Client:
+    """Get a WCS client for a particular coverage category."""
     global _clients
     if base_variable in _clients:
         return _clients[base_variable]
@@ -19,16 +28,3 @@ def get_client(base_variable: str) -> Client:
         raise TypeError(f"Expected WCS 1.0.0 client, got {type(wcs).__name__}")
     _client = wcs
     return _client
-
-
-def get_specific_variable_info(base_variable: str) -> dict[str, tuple[str, str]]:
-    """Get specifc variables for a base variable with depth interval and quantile."""
-    client = get_client(base_variable=base_variable)
-    result: dict[str, tuple[str, str]] = {}
-    for var in list(client.contents):
-        parts = var.split("_")
-        if len(parts) != 3:
-            msg = f"Invalid coverage name: {var}"
-            raise ValueError(msg)
-        result[var] = parts[1], _QUANTILES.get(parts[2]) or parts[2]
-    return result
