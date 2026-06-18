@@ -500,7 +500,7 @@ def test_nasa_power_point_bbox_consistent():
 
 
 # ===========================================================================
-# SoilGrids — no auth, REST-based, date-range free
+# SoilGrids — no auth, WCS Client, date-range free
 # ===========================================================================
 
 # use one variable for benchmarking, and scale predicted time by actual
@@ -530,7 +530,7 @@ def test_soilgrids_bbox_timing(bz):
 @pytest.mark.integration
 @pytest.mark.benchmark
 def test_soilgrids_point_bbox_consistent():
-    """Centroid-based: small bbox must return identical records to point query."""
+    """Small bbox must return identical records to point query."""
     bbox = point_to_bbox(latitude=_LAT, longitude=_LON, radius_km=1.0)
     pt = soilgrids_query(latitude=_LAT, longitude=_LON, radius_km=1.0, variables=_SOILGRIDS_VAR)
     bx = soilgrids_bbox_query(**bbox, variables=_SOILGRIDS_VAR)

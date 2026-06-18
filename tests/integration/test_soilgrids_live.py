@@ -329,6 +329,7 @@ def bbox_result(bbox_case: _BBoxCase) -> dict[str, Any]:
         kwargs["variables"] = bbox_case.requested_vars
     return soilgrids_bbox_query(**kwargs)
 
+
 @pytest.fixture(scope="module")
 def requested_vars_effective_bbox(bbox_case: _BBoxCase) -> list[str]:
     return list(DEFAULT_VARIABLES if bbox_case.requested_vars is None else bbox_case.requested_vars)
