@@ -21,10 +21,12 @@ def get_client(base_variable: str) -> Client:
     global _clients
     if base_variable in _clients:
         return _clients[base_variable]
+
     wcs = WebCoverageService(
         f"{_WEB_MAP_SERVICE_URL}?map=/map/{base_variable}.map", version="1.0.0"
     )
     if not isinstance(wcs, Client):
         raise TypeError(f"Expected WCS 1.0.0 client, got {type(wcs).__name__}")
-    _client = wcs
-    return _client
+
+    _clients[base_variable] = wcs
+    return wcs
