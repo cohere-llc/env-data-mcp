@@ -33,7 +33,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture(scope="module", autouse=True)
 def _require_soilgrids_available():
-    """Skip tests if the GBIF API is unreachable."""
+    """Skip tests if the SoilGrids services are unreachable."""
     try:
         r = httpx.get(_LAYERS_INFO_URL, timeout=30)
         if r.status_code != HTTPStatus.OK:
