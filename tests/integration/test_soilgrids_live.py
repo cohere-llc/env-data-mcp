@@ -318,16 +318,16 @@ def bbox_case(request) -> _BBoxCase:
 
 @pytest.fixture(scope="module")
 def bbox_result(bbox_case: _BBoxCase) -> dict[str, Any]:
+    min_lat, max_lat, min_lon, max_lon = bbox_case.bbox
     kwargs: dict[str, float | Sequence[str]] = {
-        "min_lat": _MIN_LAT,
-        "max_lat": _MAX_LAT,
-        "min_lon": _MIN_LON,
-        "max_lon": _MAX_LON,
+        "min_lat": min_lat,
+        "max_lat": max_lat,
+        "min_lon": min_lon,
+        "max_lon": max_lon,
     }
     if bbox_case.requested_vars is not None:
         kwargs["variables"] = bbox_case.requested_vars
-    return soilgrids_query(**kwargs)
-
+    return soilgrids_bbox_query(**kwargs)
 
 @pytest.fixture(scope="module")
 def requested_vars_effective_bbox(bbox_case: _BBoxCase) -> list[str]:
