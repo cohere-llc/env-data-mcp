@@ -212,7 +212,7 @@ def soilgrids_bbox_query(
         if warn := check_runtime(
             source="soilgrids",
             n_days=0,
-            area_deg2=(bbox.max_lat - bbox.min_lat) * (bbox.max_lon - bbox.min_lon),
+            area_deg2=bbox_area_deg2(bbox.model_dump()),
             max_runtime_s=max_runtime_s,
             scale_factor=len(variables),
         ):
