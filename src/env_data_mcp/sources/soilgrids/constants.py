@@ -21,6 +21,7 @@ DEFAULT_VARIABLES: Final[tuple[str, ...]] = (
 
 LICENSE_INFO: Final[Mapping[str, str]] = MappingProxyType(
     {
+        "license": "CC BY 4.0",
         "citation": (
             "Common soil chemical and physical properties: "
             "Poggio, L., de Sousa, L. M., Batjes, N. H., Heuvelink, G. B. M., Kempen, B., "
