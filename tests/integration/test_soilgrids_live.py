@@ -341,7 +341,7 @@ class TestSoilgridsBBoxQuery:
         assert "_meta" in bbox_result
         meta = bbox_result["_meta"]
         if bbox_case.expect_slow_warn:
-            assert ["exceeds", "threshhold"] in meta["message"]
+            assert "exceeds" in meta["message"] and "threshold" in meta["message"]
         assert meta["success"] == (not bbox_case.expect_slow_warn)
         assert meta["error"] is None
         assert meta["source"] == "soilgrids"
