@@ -156,10 +156,11 @@ def point_case(request) -> _PointCase:
 
 @pytest.fixture(scope="module")
 def point_result(point_case: _PointCase) -> dict[str, Any]:
+    lat, lon = point_case.lat_lon
     kwargs: dict[str, float | Sequence[str]] = {
-        "latitude": _LAT,
-        "longitude": _LON,
-        "radius_km": 1.0,
+        "latitude": lat,
+        "longitude": lon,
+        "radius_km": point_case.radius_km,
     }
     if point_case.requested_vars is not None:
         kwargs["variables"] = point_case.requested_vars
