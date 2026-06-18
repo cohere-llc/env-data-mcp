@@ -16,6 +16,7 @@ import pytest
 
 from env_data_mcp.sources.soilgrids import (
     soilgrids_available_variables,
+    soilgrids_bbox_query,
     soilgrids_query,
 )
 from env_data_mcp.sources.soilgrids.constants import (
