@@ -228,8 +228,8 @@ class TestSoilgridsQuery:
     ):
         """Test that points returned are in or near the bounding box."""
         for point in point_result["data"]:
-            assert point["latitude"] == point["geometry"]["coordinates"][0]
-            assert point["longitude"] == point["geometry"]["coordinates"][1]
+            assert point["longitude"] == point["geometry"]["coordinates"][0]
+            assert point["latitude"] == point["geometry"]["coordinates"][1]
             assert -90.0 <= point["latitude"] <= 90.0
             assert -180.0 <= point["longitude"] <= 180.0
 
