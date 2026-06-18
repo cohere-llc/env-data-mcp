@@ -182,7 +182,7 @@ class TestSoilgridsQuery:
         assert "_meta" in point_result
         meta = point_result["_meta"]
         if point_case.expect_slow_warn:
-            assert ["exceeds", "threshhold"] in meta["message"]
+            assert "exceeds" in meta["message"] and "threshold" in meta["message"]
         assert meta["success"] == (not point_case.expect_slow_warn)
         assert meta["error"] is None
         assert meta["source"] == "soilgrids"
