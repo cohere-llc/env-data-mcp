@@ -97,6 +97,7 @@ def soilgrids_query(
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
+        "radius_km": radius_km,
         "variables": variables,
         "max_runtime_s": max_runtime_s,
     }
