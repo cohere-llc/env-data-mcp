@@ -388,8 +388,8 @@ class TestSoilgridsBBoxQuery:
     ):
         """Test that bboxs returned are in or near the bounding box."""
         for bbox in bbox_result["data"]:
-            assert bbox["latitude"] == bbox["geometry"]["coordinates"][0]
-            assert bbox["longitude"] == bbox["geometry"]["coordinates"][1]
+            assert bbox["longitude"] == bbox["geometry"]["coordinates"][0]
+            assert bbox["latitude"] == bbox["geometry"]["coordinates"][1]
             assert -90.0 <= bbox["latitude"] <= 90.0
             assert -180.0 <= bbox["longitude"] <= 180.0
             is_in_bbox = bool(
