@@ -425,4 +425,4 @@ class TestSoilgridsBBoxQuery:
     ):
         """Test that data inside the bounding box is returned when variables are available."""
         any_in_bbox = any(p["in_bbox"] for p in bbox_result["data"])
-        assert any_in_bbox ^ len(bbox_case.expected_vars) == 0
+        assert any_in_bbox == (len(bbox_case.expected_vars) > 0)
