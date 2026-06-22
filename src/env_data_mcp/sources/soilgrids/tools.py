@@ -71,7 +71,7 @@ def soilgrids_query(
     longitude: float,
     radius_km: float,
     variables: Sequence[str] | None = None,
-    max_runtime_s: float = 30.0,
+    max_runtime_s: float = 60.0,
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a point location.
 
@@ -91,7 +91,7 @@ def soilgrids_query(
             used variables near the surface.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed
-            to be 30 s.
+            to be 60 s.
     """
     variables = list(DEFAULT_VARIABLES if variables is None else variables)
     query_params: dict[str, Any] = {
@@ -119,6 +119,7 @@ def soilgrids_query(
             max_runtime_s=max_runtime_s,
             scale_factor=len(variables),
         ):
+            warn["_meta"]["variables"] = variables
             return _validate_grouped_geometry_response(warn)
         data, unavailable_variables = query_bbox(
             min_lat=bbox["min_lat"],
@@ -170,7 +171,7 @@ def soilgrids_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: Sequence[str] | None = None,
-    max_runtime_s: float = 30.0,
+    max_runtime_s: float = 60.0,
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a bounding box region.
 
@@ -190,7 +191,7 @@ def soilgrids_bbox_query(
             used variables near the surface.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed
-            to be 30 s.
+            to be 60 s.
     """
     variables = list(DEFAULT_VARIABLES if variables is None else variables)
     query_params: dict[str, Any] = {
@@ -216,6 +217,7 @@ def soilgrids_bbox_query(
             max_runtime_s=max_runtime_s,
             scale_factor=len(variables),
         ):
+            warn["_meta"]["variables"] = variables
             return _validate_grouped_geometry_response(warn)
         data, unavailable_variables = query_bbox(
             min_lat=bbox.min_lat,
