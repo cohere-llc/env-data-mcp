@@ -25,6 +25,7 @@ from env_data_mcp.sources import nasa_power
 from env_data_mcp.sources import soilgrids
 from env_data_mcp.sources import ssurgo
 from env_data_mcp.sources import gbif
+from env_data_mcp.sources import tropomi
 from env_data_mcp.sources import openaq
 from env_data_mcp.sources import sentinel5p
 from env_data_mcp.sources import oco2

@@ -35,6 +35,7 @@ With the server running, verify it works with this self-contained Python snippet
 ```python
 # hello_world.py — run with: uv run python hello_world.py
 import asyncio
+import json
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -46,7 +47,7 @@ async def main():
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            result = await session.call_tool(
+            raw_result = await session.call_tool(
                 "nasa_power_merra2_query",
                 arguments={
                     "latitude": 46.253,
@@ -56,6 +57,7 @@ async def main():
                     "temporal_resolution": "daily",
                 },
             )
+            result = json.loads(raw_result.content[0].text)
             print(result)
 
 asyncio.run(main())
