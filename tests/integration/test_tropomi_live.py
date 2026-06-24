@@ -60,8 +60,8 @@ class TestAvailableVariables:
     def test_contains_known_methane_variable(self, var_info: dict[str, Any]):
         """Test results include known variable info."""
         data = var_info["data"]
-        assert "OFFL-L2__CH4___" in data
-        ch4_info = data["OFFL-L2__CH4___"]
+        assert "OFFL-L2_CH4" in data
+        ch4_info = data["OFFL-L2_CH4"]
         assert "description" in ch4_info
         assert any(word in ch4_info["description"].lower() for word in ["methane", "ch4"])
         assert "offline" in ch4_info["description"].lower()

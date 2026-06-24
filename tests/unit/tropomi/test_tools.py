@@ -16,13 +16,21 @@ from env_data_mcp.sources.tropomi.tools import tropomi_available_variables
 # ---------------------------------------------------------------------------
 
 _EXPECTED_VARIABLES: dict[str, dict[str, str]] = {
-    "OFFL-foo__": {
+    "OFFL-foo": {
         "description": "foo with two underscores",
         "units": "foos",
-        "extra-info": "_____________",
+        "variable_name": "foo__",
     },
-    "NRTI-__bar__": {"description": "bar with four underscores", "units": "bars"},
-    "NRTI-_______": {"description": "just a whole lot of underscores", "units": "unknown"},
+    "NRTI-bar": {
+        "description": "bar with four underscores",
+        "units": "bars",
+        "variable_name": "bar____",
+    },
+    "NRTI-baz_qux": {
+        "description": "baz and qux with a whole lot of underscores",
+        "units": "unknown",
+        "variable_name": "baz___qux___________",
+    },
 }
 
 

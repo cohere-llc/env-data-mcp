@@ -90,32 +90,32 @@ def test_get_variable_info(httpx_mock):
     # 4 variables total: 1 from NRTI, 2 from OFFL (title-less link excluded), 1 from RPRO
     assert len(var_info) == 4
 
-    assert "NRTI-L2__NO2___" in var_info
-    entry = var_info["NRTI-L2__NO2___"]
+    assert "NRTI-L2_NO2" in var_info
+    entry = var_info["NRTI-L2_NO2"]
     assert entry["description"] == "Near real-time: Nitrogen Dioxide"
     assert entry["units"] == "mol m-2"
     assert entry["url"] == "https://meeo-s5p.s3.amazonaws.com/COGT/NRTI/L2__NO2___/catalog.json"
     assert entry["product_type"] == "NRTI"
     assert entry["variable_name"] == "L2__NO2___"
 
-    assert "OFFL-L2__CO____" in var_info
-    entry = var_info["OFFL-L2__CO____"]
+    assert "OFFL-L2_CO" in var_info
+    entry = var_info["OFFL-L2_CO"]
     assert entry["description"] == "Offline processed: Carbon Monoxide"
     assert entry["units"] == "mol m-2"
     assert entry["url"] == "https://meeo-s5p.s3.amazonaws.com/COGT/OFFL/L2__CO____/catalog.json"
     assert entry["product_type"] == "OFFL"
     assert entry["variable_name"] == "L2__CO____"
 
-    assert "OFFL-L2__CH4___" in var_info
-    entry = var_info["OFFL-L2__CH4___"]
+    assert "OFFL-L2_CH4" in var_info
+    entry = var_info["OFFL-L2_CH4"]
     assert entry["description"] == "Offline processed: Methane"
     assert entry["units"] == "ppb"
     assert entry["url"] == "https://meeo-s5p.s3.amazonaws.com/COGT/OFFL/L2__CH4___/catalog.json"
     assert entry["product_type"] == "OFFL"
     assert entry["variable_name"] == "L2__CH4___"
 
-    assert "RPRO-L2__O3____" in var_info
-    entry = var_info["RPRO-L2__O3____"]
+    assert "RPRO-L2_O3" in var_info
+    entry = var_info["RPRO-L2_O3"]
     assert entry["description"] == "Reprocessed: Ozone"
     assert entry["units"] == "DU"
     assert entry["url"] == "https://meeo-s5p.s3.amazonaws.com/COGT/RPRO/L2__O3____/catalog.json"

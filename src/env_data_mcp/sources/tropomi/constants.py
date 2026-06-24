@@ -37,12 +37,12 @@ _CATALOG_URL_PREFIX: str = "https://meeo-s5p.s3.amazonaws.com/COGT/"
 # ---------------------------------------------------------------------------
 
 DEFAULT_VARIABLES: list[str] = [
-    "OFFL-L2__CH4___",  # methane total-column mixing ratio
-    "OFFL-L2__NO2___",  # nitrogen dioxide total-column concentration
-    "OFFL-L2__CO____",  # carbon monoxide total-column concentration
-    "OFFL-L2__O3_TCL",  # tropospheric ozone concentration
-    "OFFL-L2__SO2___",  # sulfur dioxide total-column concetration
-    "OFFL-L2__HCHO__",  # formaldehyde total-column concentration
+    "OFFL-L2_CH4",  # methane total-column mixing ratio
+    "OFFL-L2_NO2",  # nitrogen dioxide total-column concentration
+    "OFFL-L2_CO",  # carbon monoxide total-column concentration
+    "OFFL-L2_O3_TCL",  # tropospheric ozone concentration
+    "OFFL-L2_SO2",  # sulfur dioxide total-column concetration
+    "OFFL-L2_HCHO",  # formaldehyde total-column concentration
 ]
 
 _PRODUCT_TYPES: dict[str, str] = {
@@ -56,14 +56,14 @@ _PRODUCT_TYPES: dict[str, str] = {
 # hard-code them here and let any mismatches just result in "unknown" units.
 # source: https://sentiwiki.copernicus.eu/web/s5p-products
 _UNITS_MAP: dict[str, str] = {
-    "L2__CH4___": "ppb",
-    "L2__SO2___": "mol m-2",
-    "L2__AER_AI": "unitless",
-    "L2__CO____": "mol m-2",
-    "L2__HCHO__": "mol m-2",
-    "L2__NO2___": "mol m-2",
-    "L2__CLOUD_": "unitless",
-    "L2__O3____": "DU",
-    "L2__AER_LH": "m",
-    "L2__O3_TCL": "DU",
+    "L2_CH4": "ppb",
+    "L2_SO2": "mol m-2",
+    "L2_AER_AI": "unitless",
+    "L2_CO": "mol m-2",
+    "L2_HCHO": "mol m-2",
+    "L2_NO2": "mol m-2",
+    "L2_CLOUD": "unitless",
+    "L2_O3": "DU",
+    "L2_AER_LH": "m",
+    "L2_O3_TCL": "DU",
 }
