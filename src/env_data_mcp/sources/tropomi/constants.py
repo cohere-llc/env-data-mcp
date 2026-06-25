@@ -9,7 +9,7 @@ from __future__ import annotations
 LICENSE_INFO: dict[str, str] = {
     "description": (
         "This data set consists of observations from the Sentinel-5 Precursor "
-        "(Sentinel-5P) satellite of the European Commission’s Copernicus Earth "
+        "(Sentinel-5P) satellite of the European Commission's Copernicus Earth "
         "Observation Programme. Sentinel-5P is a polar orbiting satellite that "
         "completes 14 orbits of the Earth a day. It carries the TROPOspheric "
         "Monitoring Instrument (TROPOMI) which is a spectrometer that senses "
@@ -28,9 +28,12 @@ LICENSE_INFO: dict[str, str] = {
 # Query endpoints
 # ---------------------------------------------------------------------------
 
-#  add "{PRODUCT_TYPE}/catalog.json" to get full path
-_CATALOG_URL_PREFIX: str = "https://meeo-s5p.s3.amazonaws.com/COGT/"
+# AWS URL for Sentinel-5
+#  add "COGT/{PRODUCT_TYPE}/catalog.json" to get full path to catalog
+_AWS_URL: str = "https://meeo-s5p.s3.amazonaws.com/"
 
+# API for figuring out set of S3 keys to query for a given date/location
+_CDSE_ODATA_URL = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
 
 # ---------------------------------------------------------------------------
 # Variable info
