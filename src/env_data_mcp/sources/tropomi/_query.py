@@ -207,8 +207,10 @@ def _get_s3_file_paths(
     return paths
 
 
-def _get_cogt_url(s3_path: str, variable_name: str) -> str:
-    """Returns a GDAL VSICURL URL for an equivalent S3 NetCDF path."""
+def _get_cogt_urls(s3_path: str, variable_name: str) -> tuple[str, str]:
+    """Returns GDAL VSICURL URLs for an equivalent S3 NetCDF path.
+
+    The URLs returned are for the requested variable and the qa_values."""
     all_var_info = _get_variable_info()
     if variable_name not in all_var_info:
         msg = f"Invalid TROPOMI variable: {variable_name}"
@@ -221,4 +223,8 @@ def _get_cogt_url(s3_path: str, variable_name: str) -> str:
     # parts[1] e.g. "/L2__O3____/2024/01/03/S5P_OFFL_L2__O3_____20240103.nc"
     cogt_path = PurePosixPath(f"COGT/{var_info['product_type']}{parts[1]}")
     new_name = f"{cogt_path.stem}_PRODUCT_{var_info['cogt_name']}_4326.tif"
-    return f"/vsicurl/{_AWS_URL}{cogt_path.with_name(new_name)}"
+    new_qa_name = f"{cogt_path.stem}_PRODUCT_qa_value_4326.tif"
+    return (
+        f"/vsicurl/{_AWS_URL}{cogt_path.with_name(new_name)}",
+        f"/vsicurl/{_AWS_URL}{cogt_path.with_name(new_qa_name)}",
+    )
