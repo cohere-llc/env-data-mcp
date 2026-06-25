@@ -24,6 +24,7 @@ from __future__ import annotations
 import datetime
 import re
 import xml.etree.ElementTree as ET
+from pathlib import PurePosixPath
 
 import httpx
 
@@ -204,3 +205,20 @@ def _get_s3_file_paths(
             break
         skip += page_size
     return paths
+
+
+def _get_cogt_url(s3_path: str, variable_name: str) -> str:
+    """Returns a GDAL VSICURL URL for an equivalent S3 NetCDF path."""
+    all_var_info = _get_variable_info()
+    if variable_name not in all_var_info:
+        msg = f"Invalid TROPOMI variable: {variable_name}"
+        raise ValueError(msg)
+    var_info = all_var_info[variable_name]
+    parts = s3_path.split("TROPOMI")
+    if len(parts) != 2:
+        msg = f"Unparsable NetCDF S3 path: {s3_path}"
+        raise ValueError(msg)
+    # parts[1] e.g. "/L2__O3____/2024/01/03/S5P_OFFL_L2__O3_____20240103.nc"
+    cogt_path = PurePosixPath(f"COGT/{var_info['product_type']}{parts[1]}")
+    new_name = f"{cogt_path.stem}_PRODUCT_{var_info['cogt_name']}_4326.tif"
+    return f"/vsicurl/{_AWS_URL}{cogt_path.with_name(new_name)}"

@@ -13,7 +13,11 @@ import httpx
 import pytest
 
 import env_data_mcp.sources.tropomi._query as _query_mod
-from env_data_mcp.sources.tropomi._query import _get_s3_file_paths, _get_variable_info
+from env_data_mcp.sources.tropomi._query import (
+    _get_cogt_url,
+    _get_s3_file_paths,
+    _get_variable_info,
+)
 from env_data_mcp.sources.tropomi.constants import _AWS_URL, _CDSE_ODATA_URL
 
 # ---------------------------------------------------------------------------
@@ -312,3 +316,80 @@ def test_get_s3_file_paths_paginates(httpx_mock):
     assert len(results) == _PAGE_SIZE + 3
     assert results[0] == "/OFFL/L2__O3____/2024/01/01/S5P_OFFL_variable_00000.nc"
     assert results[_PAGE_SIZE] == "/OFFL/L2__O3____/2024/01/02/S5P_OFFL_variable_00000.nc"
+
+
+# ---------------------------------------------------------------------------
+# _get_cogt_url
+# ---------------------------------------------------------------------------
+
+# Realistic CDSE S3Path: /eodata/Sentinel-5P/TROPOMI/<folder>/<date>/<name>.nc
+_CDSE_S3_PATH = (
+    "/eodata/Sentinel-5P/TROPOMI/L2__O3____/2024/01/03/"
+    "S5P_OFFL_L2__O3_____20240103T000105_20240103T000605_32856_03_020401_20240103T015600.nc"
+)
+_CDSE_S3_STEM = (
+    "S5P_OFFL_L2__O3_____20240103T000105_20240103T000605_32856_03_020401_20240103T015600"
+)
+
+
+def test_get_cogt_url_returns_vsicurl_path(httpx_mock):
+    """Output must be a valid GDAL VSICURL URL pointing to a .tif on the MEEO S3 bucket."""
+    _add_catalog_mocks(httpx_mock)
+
+    url = _get_cogt_url(_CDSE_S3_PATH, "OFFL-L2_O3")
+
+    assert url.startswith("/vsicurl/https://meeo-s5p.s3.amazonaws.com/")
+    assert url.endswith(".tif")
+    # date path and product folder must be preserved
+    assert "/2024/01/03/" in url
+    assert "/L2__O3____/" in url
+
+
+def test_get_cogt_url_embeds_cogt_variable_name(httpx_mock):
+    """The COGT variable name must appear between '_PRODUCT_' and '_4326.tif'."""
+    _add_catalog_mocks(httpx_mock)
+
+    url = _get_cogt_url(_CDSE_S3_PATH, "OFFL-L2_O3")
+
+    filename = PurePosixPath(url).name
+    assert filename == f"{_CDSE_S3_STEM}_PRODUCT_ozone_total_vertical_column_4326.tif"
+
+
+def test_get_cogt_url_different_variable(httpx_mock):
+    """The COGT name for a different variable is substituted correctly."""
+    _add_catalog_mocks(httpx_mock)
+    ch4_s3_path = (
+        "/eodata/Sentinel-5P/TROPOMI/L2__CH4___/2024/01/03/S5P_OFFL_L2__CH4___20240103T000105.nc"
+    )
+
+    url = _get_cogt_url(ch4_s3_path, "OFFL-L2_CH4")
+
+    assert "/COGT/OFFL/" in url
+    assert "_PRODUCT_methane_mixing_ratio_4326.tif" in url
+
+
+def test_get_cogt_url_invalid_variable_raises(httpx_mock):
+    """Unknown variable name must raise ValueError."""
+    _add_catalog_mocks(httpx_mock)
+
+    with pytest.raises(ValueError, match="Invalid TROPOMI variable"):
+        _get_cogt_url(_CDSE_S3_PATH, "OFFL-L2_INVALID")
+
+
+def test_get_cogt_url_path_missing_tropomi_raises(httpx_mock):
+    """S3 path with no 'TROPOMI' token must raise ValueError."""
+    _add_catalog_mocks(httpx_mock)
+
+    with pytest.raises(ValueError, match="Unparsable NetCDF S3 path"):
+        _get_cogt_url("/eodata/Sentinel-5P/L2__O3____/2024/01/03/file.nc", "OFFL-L2_O3")
+
+
+def test_get_cogt_url_multiple_tropomi_occurrences_raises(httpx_mock):
+    """S3 path with more than one 'TROPOMI' token must raise ValueError."""
+    _add_catalog_mocks(httpx_mock)
+
+    with pytest.raises(ValueError, match="Unparsable NetCDF S3 path"):
+        _get_cogt_url(
+            "/eodata/TROPOMI/Sentinel-5P/TROPOMI/L2__O3____/2024/01/03/file.nc",
+            "OFFL-L2_O3",
+        )
