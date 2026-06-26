@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
-from env_data_mcp.helpers import build_meta
-from env_data_mcp.models import AvailableVariablesResponse
+from env_data_mcp.helpers import build_meta, check_runtime, parse_date
+from env_data_mcp.models import (
+    AvailableVariablesResponse,
+    DateRange,
+    GroupedGeometryResponse,
+    PointInput,
+)
 from env_data_mcp.server import mcp
 
-from ._query import _get_variable_info
-from .constants import LICENSE_INFO
+from ._query import get_variable_info, query_point
+from .constants import DEFAULT_VARIABLES, LICENSE_INFO
 
 
 def _validate_available_variables_response(response: dict[str, Any]) -> dict[str, Any]:
@@ -17,17 +23,19 @@ def _validate_available_variables_response(response: dict[str, Any]) -> dict[str
     return AvailableVariablesResponse.model_validate(response).model_dump(by_alias=True)
 
 
+def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, Any]:
+    """Validate and normalize grouped geometry query responses."""
+    return GroupedGeometryResponse.model_validate(response).model_dump(by_alias=True)
+
+
 @mcp.tool()
 def tropomi_available_variables() -> dict[str, Any]:
     """Return a list of available TROPOMI variables with descriptions."""
     try:
-        variable_info = _get_variable_info()
+        variable_info = get_variable_info()
         return _validate_available_variables_response(
             {
-                "data": {
-                    key: {"description": val["description"], "units": val["units"]}
-                    for key, val in variable_info.items()
-                },
+                "data": variable_info,
                 "_meta": build_meta(
                     source="tropomi",
                     query_params={},
@@ -49,6 +57,103 @@ def tropomi_available_variables() -> dict[str, Any]:
                     license_info=LICENSE_INFO,
                     success=False,
                     error=str(e),
+                ),
+            }
+        )
+
+
+@mcp.tool()
+def tropomi_query(
+    latitude: float,
+    longitude: float,
+    start_date: str,
+    end_date: str,
+    variables: list[str] = DEFAULT_VARIABLES,
+    max_runtime_s: float = 60,
+) -> dict[str, Any]:
+    """Query Sentinel5-TROPOMI data for a point location.
+
+    Returns atmospheric composition data grouped by nearest grid cell with a GeoJSON Point
+    geometry, from the TROPOMI dataset via AWS.
+    Global coverage, July 2018-present.
+
+    Args:
+        latitude: Decimal degrees, WGS84 (-90 to 90).
+        longitude: Decimal degrees, WGS84 (-180 to 180).
+        start_date: ISO 8601 date string, e.g., "2019-08-15",
+        end_date: ISO 8601 date string, inclusive, e.g., "2019-08-15".
+        variables: TROPOMI variable names. Use tropomi_available_variables() tool to get
+            a list of valid variable names. Defaults to a standard set of commonly used
+            variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to
+            be 60s.
+    """
+    query_params: dict[str, Any] = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "start_date": start_date,
+        "end_date": end_date,
+        "variables": variables,
+        "max_runtime_s": max_runtime_s,
+    }
+    t0 = time.perf_counter()
+    try:
+        point = PointInput(latitude=latitude, longitude=longitude)
+        date_range = DateRange(start_date=start_date, end_date=end_date)
+
+        full_var_info = get_variable_info()
+        var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
+
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        if warn := check_runtime(
+            source="tropomi",
+            n_days=n_days,
+            area_deg2=0.0,
+            max_runtime_s=max_runtime_s,
+            scale_factor=len(variables),
+        ):
+            return _validate_grouped_geometry_response(warn)
+        data, unavailable = query_point(
+            point.latitude,
+            point.longitude,
+            date_range.start_date,
+            date_range.end_date,
+            variables,
+        )
+        latency = time.perf_counter() - t0
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="tropomi",
+                    query_params=query_params,
+                    rows_returned=len(data),
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    variables=variables,
+                    variable_info=var_info,
+                    unavailable_variables=unavailable,
+                ),
+            }
+        )
+    except Exception as e:
+        latency = time.perf_counter() - t0
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="tropomi",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(e),
+                    variables=variables,
+                    variable_info={},
                 ),
             }
         )

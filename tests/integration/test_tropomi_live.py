@@ -6,6 +6,7 @@ These tests query the real AWS S3 bucket for TROPOMI data and require network ac
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Any
@@ -13,9 +14,9 @@ from typing import Any
 import httpx
 import pytest
 
-from env_data_mcp.sources.tropomi._query import _get_s3_file_paths
-from env_data_mcp.sources.tropomi.constants import _PRODUCT_TYPES, DEFAULT_VARIABLES
-from env_data_mcp.sources.tropomi.tools import tropomi_available_variables
+from env_data_mcp.sources.tropomi._query import _get_netcdf_file_paths, _VariableInfo
+from env_data_mcp.sources.tropomi.constants import _PRODUCT_TYPES, DEFAULT_VARIABLES, ProductType
+from env_data_mcp.sources.tropomi.tools import tropomi_available_variables, tropomi_query
 
 pytestmark = pytest.mark.integration
 
@@ -103,15 +104,37 @@ class TestAvailableVariables:
 
 
 @dataclass(frozen=True)
-class _S3PathTest:
+class _NetCDFPathTest:
     name: str
-    variable_name: str
+    variable: _VariableInfo
     start_date: str
     end_date: str
     geometry: str
     expect_results: bool = True
     # expected prefix in path filenames, e.g. "S5P_OFFL_L2__O3"
     expected_name_prefix: str = ""
+
+
+def new_variable(
+    name: str,
+    *,
+    description: str = "",
+    units: str = "",
+    product_type: ProductType = ProductType.NRTI,
+    property_name: str = "",
+    underscored_name: str = "",
+    cogt_name: str = "",
+) -> _VariableInfo:
+    """Create a new _VariableInfo instance with a specified name."""
+    return _VariableInfo(
+        name=name,
+        description=description,
+        units=units,
+        product_type=product_type,
+        property_name=property_name,
+        underscored_name=underscored_name,
+        cogt_name=cogt_name,
+    )
 
 
 # Southern California point / small bbox centred on ~(33.84 N, 116.49 W)
@@ -121,34 +144,54 @@ _SOCAL_POLYGON = (
     "geography'SRID=4326;POLYGON((-117.0 33.5,-116.0 33.5,-116.0 34.5,-117.0 34.5,-117.0 33.5))'"
 )
 
-_S3_PATH_TESTS: list[_S3PathTest] = [
-    _S3PathTest(
+_NETCDF_PATH_TESTS: list[_NetCDFPathTest] = [
+    _NetCDFPathTest(
         "point - ozone",
-        variable_name="OFFL-L2_O3",
+        variable=new_variable(
+            "OFFL-L2_O3",
+            product_type=ProductType.OFFL,
+            property_name="L2_O3",
+            underscored_name="L2__O3____",
+        ),
         start_date="2024-01-03",
         end_date="2024-01-05",
         geometry=_SOCAL_POINT,
         expected_name_prefix="S5P_OFFL_L2__O3",
     ),
-    _S3PathTest(
+    _NetCDFPathTest(
         "polygon - methane",
-        variable_name="OFFL-L2_CH4",
+        variable=new_variable(
+            "OFFL-L2_CH4",
+            product_type=ProductType.OFFL,
+            property_name="L2_CH4",
+            underscored_name="L2__CH4___",
+        ),
         start_date="2024-01-03",
         end_date="2024-01-05",
         geometry=_SOCAL_POLYGON,
         expected_name_prefix="S5P_OFFL_L2__CH4",
     ),
-    _S3PathTest(
+    _NetCDFPathTest(
         "point - carbon monoxide",
-        variable_name="OFFL-L2_CO",
+        variable=new_variable(
+            "OFFL-L2_CO",
+            product_type=ProductType.OFFL,
+            property_name="L2_CO",
+            underscored_name="L2__CO____",
+        ),
         start_date="2024-01-03",
         end_date="2024-01-05",
         geometry=_SOCAL_POINT,
         expected_name_prefix="S5P_OFFL_L2__CO",
     ),
-    _S3PathTest(
+    _NetCDFPathTest(
         "polygon - no results (future date)",
-        variable_name="OFFL-L2_O3",
+        variable=new_variable(
+            "OFFL-L2_O3",
+            product_type=ProductType.OFFL,
+            property_name="L2_O3",
+            underscored_name="L2__O3____",
+        ),
         start_date="2099-01-01",
         end_date="2099-01-03",
         geometry=_SOCAL_POLYGON,
@@ -157,65 +200,67 @@ _S3_PATH_TESTS: list[_S3PathTest] = [
 ]
 
 
-@pytest.fixture(scope="module", params=_S3_PATH_TESTS, ids=lambda c: c.name)
-def s3_path_case(request) -> _S3PathTest:
+@pytest.fixture(scope="module", params=_NETCDF_PATH_TESTS, ids=lambda c: c.name)
+def netcdf_path_case(request) -> _NetCDFPathTest:
     return request.param
 
 
 @pytest.fixture(scope="module")
-def s3_file_paths(s3_path_case: _S3PathTest) -> list[str]:
-    return _get_s3_file_paths(
-        variable_name=s3_path_case.variable_name,
-        start_date=s3_path_case.start_date,
-        end_date=s3_path_case.end_date,
-        geometry_string=s3_path_case.geometry,
+def netcdf_file_paths(netcdf_path_case: _NetCDFPathTest) -> list[str]:
+    return _get_netcdf_file_paths(
+        variable=netcdf_path_case.variable,
+        start_date=netcdf_path_case.start_date,
+        end_date=netcdf_path_case.end_date,
+        geometry_string=netcdf_path_case.geometry,
     )
 
 
 class TestGetS3FilePaths:
-    """Tests of the _get_s3_file_paths() query function."""
+    """Tests of the _get_netcdf_file_paths() query function."""
 
-    def test_returns_valid_paths(self, s3_file_paths: list[str], s3_path_case: _S3PathTest):
-        if s3_path_case.expect_results:
-            assert len(s3_file_paths) > 0
+    def test_returns_valid_paths(
+        self, netcdf_file_paths: list[str], netcdf_path_case: _NetCDFPathTest
+    ):
+        if netcdf_path_case.expect_results:
+            assert len(netcdf_file_paths) > 0
         else:
-            assert len(s3_file_paths) == 0
-        for path in s3_file_paths:
+            assert len(netcdf_file_paths) == 0
+        for path in netcdf_file_paths:
             posix_path = PurePosixPath(path)
             assert len(posix_path.parts) > 1
             assert posix_path.suffix == ".nc"
 
     def test_paths_have_expected_product_prefix(
-        self, s3_file_paths: list[str], s3_path_case: _S3PathTest
+        self, netcdf_file_paths: list[str], netcdf_path_case: _NetCDFPathTest
     ):
         """Each filename should start with the S5P product prefix for the variable."""
-        if not s3_path_case.expected_name_prefix:
+        if not netcdf_path_case.expected_name_prefix:
             pytest.skip("no expected_name_prefix defined for this case")
-        for path in s3_file_paths:
+        for path in netcdf_file_paths:
             filename = PurePosixPath(path).name
-            assert filename.startswith(s3_path_case.expected_name_prefix), (
-                f"{filename!r} does not start with {s3_path_case.expected_name_prefix!r}"
+            assert filename.startswith(netcdf_path_case.expected_name_prefix), (
+                f"{filename!r} does not start with {netcdf_path_case.expected_name_prefix!r}"
             )
 
-    def test_paths_are_unique(self, s3_file_paths: list[str]):
+    def test_paths_are_unique(self, netcdf_file_paths: list[str]):
         """CDSE should not return duplicate paths."""
-        assert len(s3_file_paths) == len(set(s3_file_paths))
+        assert len(netcdf_file_paths) == len(set(netcdf_file_paths))
 
-    def test_invalid_variable_raises(self):
-        """Passing an unknown variable name must raise ValueError."""
-        with pytest.raises(ValueError, match="Invalid TROPOMI variable name"):
-            _get_s3_file_paths(
-                variable_name="OFFL-L2_DOES_NOT_EXIST",
-                start_date="2024-01-01",
-                end_date="2024-01-02",
-                geometry_string=_SOCAL_POINT,
-            )
+    def test_invalid_variable_returns_empty_list(self):
+        """Passing an unknown variable must return an empty list."""
+        results = _get_netcdf_file_paths(
+            variable=new_variable("OFFL-L2_DOES_NOT_EXIST"),
+            start_date="2024-01-01",
+            end_date="2024-01-02",
+            geometry_string=_SOCAL_POINT,
+        )
+        assert len(results) == 0
 
     def test_invalid_start_date_format_raises(self):
         """A non-ISO start date must raise ValueError before any network call."""
         with pytest.raises(ValueError, match="Invalid date"):
-            _get_s3_file_paths(
-                variable_name="OFFL-L2_O3",
+            _get_netcdf_file_paths(
+                variable=new_variable("OFFL-L2_O3"),
                 start_date="01/03/2024",
                 end_date="2024-01-05",
                 geometry_string=_SOCAL_POINT,
@@ -224,8 +269,8 @@ class TestGetS3FilePaths:
     def test_invalid_end_date_format_raises(self):
         """A non-ISO end date must raise ValueError before any network call."""
         with pytest.raises(ValueError, match="Invalid date"):
-            _get_s3_file_paths(
-                variable_name="OFFL-L2_O3",
+            _get_netcdf_file_paths(
+                variable=new_variable("OFFL-L2_O3"),
                 start_date="2024-01-03",
                 end_date="January 5 2024",
                 geometry_string=_SOCAL_POINT,
@@ -234,9 +279,202 @@ class TestGetS3FilePaths:
     def test_malformed_geometry_raises_http_error(self):
         """A geometry string that is not valid WKT must cause CDSE to return HTTP 400."""
         with pytest.raises(httpx.HTTPStatusError):
-            _get_s3_file_paths(
-                variable_name="OFFL-L2_O3",
+            _get_netcdf_file_paths(
+                variable=new_variable("OFFL-L2_O3"),
                 start_date="2024-01-03",
                 end_date="2024-01-05",
                 geometry_string="not-a-valid-geometry",
             )
+
+
+# ---------------------------------------------------------------------------
+# Point query tool tests
+# ---------------------------------------------------------------------------
+
+
+# Test coordinates - Yakima Valley, WA
+_LAT = 46.2531882
+_LON = -119.4768203
+
+
+@dataclass(frozen=True)
+class _PointCase:
+    name: str
+    requested_vars: Sequence[str] | None
+    expected_vars: Sequence[str]
+    unavailable_vars: Sequence[str]
+    lat_lon: tuple[float, float] = (_LAT, _LON)
+    start_date: str = "2024-01-03"
+    end_date: str = "2024-01-05"
+    max_runtime_s: float = 90.0
+    expect_slow_warn: bool = False
+
+
+_RELIABLE_VARS = ["OFFL-L2_NO2", "OFFL-L2_CO", "OFFL-L2_SO2", "OFFL-L2_HCHO"]
+_UNRELIABLE_VARS = ["OFFL-L2_CH4", "OFFL-L2_O3_TCL"]  # low QA / limited COGT coverage
+
+_POINT_CASES: list[_PointCase] = [
+    _PointCase("default", None, _RELIABLE_VARS, _UNRELIABLE_VARS),
+    _PointCase(
+        "Nairobi, Kenya",
+        None,
+        _RELIABLE_VARS,
+        _UNRELIABLE_VARS,
+        lat_lon=(-1.27, 36.65),
+    ),
+    _PointCase(
+        "slow query warning",
+        None,
+        [],
+        [],
+        max_runtime_s=0,  # threshold=0 → any estimate triggers the warning
+        expect_slow_warn=True,
+    ),
+    _PointCase("single variable", ["OFFL-L2_NO2"], ["OFFL-L2_NO2"], []),
+    _PointCase(
+        "some unavailable",
+        ["foo", "OFFL-L2_NO2"],
+        ["OFFL-L2_NO2"],
+        ["foo"],
+    ),
+    _PointCase("all unavailable", ["bar", "baz", "qux"], [], ["bar", "baz", "qux"]),
+    _PointCase(
+        "no results (future date)",
+        None,
+        [],
+        DEFAULT_VARIABLES,
+        start_date="2099-01-01",
+        end_date="2099-01-03",
+    ),
+]
+
+
+@pytest.fixture(scope="module", params=_POINT_CASES, ids=lambda c: c.name)
+def point_case(request) -> _PointCase:
+    return request.param
+
+
+@pytest.fixture(scope="module")
+def point_result(point_case: _PointCase) -> dict[str, Any]:
+    lat, lon = point_case.lat_lon
+    kwargs: dict[str, Any] = {
+        "latitude": lat,
+        "longitude": lon,
+        "start_date": point_case.start_date,
+        "end_date": point_case.end_date,
+        "max_runtime_s": point_case.max_runtime_s,
+    }
+    if point_case.requested_vars is not None:
+        kwargs["variables"] = point_case.requested_vars
+    return tropomi_query(**kwargs)
+
+
+@pytest.fixture(scope="module")
+def requested_vars_effective(point_case: _PointCase) -> list[str]:
+    return list(
+        DEFAULT_VARIABLES if point_case.requested_vars is None else point_case.requested_vars
+    )
+
+
+class TestTropomiQuery:
+    """Tests of the tropomi_query() tool."""
+
+    def test_metadata_success(self, point_case: _PointCase, point_result: dict[str, Any]):
+        """Tests metadata indicates success."""
+        assert "_meta" in point_result
+        meta = point_result["_meta"]
+        if point_case.expect_slow_warn:
+            assert "exceeds" in meta["message"] and "threshold" in meta["message"]
+        assert meta["success"] == (not point_case.expect_slow_warn)
+        assert meta["error"] is None
+        assert meta["source"] == "tropomi"
+
+    def test_metadata_stats(self, point_case: _PointCase, point_result: dict[str, Any]):
+        """Tests counts and timers in metadata."""
+        meta = point_result["_meta"]
+        if len(point_case.expected_vars) > 0:
+            assert meta["latency_s"] > 0.25
+            assert meta["rows_returned"] > 0
+        else:
+            assert meta["rows_returned"] == 0
+
+    def test_metadata_variables_echoed(
+        self,
+        point_case: _PointCase,
+        requested_vars_effective: list[str],
+        point_result: dict[str, Any],
+    ):
+        """Tests that the variables list in metadata mirrors what was requested."""
+        if point_case.expect_slow_warn:
+            return  # slow-query warning response returns variables=[]
+        got = point_result["_meta"]["variables"]
+        assert len(got) == len(requested_vars_effective)
+        for var in requested_vars_effective:
+            assert var in got
+
+    def test_metadata_unavailable_variables(
+        self, point_case: _PointCase, point_result: dict[str, Any]
+    ):
+        """Tests that the expected unavailable variables are returned."""
+        got = point_result["_meta"]["unavailable_variables"]
+        assert len(got) == len(point_case.unavailable_vars)
+        for var in point_case.unavailable_vars:
+            assert var in got
+
+    def test_metadata_variable_info(self, point_case: _PointCase, point_result: dict[str, Any]):
+        """Tests that variable info in metadata is present for each expected variable."""
+        if point_case.expect_slow_warn or len(point_case.expected_vars) == 0:
+            return
+        got = point_result["_meta"]["variable_info"]
+        # variable_info covers all *requested* vars; expected_vars is a subset of those
+        for var in point_case.expected_vars:
+            assert var in got
+            assert "description" in got[var]
+            assert "units" in got[var]
+
+    def test_geojson_geometry_in_expected_range(
+        self, point_case: _PointCase, point_result: dict[str, Any]
+    ):
+        """Tests that returned coordinates are valid WGS84 lat/lon values."""
+        for point in point_result["data"]:
+            assert point["longitude"] == point["geometry"]["coordinates"][0]
+            assert point["latitude"] == point["geometry"]["coordinates"][1]
+            assert -90.0 <= point["latitude"] <= 90.0
+            assert -180.0 <= point["longitude"] <= 180.0
+
+    def test_data_records_have_date_key(self, point_case: _PointCase, point_result: dict[str, Any]):
+        """Each record within a geo point must include an ISO 8601 date key."""
+        for point in point_result["data"]:
+            assert len(point["records"]) >= 1
+            for record in point["records"]:
+                assert "date" in record
+                # YYYY-MM-DD
+                assert len(record["date"]) == 10
+
+    def test_data_includes_expected_variables(
+        self, point_case: _PointCase, point_result: dict[str, Any]
+    ):
+        """Each expected variable appears in at least one record across all geo points."""
+        for var in point_case.expected_vars:
+            found = any(
+                var in record for point in point_result["data"] for record in point["records"]
+            )
+            assert found, f"{var!r} not found in any record"
+
+    def test_data_has_expected_property_values(
+        self, point_case: _PointCase, point_result: dict[str, Any]
+    ):
+        """NO2 values over Yakima Valley fall within a plausible atmospheric range."""
+        if point_case.lat_lon == (_LAT, _LON) and "OFFL-L2_NO2" in point_case.expected_vars:
+            no2_values = [
+                record["OFFL-L2_NO2"]
+                for point in point_result["data"]
+                for record in point["records"]
+                if "OFFL-L2_NO2" in record
+            ]
+            assert len(no2_values) > 0
+            for val in no2_values:
+                # Tropospheric NO2 column is typically 0–0.001 mol/m² over rural areas
+                assert 0 <= val <= 0.01, (
+                    f"NO2 value {val:.2e} mol/m\u00b2 outside plausible range (0–0.01)"
+                )

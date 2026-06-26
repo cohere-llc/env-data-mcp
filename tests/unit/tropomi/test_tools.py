@@ -55,7 +55,7 @@ class TestAvailableVariables:
     def test_returns_results(self):
         """Tests expected results are returned."""
         with patch(
-            "env_data_mcp.sources.tropomi.tools._get_variable_info",
+            "env_data_mcp.sources.tropomi.tools.get_variable_info",
             return_value=_EXPECTED_VARIABLES,
         ):
             results = tropomi_available_variables()
@@ -70,7 +70,7 @@ class TestAvailableVariables:
     def test_returns_error(self):
         """Tests that HTTP status errors are handled."""
         with patch(
-            "env_data_mcp.sources.tropomi.tools._get_variable_info",
+            "env_data_mcp.sources.tropomi.tools.get_variable_info",
             side_effect=get_mock_http_error(),
         ):
             results = tropomi_available_variables()

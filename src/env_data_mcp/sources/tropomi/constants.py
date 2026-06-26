@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 # ---------------------------------------------------------------------------
 # License and metadata
 # ---------------------------------------------------------------------------
@@ -48,10 +50,17 @@ DEFAULT_VARIABLES: list[str] = [
     "OFFL-L2_HCHO",  # formaldehyde total-column concentration
 ]
 
-_PRODUCT_TYPES: dict[str, str] = {
-    "NRTI": "Near real-time",
-    "OFFL": "Offline processed",
-    "RPRO": "Reprocessed",
+
+class ProductType(StrEnum):
+    NRTI = "NRTI"
+    OFFL = "OFFL"
+    RPRO = "RPRO"
+
+
+_PRODUCT_TYPES: dict[ProductType, str] = {
+    ProductType.NRTI: "Near real-time",
+    ProductType.OFFL: "Offline processed",
+    ProductType.RPRO: "Reprocessed",
 }
 
 # Units were extracted from the PDFs describing each products. There does not
@@ -70,3 +79,23 @@ _UNITS_MAP: dict[str, str] = {
     "L2_AER_LH": "m",
     "L2_O3_TCL": "DU",
 }
+
+
+# ---------------------------------------------------------------------------
+# GDAL/VSICURL access of Cloud-Optimized GeoTIFF (COGT) records on AWS
+# ---------------------------------------------------------------------------
+
+# QA threshold — pixels with qa_value (0–1 scale) below this are excluded.
+# COGT files store qa_value on a 0–100 integer scale; we divide by 100
+# before comparing so this constant stays in the familiar 0–1 space.
+_QA_THRESHOLD = 0.5
+
+# GDAL/VSICURL environment for efficient COG range reads.
+_GDAL_OPTS: dict[str, str] = {
+    "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
+    "CPL_VSIL_CURL_CHUNK_SIZE": "65536",
+    "GDAL_HTTP_MAX_RETRY": "2",
+}
+
+# Number of threads for parallel COGT reads.
+_IO_WORKERS = 16

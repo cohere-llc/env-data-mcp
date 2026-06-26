@@ -24,20 +24,49 @@ from __future__ import annotations
 import datetime
 import re
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import PurePosixPath
+from typing import Any
 
 import httpx
+import numpy as np
+import rasterio
+from rasterio.env import Env
 
 from env_data_mcp.helpers import parse_date
 
-from .constants import _AWS_URL, _CDSE_ODATA_URL, _PRODUCT_TYPES, _UNITS_MAP
+from .constants import (
+    _AWS_URL,
+    _CDSE_ODATA_URL,
+    _GDAL_OPTS,
+    _IO_WORKERS,
+    _PRODUCT_TYPES,
+    _QA_THRESHOLD,
+    _UNITS_MAP,
+    ProductType,
+)
 
 # ---------------------------------------------------------------------------
 # Session-level caches
 # ---------------------------------------------------------------------------
 
-# available variables by name -> { variable: { "description": str, "units": str } }
-_VARIABLE_INFO_CACHE: dict[str, dict[str, str]] = {}
+
+@dataclass(frozen=True)
+class _VariableInfo:
+    """Full set of per-variable information."""
+
+    name: str  # Variable name exposed to MCP tool users (e.g., OFFL-L2_O3)
+    description: str
+    units: str
+    product_type: ProductType
+    property_name: str  # name of property (e.g., L2_O3)
+    underscored_name: str  # name used in building URIs (e.g., L2__O3____)
+    cogt_name: str  # descriptive name embedded in COGT file names (e.g., ozone_total_column)
+
+
+# available variables by name
+_VARIABLE_INFO_CACHE: dict[str, _VariableInfo] = {}
 
 # ---------------------------------------------------------------------------
 # Core query logic
@@ -75,7 +104,7 @@ def _extract_name_from_variable_url(url: str) -> tuple[str, str]:
 _S3_NS = "http://s3.amazonaws.com/doc/2006-03-01/"
 
 
-def _get_cogt_variable_name(product_type: str, variable_folder: str) -> str:
+def _get_cogt_variable_name(product_type: ProductType, variable_folder: str) -> str:
     """Returns the COGT variable name associated with a variable folder.
 
     e.g., "OFFL", "L2__O3____" -> "total_column_ozone"
@@ -99,7 +128,7 @@ def _get_cogt_variable_name(product_type: str, variable_folder: str) -> str:
     return parts[1].removesuffix("_4326.tif")
 
 
-def _get_variable_info() -> dict[str, dict[str, str]]:
+def _get_full_variable_info() -> dict[str, _VariableInfo]:
     """Discover available variables for TROPOMI.
 
     :return: dict keyed on variable with `description` and `units`
@@ -114,21 +143,31 @@ def _get_variable_info() -> dict[str, dict[str, str]]:
             info = resp.json()
         _VARIABLE_INFO_CACHE.update(
             {
-                f"{product_type}-{(names := _extract_name_from_variable_url(var.get('href')))[0]}": {  # noqa: E501
-                    "description": f"{product_description}: {var.get('title')}",
-                    "units": _UNITS_MAP.get(names[0], "unknown"),
-                    "url": var.get("href"),
-                    "product_type": product_type,  # e.g., OFFL
-                    "variable_folder": names[1],  # e.g., L2__O3____
-                    "cogt_name": _get_cogt_variable_name(
-                        product_type, names[1]
-                    ),  # e.g., methane_mixing_ratio
-                }
+                (
+                    name
+                    := f"{product_type}-{(names := _extract_name_from_variable_url(var.get('href')))[0]}"  # noqa: E501
+                ): _VariableInfo(
+                    name=name,
+                    description=f"{product_description}: {var.get('title')}",
+                    units=_UNITS_MAP.get(names[0], "unknown"),
+                    product_type=product_type,
+                    property_name=names[0],
+                    underscored_name=names[1],
+                    cogt_name=_get_cogt_variable_name(product_type, names[1]),
+                )
                 for var in info.get("links")
                 if "title" in var
             }
         )
     return _VARIABLE_INFO_CACHE
+
+
+def get_variable_info() -> dict[str, dict[str, str]]:
+    """Return descriptions and units for each available variable."""
+    return {
+        key: {"description": val.description, "units": val.units}
+        for key, val in _get_full_variable_info().items()
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +176,8 @@ def _get_variable_info() -> dict[str, dict[str, str]]:
 
 
 def _get_point_geometry_string(
-    *latitude: float,
+    *,
+    latitude: float,
     longitude: float,
 ) -> str:
     """Returns an OData geometry filter string for a point location."""
@@ -145,7 +185,8 @@ def _get_point_geometry_string(
 
 
 def _get_bbox_geometry_string(
-    *min_lat: float,
+    *,
+    min_lat: float,
     max_lat: float,
     min_lon: float,
     max_lon: float,
@@ -159,20 +200,12 @@ def _get_bbox_geometry_string(
     )
 
 
-def _get_s3_file_paths(
-    variable_name: str, start_date: str, end_date: str, geometry_string: str
+def _get_netcdf_file_paths(
+    variable: _VariableInfo, start_date: str, end_date: str, geometry_string: str
 ) -> list[str]:
     """Returns a set of S3 paths to NetCDF files for given date and location ranges."""
     # the prefix is going to be something like 'S5P_OFFL_L2__CO'
-    all_var_info = _get_variable_info()
-    if variable_name not in all_var_info:
-        msg = (
-            f"Invalid TROPOMI variable name: {variable_name}. Use "
-            "tropomi_available_variables tool to find valid variable names."
-        )
-        raise ValueError(msg)
-    var_info = all_var_info[variable_name]
-    name_prefix = f"S5P_{var_info['product_type']}_{var_info['variable_folder'].rstrip('_')}"
+    name_prefix = f"S5P_{variable.product_type}_{variable.underscored_name.rstrip('_')}"
 
     start_dt = parse_date(start_date)
     end_dt = parse_date(end_date) + datetime.timedelta(days=1)
@@ -207,24 +240,145 @@ def _get_s3_file_paths(
     return paths
 
 
-def _get_cogt_urls(s3_path: str, variable_name: str) -> tuple[str, str]:
+def _get_cogt_urls(netcdf_path: str, variable: _VariableInfo) -> tuple[str, str]:
     """Returns GDAL VSICURL URLs for an equivalent S3 NetCDF path.
 
     The URLs returned are for the requested variable and the qa_values."""
-    all_var_info = _get_variable_info()
-    if variable_name not in all_var_info:
-        msg = f"Invalid TROPOMI variable: {variable_name}"
-        raise ValueError(msg)
-    var_info = all_var_info[variable_name]
-    parts = s3_path.split("TROPOMI")
+    parts = netcdf_path.split("TROPOMI")
     if len(parts) != 2:
-        msg = f"Unparsable NetCDF S3 path: {s3_path}"
+        msg = f"Unparsable NetCDF S3 path: {netcdf_path}"
         raise ValueError(msg)
     # parts[1] e.g. "/L2__O3____/2024/01/03/S5P_OFFL_L2__O3_____20240103.nc"
-    cogt_path = PurePosixPath(f"COGT/{var_info['product_type']}{parts[1]}")
-    new_name = f"{cogt_path.stem}_PRODUCT_{var_info['cogt_name']}_4326.tif"
+    cogt_path = PurePosixPath(f"COGT/{variable.product_type}{parts[1]}")
+    new_name = f"{cogt_path.stem}_PRODUCT_{variable.cogt_name}_4326.tif"
     new_qa_name = f"{cogt_path.stem}_PRODUCT_qa_value_4326.tif"
     return (
         f"/vsicurl/{_AWS_URL}{cogt_path.with_name(new_name)}",
         f"/vsicurl/{_AWS_URL}{cogt_path.with_name(new_qa_name)}",
     )
+
+
+# ---------------------------------------------------------------------------
+# Point and BBox Query functions
+# ---------------------------------------------------------------------------
+
+
+def _extract_date_from_netcdf_path(netcdf_path: str) -> str:
+    """Extract date information from a NetCDF path and returns it as YYYY-MM-DD."""
+    parts = netcdf_path.split("/")
+    if len(parts) < 8:
+        msg = f"Unparsable NetCDF path for date: {netcdf_path}"
+        raise ValueError(msg)
+    return f"{parts[5]}-{parts[6]}-{parts[7]}"
+
+
+def _query_point_from_file(
+    variable: _VariableInfo,
+    netcdf_path: str,
+    latitude: float,
+    longitude: float,
+) -> dict[str, Any]:
+    """Fetch product and QA values for a point location from a GeoTIFF file.
+
+    Values below the QA threshhold are excluded from the results.
+    """
+    var_url, qa_url = _get_cogt_urls(netcdf_path, variable)
+    with Env(aws_unsigned=True, **_GDAL_OPTS):
+        with rasterio.open(var_url) as ds:
+            var_nodata = ds.nodata
+            row, col = ds.index(longitude, latitude)
+            var_lon, var_lat = ds.xy(row, col)
+            var_val = float(next(ds.sample([(longitude, latitude)]))[0])
+        with rasterio.open(qa_url) as ds:
+            qa_nodata = ds.nodata
+            qa_val = float(next(ds.sample([(longitude, latitude)]))[0])
+
+    if (
+        (var_nodata is not None and var_val == var_nodata)
+        or not np.isfinite(var_val)
+        or var_val < -1.0e10
+    ):
+        return {}
+    if qa_nodata is not None and qa_val == qa_nodata:
+        return {}
+    # normalize qa_value from 0-100 to 0-1 scale
+    if qa_val / 100.0 < _QA_THRESHOLD:
+        return {}
+
+    return {
+        "variable_name": variable.name,
+        "date": _extract_date_from_netcdf_path(netcdf_path),
+        "latitude": var_lat,
+        "longitude": var_lon,
+        "value": var_val,
+    }
+
+
+def _format_results(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Convert raw query results into common mcp tool format."""
+    results: dict[tuple[float, float], dict[str, Any]] = {}
+    for rec in records:
+        key = (rec["latitude"], rec["longitude"])
+        if key not in results:
+            results[key] = {
+                "geometry": {"type": "Point", "coordinates": [key[1], key[0]]},
+                "latitude": key[0],
+                "longitude": key[1],
+                "records_dict": {},
+            }
+        if rec["date"] not in results[key]["records_dict"]:
+            results[key]["records_dict"][rec["date"]] = {}
+        results[key]["records_dict"][rec["date"]][rec["variable_name"]] = rec["value"]
+    for _, val in results.items():
+        val["records"] = [{"date": key, **rec} for key, rec in val["records_dict"].items()]
+        val.pop("records_dict")
+    return [val for _, val in results.items()]
+
+
+def query_point(
+    latitude: float,
+    longitude: float,
+    start_date: str,
+    end_date: str,
+    variables: list[str],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Query for a set of variables at a point location.
+
+    Args:
+        latitude: Decimal degrees, WGS84 (-90 to 90).
+        longitude: Decimal degrees, WGS84 (-180 to 180).
+        start_date: ISO 8601 date (YYYY-MM-DD).
+        end_date: ISO 8601 date (YYYY-MM-DD).
+        variables: list of variable names to query for.
+    Returns:
+        Tuple of properties by geometry and list of unavailable variables.
+    """
+    var_info = _get_full_variable_info()
+    unavailable: set[str] = {var for var in variables if var not in var_info}
+    geometry = _get_point_geometry_string(latitude=latitude, longitude=longitude)
+    netcdf_paths: list[tuple[_VariableInfo, str]] = [
+        (var_info[name], path)
+        for name in variables
+        if name not in unavailable
+        for path in _get_netcdf_file_paths((var_info[name]), start_date, end_date, geometry)
+    ]
+    records: list[dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=_IO_WORKERS) as pool:
+        futures = [
+            pool.submit(_query_point_from_file, rec[0], rec[1], latitude, longitude)
+            for rec in netcdf_paths
+        ]
+        for future in as_completed(futures):
+            try:
+                rec = future.result()
+                if rec:
+                    records.append(rec)
+            except Exception:
+                # silently ignore failures for individual file reads to avoid failing the whole run
+                continue
+    results = _format_results(records)
+    has_data: set[str] = {
+        var for geo in results for rec in geo["records"] for var in rec if var != "date"
+    }
+    unavailable |= {var for var in variables if var not in has_data}
+    return results, list(unavailable)
