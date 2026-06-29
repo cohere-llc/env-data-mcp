@@ -371,11 +371,11 @@ def test_get_netcdf_file_paths_paginates(httpx_mock):
     """
     _PAGE_SIZE = 1000
     page1 = [
-        {"S3Path": f"/OFFL/L2__O3____/2024/01/01/S5P_OFFL_variable_{i:05d}.nc"}
+        {"S3Path": f"/eodata/Sentinel-5P/TROPOMI/L2__O3____/2024/01/01/S5P_OFFL_variable_{i:05d}.nc"}
         for i in range(_PAGE_SIZE)
     ]
     page2 = [
-        {"S3Path": f"/OFFL/L2__O3____/2024/01/02/S5P_OFFL_variable_{i:05d}.nc"} for i in range(3)
+        {"S3Path": f"/eodata/Sentinel-5P/TROPOMI/L2__O3____/2024/01/02/S5P_OFFL_variable_{i:05d}.nc"} for i in range(3)
     ]
     # pytest-httpx returns registered responses in FIFO order for the same URL.
     httpx_mock.add_response(url=_CDSE_URL_RE, json={"value": page1})
