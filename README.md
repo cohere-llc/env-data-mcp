@@ -142,8 +142,8 @@ See [Credential setup](#environment-variables) for how to obtain each token.
 | `gbif_occurrence_bbox_query` | GBIF | none | Species occurrence records within a bounding box |
 | `soilgrids_query` | ISRIC SoilGrids v2 | none | Global soil properties at a point |
 | `soilgrids_bbox_query` | ISRIC SoilGrids v2 | none | Global soil properties over a bounding box |
-| `sentinel5p_query` | Sentinel-5P TROPOMI | none | Atmospheric column at a point (CO / NO₂ / CH₄) |
-| `sentinel5p_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric column mean over a bounding box |
+| `tropomi_query` | Sentinel-5P TROPOMI | none | Atmospheric composition at a point location |
+| `tropomi_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric composition over a bounding box |
 | `oco2_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column at a point |
 | `oco2_bbox_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column over a bounding box |
 | `emit_query` | NASA EMIT L2B | NASA EarthData token | Mineral identification at a point |

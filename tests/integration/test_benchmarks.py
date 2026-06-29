@@ -798,7 +798,7 @@ def test_tropomi_bbox_timing(sc, bz):
 @pytest.mark.integration
 @pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
-def test_sentinel5p_extra_location_timing(loc):
+def test_tropomi_extra_location_timing(loc):
     result = tropomi_query(
         latitude=loc["lat"],
         longitude=loc["lon"],

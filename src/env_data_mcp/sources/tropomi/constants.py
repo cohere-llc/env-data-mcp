@@ -99,3 +99,6 @@ _GDAL_OPTS: dict[str, str] = {
 
 # Number of threads for parallel COGT reads.
 _IO_WORKERS = 16
+
+# Minimum value for cleaning data
+_MINIMUM_VALUE: float = -1.0e10

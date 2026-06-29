@@ -95,15 +95,6 @@ def estimate_runtime(source: str, n_days: int, area_deg2: float) -> float:
         granules_per_3days = max(1.0, area_deg2 / 40.0)
         t_override = 0.2 + (n_days // 3) * granules_per_3days * 3.5
         t_model = max(t_model, t_override)
-    elif source == "sentinel5p":
-        # 16 GDAL COGT workers in parallel; each batch ≈ 4.5 s (calibrated
-        # against all benchmark observations).  S5P swaths are ~2600 km wide,
-        # so the granule-per-day rate saturates at ~4 deg² (any larger bbox is
-        # covered by the same orbital passes): 1.0 granule/day for point queries,
-        # 1.5 granules/day for bbox ≥ 4 deg².
-        n_granules = n_days * (1.0 + 0.5 * min(1.0, area_deg2 / 4.0))
-        t_override = 2.0 + math.ceil(n_granules / 16) * 4.5
-        t_model = max(t_model, t_override)
     elif source == "openaq":
         # Fitted R²=0.07 — model is nearly useless (density varies by location).
         # Assumes a moderately busy urban station: ~1 page of measurements per

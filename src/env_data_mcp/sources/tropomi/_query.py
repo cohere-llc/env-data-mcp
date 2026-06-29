@@ -14,9 +14,6 @@ Query strategy
    NetCDF, and GDAL handles the range requests automatically.
 
 3. All GeoTIFF COG reads are performed in parallel (16 worker threads).
-
-Resulting latency: ~2 s (CDSE) + ~7 s (parallel COGT reads) ≈ <10 s for a
-full calendar month, vs ~100 s with the previous per-day listing approach.
 """
 
 from __future__ import annotations
@@ -42,6 +39,7 @@ from .constants import (
     _CDSE_ODATA_URL,
     _GDAL_OPTS,
     _IO_WORKERS,
+    _MINIMUM_VALUE,
     _PRODUCT_TYPES,
     _QA_THRESHOLD,
     _UNITS_MAP,
@@ -318,7 +316,7 @@ def _query_point_from_file(
     if (
         (var_nodata is not None and var_val == var_nodata)
         or not np.isfinite(var_val)
-        or var_val < -1.0e10
+        or var_val < _MINIMUM_VALUE
     ):
         return {}
     if qa_nodata is not None and qa_val == qa_nodata:
@@ -380,7 +378,7 @@ def _query_bbox_from_file(
         )
         if not (var_nodata is not None and val == var_nodata)
         and np.isfinite(val)
-        and val >= -1.0e10
+        and val >= _MINIMUM_VALUE
         and not (qa_nodata is not None and qa == qa_nodata)
         and qa / 100.0 >= _QA_THRESHOLD
     ]
