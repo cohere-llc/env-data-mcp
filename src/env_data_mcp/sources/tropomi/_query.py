@@ -32,6 +32,7 @@ from typing import Any
 import httpx
 import numpy as np
 import rasterio
+import rasterio.windows
 from rasterio.env import Env
 
 from env_data_mcp.helpers import parse_date
@@ -193,7 +194,7 @@ def _get_bbox_geometry_string(
 ) -> str:
     """Returns an OData geometry filter string for a bounding box."""
     return (
-        f"geography`SRID=4326;POLYGON(("
+        f"geography'SRID=4326;POLYGON(("
         f"{min_lon} {min_lat},{max_lon} {min_lat},"
         f"{max_lon} {max_lat},{min_lon} {max_lat},"
         f"{min_lon} {min_lat}))'"
@@ -272,6 +273,27 @@ def _extract_date_from_netcdf_path(netcdf_path: str) -> str:
     return f"{parts[5]}-{parts[6]}-{parts[7]}"
 
 
+def _format_results(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Convert raw query results into common mcp tool format."""
+    results: dict[tuple[float, float], dict[str, Any]] = {}
+    for rec in records:
+        key = (rec["latitude"], rec["longitude"])
+        if key not in results:
+            results[key] = {
+                "geometry": {"type": "Point", "coordinates": [key[1], key[0]]},
+                "latitude": key[0],
+                "longitude": key[1],
+                "records_dict": {},
+            }
+        if rec["date"] not in results[key]["records_dict"]:
+            results[key]["records_dict"][rec["date"]] = {}
+        results[key]["records_dict"][rec["date"]][rec["variable_name"]] = rec["value"]
+    for _, val in results.items():
+        val["records"] = [{"date": key, **rec} for key, rec in val["records_dict"].items()]
+        val.pop("records_dict")
+    return [val for _, val in results.items()]
+
+
 def _query_point_from_file(
     variable: _VariableInfo,
     netcdf_path: str,
@@ -308,31 +330,60 @@ def _query_point_from_file(
     return {
         "variable_name": variable.name,
         "date": _extract_date_from_netcdf_path(netcdf_path),
-        "latitude": var_lat,
-        "longitude": var_lon,
-        "value": var_val,
+        "latitude": float(var_lat),
+        "longitude": float(var_lon),
+        "value": float(var_val),
     }
 
 
-def _format_results(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Convert raw query results into common mcp tool format."""
-    results: dict[tuple[float, float], dict[str, Any]] = {}
-    for rec in records:
-        key = (rec["latitude"], rec["longitude"])
-        if key not in results:
-            results[key] = {
-                "geometry": {"type": "Point", "coordinates": [key[1], key[0]]},
-                "latitude": key[0],
-                "longitude": key[1],
-                "records_dict": {},
-            }
-        if rec["date"] not in results[key]["records_dict"]:
-            results[key]["records_dict"][rec["date"]] = {}
-        results[key]["records_dict"][rec["date"]][rec["variable_name"]] = rec["value"]
-    for _, val in results.items():
-        val["records"] = [{"date": key, **rec} for key, rec in val["records_dict"].items()]
-        val.pop("records_dict")
-    return [val for _, val in results.items()]
+def _query_bbox_from_file(
+    variable: _VariableInfo,
+    netcdf_path: str,
+    min_lat: float,
+    max_lat: float,
+    min_lon: float,
+    max_lon: float,
+) -> list[dict[str, Any]]:
+    """Fetch product and QA values for a point location from a GeoTIFF file.
+
+    Values below the QA threshhold are excluded from the results.
+    """
+    var_url, qa_url = _get_cogt_urls(netcdf_path, variable)
+    with Env(aws_unsigned=True, **_GDAL_OPTS):
+        with rasterio.open(var_url) as ds:
+            var_nodata = ds.nodata
+            window = rasterio.windows.from_bounds(min_lon, min_lat, max_lon, max_lat, ds.transform)
+            var_vals = ds.read(1, window=window).astype(np.float64)
+
+            nrows, ncols = var_vals.shape
+            row_idx = np.arange(int(window.row_off), int(window.row_off) + nrows)
+            col_idx = np.arange(int(window.col_off), int(window.col_off) + ncols)
+            col_grid, row_grid = np.meshgrid(col_idx, row_idx)
+            lons, lats = ds.xy(row_grid, col_grid)
+            lons = np.array(lons)
+            lats = np.array(lats)
+        with rasterio.open(qa_url) as ds:
+            qa_nodata = ds.nodata
+            qa_vals = ds.read(1, window=window).astype(np.float64)
+
+    date = _extract_date_from_netcdf_path(netcdf_path)
+    return [
+        {
+            "variable_name": variable.name,
+            "date": date,
+            "latitude": float(lat),
+            "longitude": float(lon),
+            "value": float(val),
+        }
+        for val, qa, lat, lon in zip(
+            var_vals.ravel(), qa_vals.ravel(), lats.ravel(), lons.ravel(), strict=True
+        )
+        if not (var_nodata is not None and val == var_nodata)
+        and np.isfinite(val)
+        and val >= -1.0e10
+        and not (qa_nodata is not None and qa == qa_nodata)
+        and qa / 100.0 >= _QA_THRESHOLD
+    ]
 
 
 def query_point(
@@ -373,6 +424,61 @@ def query_point(
                 rec = future.result()
                 if rec:
                     records.append(rec)
+            except Exception:
+                # silently ignore failures for individual file reads to avoid failing the whole run
+                continue
+    results = _format_results(records)
+    has_data: set[str] = {
+        var for geo in results for rec in geo["records"] for var in rec if var != "date"
+    }
+    unavailable |= {var for var in variables if var not in has_data}
+    return results, list(unavailable)
+
+
+def query_bbox(
+    min_lat: float,
+    max_lat: float,
+    min_lon: float,
+    max_lon: float,
+    start_date: str,
+    end_date: str,
+    variables: list[str],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Query for a set of variables within a bounding box.
+
+    Args:
+        min_lat: Decimal degrees, WGS84 (-90 to 90).
+        max_lat: Decimal degrees, WGS84 (-90 to 90).
+        min_lon: Decimal degrees, WGS84 (-180 to 180).
+        max_lon: Decimal degrees, WGS84 (-180 to 180).
+        start_date: ISO 8601 date (YYYY-MM-DD).
+        end_date: ISO 8601 date (YYYY-MM-DD).
+        variables: list of variable names to query for.
+    Returns:
+        Tupe of properties by geometry and list of unavailable variables.
+    """
+    var_info = _get_full_variable_info()
+    unavailable: set[str] = {var for var in variables if var not in var_info}
+    geometry = _get_bbox_geometry_string(
+        min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon
+    )
+    netcdf_paths: list[tuple[_VariableInfo, str]] = [
+        (var_info[name], path)
+        for name in variables
+        if name not in unavailable
+        for path in _get_netcdf_file_paths((var_info[name]), start_date, end_date, geometry)
+    ]
+    records: list[dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=_IO_WORKERS) as pool:
+        futures = [
+            pool.submit(_query_bbox_from_file, rec[0], rec[1], min_lat, max_lat, min_lon, max_lon)
+            for rec in netcdf_paths
+        ]
+        for future in as_completed(futures):
+            try:
+                recs = future.result()
+                if recs:
+                    records.extend(recs)
             except Exception:
                 # silently ignore failures for individual file reads to avoid failing the whole run
                 continue

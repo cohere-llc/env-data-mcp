@@ -5,16 +5,17 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from env_data_mcp.helpers import build_meta, check_runtime, parse_date
+from env_data_mcp.helpers import bbox_area_deg2, build_meta, check_runtime, parse_date
 from env_data_mcp.models import (
     AvailableVariablesResponse,
+    BboxInput,
     DateRange,
     GroupedGeometryResponse,
     PointInput,
 )
 from env_data_mcp.server import mcp
 
-from ._query import get_variable_info, query_point
+from ._query import get_variable_info, query_bbox, query_point
 from .constants import DEFAULT_VARIABLES, LICENSE_INFO
 
 
@@ -119,6 +120,111 @@ def tropomi_query(
         data, unavailable = query_point(
             point.latitude,
             point.longitude,
+            date_range.start_date,
+            date_range.end_date,
+            variables,
+        )
+        latency = time.perf_counter() - t0
+        return _validate_grouped_geometry_response(
+            {
+                "data": data,
+                "_meta": build_meta(
+                    source="tropomi",
+                    query_params=query_params,
+                    rows_returned=len(data),
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    variables=variables,
+                    variable_info=var_info,
+                    unavailable_variables=unavailable,
+                ),
+            }
+        )
+    except Exception as e:
+        latency = time.perf_counter() - t0
+        return _validate_grouped_geometry_response(
+            {
+                "data": [],
+                "_meta": build_meta(
+                    source="tropomi",
+                    query_params=query_params,
+                    rows_returned=0,
+                    latency_s=latency,
+                    license_info=LICENSE_INFO,
+                    success=False,
+                    error=str(e),
+                    variables=variables,
+                    variable_info={},
+                ),
+            }
+        )
+
+
+@mcp.tool()
+def tropomi_bbox_query(
+    min_lat: float,
+    max_lat: float,
+    min_lon: float,
+    max_lon: float,
+    start_date: str,
+    end_date: str,
+    variables: list[str] = DEFAULT_VARIABLES,
+    max_runtime_s: float = 60.0,
+) -> dict[str, Any]:
+    """Query Sentinel5-TROPOMI data within a bounding box.
+
+    Returns atmospheric composition data grouped by grid cell with a GeoJSON Point
+    geometry, from the TROPOMI dataset via AWS.
+    Global coverage, July 2018-present.
+
+    Args:
+        min_lat: Decimal degrees, WGS84 (-90 to 90).
+        max_lat: Decimal degrees, WGS84 (-90 to 90).
+        min_lon: Decimal degrees, WGS84 (-180 to 180).
+        max_lon: Decimal degrees, WGS84 (-180 to 180).
+        start_date: ISO 8601 date string, e.g., "2019-08-15",
+        end_date: ISO 8601 date string, inclusive, e.g., "2019-08-15".
+        variables: TROPOMI variable names. Use tropomi_available_variables() tool to get
+            a list of valid variable names. Defaults to a standard set of commonly used
+            variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to
+            be 60s.
+    """
+    query_params: dict[str, Any] = {
+        "min_lat": min_lat,
+        "max_lat": max_lat,
+        "min_lon": min_lon,
+        "max_lon": max_lon,
+        "start_date": start_date,
+        "end_date": end_date,
+        "variables": variables,
+        "max_runtime_s": max_runtime_s,
+    }
+    t0 = time.perf_counter()
+    try:
+        bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
+        date_range = DateRange(start_date=start_date, end_date=end_date)
+
+        full_var_info = get_variable_info()
+        var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
+
+        _sd = parse_date(start_date)
+        _ed = parse_date(end_date)
+        n_days = (_ed - _sd).days + 1
+        if warn := check_runtime(
+            source="tropomi",
+            n_days=n_days,
+            area_deg2=bbox_area_deg2(bbox.model_dump()),
+            max_runtime_s=max_runtime_s,
+            scale_factor=len(variables),
+        ):
+            return _validate_grouped_geometry_response(warn)
+        data, unavailable = query_bbox(
+            bbox.min_lat,
+            bbox.max_lat,
+            bbox.min_lon,
+            bbox.max_lon,
             date_range.start_date,
             date_range.end_date,
             variables,

@@ -21,9 +21,11 @@ from env_data_mcp.sources.tropomi._query import (
     _get_cogt_urls,
     _get_full_variable_info,
     _get_netcdf_file_paths,
+    _query_bbox_from_file,
     _query_point_from_file,
     _VariableInfo,
     get_variable_info,
+    query_bbox,
     query_point,
 )
 from env_data_mcp.sources.tropomi.constants import _AWS_URL, _CDSE_ODATA_URL, ProductType
@@ -687,3 +689,215 @@ def test_query_point_returns_results():
     records = results[0]["records"]
     assert len(records) == 1
     assert records[0]["OFFL-L2_O3"] == pytest.approx(0.42)
+
+
+# ---------------------------------------------------------------------------
+# _query_bbox_from_file
+# ---------------------------------------------------------------------------
+
+_BBOX_QUERY = dict(min_lat=45.75, max_lat=46.75, min_lon=-120.0, max_lon=-119.0)
+
+# 2x2 grid of pixel centres used across bbox tests
+_GRID_SHAPE = (2, 2)
+_GRID_LATS = np.array([[46.5, 46.5], [46.0, 46.0]])
+_GRID_LONS = np.array([[-119.9, -119.4], [-119.9, -119.4]])
+_VALID_VALS = np.array([[0.30, 0.35], [0.40, 0.45]])
+_VALID_QA = np.array([[80.0, 75.0], [90.0, 85.0]])  # all >= 50 threshold
+
+
+def _make_bbox_ds_mock(
+    vals: np.ndarray,
+    *,
+    nodata: float | None = None,
+    lons: np.ndarray | None = None,
+    lats: np.ndarray | None = None,
+) -> MagicMock:
+    """Return a mock rasterio dataset for bbox reads."""
+    ds = MagicMock()
+    ds.nodata = nodata
+    ds.read.return_value = vals
+    if lons is not None and lats is not None:
+        # rasterio.DatasetReader.xy() returns (xs, ys) == (lons, lats)
+        ds.xy.return_value = (lons, lats)
+    ds.__enter__.return_value = ds
+    return ds
+
+
+def _make_bbox_window() -> MagicMock:
+    """Return a mock rasterio Window with row_off=col_off=0."""
+    w = MagicMock()
+    w.row_off = 0
+    w.col_off = 0
+    return w
+
+
+def _call_query_bbox(var_ds: MagicMock, qa_ds: MagicMock, window: MagicMock) -> list[dict]:
+    """Run _query_bbox_from_file with standard test bbox bounds and mock patches."""
+    with (
+        patch("rasterio.open", side_effect=[var_ds, qa_ds]),
+        patch("rasterio.windows.from_bounds", return_value=window),
+        patch("env_data_mcp.sources.tropomi._query.Env"),
+    ):
+        return _query_bbox_from_file(L2_O3_VAR, _NETCDF_PATH, **_BBOX_QUERY)
+
+
+@pytest.mark.parametrize(
+    "var_vals,var_nodata,qa_vals,qa_nodata",
+    [
+        (np.full(_GRID_SHAPE, 0.5), 0.5, np.full(_GRID_SHAPE, 75.0), None),  # var == nodata
+        (np.full(_GRID_SHAPE, np.nan), None, np.full(_GRID_SHAPE, 75.0), None),  # var NaN
+        (np.full(_GRID_SHAPE, np.inf), None, np.full(_GRID_SHAPE, 75.0), None),  # var Inf
+        (np.full(_GRID_SHAPE, -2e10), None, np.full(_GRID_SHAPE, 75.0), None),  # var < -1e10
+        (np.full(_GRID_SHAPE, 0.5), None, np.full(_GRID_SHAPE, 0.0), 0.0),  # qa == nodata
+        (np.full(_GRID_SHAPE, 0.5), None, np.full(_GRID_SHAPE, 49.0), None),  # qa/100 < threshold
+    ],
+    ids=[
+        "all_var_nodata",
+        "all_var_nan",
+        "all_var_inf",
+        "all_var_below_sentinel",
+        "all_qa_nodata",
+        "all_qa_below_threshold",
+    ],
+)
+def test_query_bbox_from_file_returns_empty_list(var_vals, var_nodata, qa_vals, qa_nodata):
+    """Every per-pixel filter condition applied uniformly returns an empty list."""
+    var_ds = _make_bbox_ds_mock(var_vals, nodata=var_nodata, lons=_GRID_LONS, lats=_GRID_LATS)
+    qa_ds = _make_bbox_ds_mock(qa_vals, nodata=qa_nodata)
+    assert _call_query_bbox(var_ds, qa_ds, _make_bbox_window()) == []
+
+
+def test_query_bbox_from_file_returns_results():
+    """All valid pixels in a 2x2 window yield one record per pixel."""
+    var_ds = _make_bbox_ds_mock(_VALID_VALS, lons=_GRID_LONS, lats=_GRID_LATS)
+    qa_ds = _make_bbox_ds_mock(_VALID_QA)
+
+    results = _call_query_bbox(var_ds, qa_ds, _make_bbox_window())
+
+    assert len(results) == 4
+    for rec in results:
+        assert rec["variable_name"] == "OFFL-L2_O3"
+        assert rec["date"] == "2024-01-03"
+        assert "latitude" in rec
+        assert "longitude" in rec
+        assert "value" in rec
+    assert sorted(rec["value"] for rec in results) == pytest.approx(sorted(_VALID_VALS.ravel()))
+
+
+def test_query_bbox_from_file_record_coordinates():
+    """Returned coordinates come from ds.xy(), not from the requested bbox bounds."""
+    var_ds = _make_bbox_ds_mock(_VALID_VALS, lons=_GRID_LONS, lats=_GRID_LATS)
+    qa_ds = _make_bbox_ds_mock(_VALID_QA)
+
+    results = _call_query_bbox(var_ds, qa_ds, _make_bbox_window())
+
+    returned_lats = sorted(rec["latitude"] for rec in results)
+    returned_lons = sorted(rec["longitude"] for rec in results)
+    assert returned_lats == pytest.approx(sorted(_GRID_LATS.ravel()))
+    assert returned_lons == pytest.approx(sorted(_GRID_LONS.ravel()))
+
+
+def test_query_bbox_from_file_partial_var_nodata():
+    """Only pixels that pass all filters appear in the result."""
+    nodata_val = -999.0
+    var_vals = np.array([[0.30, 0.35], [nodata_val, nodata_val]])
+    qa_vals = np.full(_GRID_SHAPE, 80.0)
+    var_ds = _make_bbox_ds_mock(var_vals, nodata=nodata_val, lons=_GRID_LONS, lats=_GRID_LATS)
+    qa_ds = _make_bbox_ds_mock(qa_vals)
+
+    results = _call_query_bbox(var_ds, qa_ds, _make_bbox_window())
+
+    assert len(results) == 2
+    assert sorted(rec["value"] for rec in results) == pytest.approx([0.30, 0.35])
+
+
+def test_query_bbox_from_file_partial_qa_below_threshold():
+    """Pixels whose qa/100 falls below the threshold are excluded; others kept."""
+    # (0,0) and (1,0) pass; (0,1) and (1,1) fail
+    qa_vals = np.array([[80.0, 49.0], [75.0, 30.0]])
+    var_ds = _make_bbox_ds_mock(_VALID_VALS, lons=_GRID_LONS, lats=_GRID_LATS)
+    qa_ds = _make_bbox_ds_mock(qa_vals)
+
+    results = _call_query_bbox(var_ds, qa_ds, _make_bbox_window())
+
+    assert len(results) == 2
+    # passing pixels are at (0,0)=0.30 and (1,0)=0.40
+    assert sorted(rec["value"] for rec in results) == pytest.approx([0.30, 0.40])
+
+
+# ---------------------------------------------------------------------------
+# query_bbox
+# ---------------------------------------------------------------------------
+
+
+def test_query_bbox_unknown_variable_is_unavailable():
+    """Variables absent from variable info are immediately marked unavailable."""
+    with patch.object(_query_mod, "_get_full_variable_info", return_value={}):
+        results, unavailable = query_bbox(
+            min_lat=45.75,
+            max_lat=46.75,
+            min_lon=-120.0,
+            max_lon=-119.0,
+            start_date="2024-01-03",
+            end_date="2024-01-05",
+            variables=["OFFL-L2_O3"],
+        )
+    assert results == []
+    assert "OFFL-L2_O3" in unavailable
+
+
+def test_query_bbox_no_files_variable_is_unavailable():
+    """A known variable with no matching CDSE files is returned as unavailable."""
+    with (
+        patch.object(_query_mod, "_get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
+        patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[]),
+    ):
+        results, unavailable = query_bbox(
+            min_lat=45.75,
+            max_lat=46.75,
+            min_lon=-120.0,
+            max_lon=-119.0,
+            start_date="2024-01-03",
+            end_date="2024-01-05",
+            variables=["OFFL-L2_O3"],
+        )
+    assert results == []
+    assert "OFFL-L2_O3" in unavailable
+
+
+def test_query_bbox_returns_results():
+    """A variable with valid pixel reads appears in results and not in unavailable."""
+    mock_records = [
+        {
+            "variable_name": "OFFL-L2_O3",
+            "date": "2024-01-03",
+            "latitude": float(_GRID_LATS[i, j]),
+            "longitude": float(_GRID_LONS[i, j]),
+            "value": float(_VALID_VALS[i, j]),
+        }
+        for i in range(2)
+        for j in range(2)
+    ]
+    with (
+        patch.object(_query_mod, "_get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
+        patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[_NETCDF_PATH]),
+        patch.object(_query_mod, "_query_bbox_from_file", return_value=mock_records),
+    ):
+        results, unavailable = query_bbox(
+            min_lat=45.75,
+            max_lat=46.75,
+            min_lon=-120.0,
+            max_lon=-119.0,
+            start_date="2024-01-03",
+            end_date="2024-01-05",
+            variables=["OFFL-L2_O3"],
+        )
+    assert len(results) == 4
+    assert unavailable == []
+    all_values = [
+        record["OFFL-L2_O3"]
+        for geo in results
+        for record in geo["records"]
+        if "OFFL-L2_O3" in record
+    ]
+    assert sorted(all_values) == pytest.approx(sorted(_VALID_VALS.ravel()))
