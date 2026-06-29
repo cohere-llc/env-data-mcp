@@ -343,9 +343,9 @@ def _query_bbox_from_file(
     min_lon: float,
     max_lon: float,
 ) -> list[dict[str, Any]]:
-    """Fetch product and QA values for a point location from a GeoTIFF file.
+    """Fetch product and QA values for all pixels within a bounding box from a GeoTIFF file.
 
-    Values below the QA threshhold are excluded from the results.
+    Values below the QA threshold are excluded from the results.
     """
     var_url, qa_url = _get_cogt_urls(netcdf_path, variable)
     with Env(aws_unsigned=True, **_GDAL_OPTS):
