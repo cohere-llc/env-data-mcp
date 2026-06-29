@@ -46,7 +46,7 @@ DEFAULT_VARIABLES: list[str] = [
     "OFFL-L2_NO2",  # nitrogen dioxide total-column concentration
     "OFFL-L2_CO",  # carbon monoxide total-column concentration
     "OFFL-L2_O3_TCL",  # tropospheric ozone concentration
-    "OFFL-L2_SO2",  # sulfur dioxide total-column concetration
+    "OFFL-L2_SO2",  # sulfur dioxide total-column concentration
     "OFFL-L2_HCHO",  # formaldehyde total-column concentration
 ]
 
