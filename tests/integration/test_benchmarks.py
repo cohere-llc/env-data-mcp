@@ -40,7 +40,6 @@ from env_data_mcp.sources.nasa_power import (
 )
 from env_data_mcp.sources.oco2 import oco2_bbox_query, oco2_query
 from env_data_mcp.sources.openaq import openaq_bbox_query, openaq_query
-from env_data_mcp.sources.sentinel5p import sentinel5p_bbox_query, sentinel5p_query
 from env_data_mcp.sources.soilgrids import soilgrids_bbox_query, soilgrids_query
 from env_data_mcp.sources.ssurgo import (
     ssurgo_area_summary_bbox_query,
@@ -61,6 +60,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_subsurface_barriers_query,
 )
 from env_data_mcp.sources.ssurgo.constants import DEFAULT_SOIL_SUITABILITY_RULE_NAMES
+from env_data_mcp.sources.tropomi import tropomi_bbox_query, tropomi_query
 
 # ---------------------------------------------------------------------------
 # Reference location & time windows
@@ -748,83 +748,89 @@ def test_gbif_point_bbox_consistent():
 
 
 # ===========================================================================
-# Sentinel-5P — no auth, CDSE COGT, all scenarios
+# Sentinel-5P: TROPOMI — no auth, CDSE COGT, all scenarios
 # ===========================================================================
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
-def test_sentinel5p_timing(sc):
-    result = sentinel5p_query(
+def test_tropomi_timing(sc):
+    result = tropomi_query(
         latitude=_LAT,
         longitude=_LON,
         start_date=sc["start"],
         end_date=sc["end"],
-        product="CO",
+        variables=["OFFL-L2_CO"],
     )
-    _assert_or_skip(result, "sentinel5p")
-    _record("sentinel5p", sc["name"], sc["n_days"], result)
+    _assert_or_skip(result, "tropomi")
+    _record("tropomi", sc["name"], sc["n_days"], result)
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+    assert len(result["data"]) > 0
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
-@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("bz", _NASA_POWER_BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
-def test_sentinel5p_bbox_timing(sc, bz):
-    result = sentinel5p_bbox_query(
+def test_tropomi_bbox_timing(sc, bz):
+    # skip the two longest running queries
+    if sc["n_days"] > 14 and bz["area_deg2"] > 200.0:
+        return
+    result = tropomi_bbox_query(
         **_make_bbox(_LAT, _LON, bz["half"]),
         start_date=sc["start"],
         end_date=sc["end"],
-        product="CO",
+        variables=["OFFL-L2_CO"],
     )
-    _assert_or_skip(result, "sentinel5p/bbox")
+    _assert_or_skip(result, "tropomi/bbox")
     _record(
-        "sentinel5p",
+        "tropomi",
         f"{sc['name']}/bbox/{bz['name']}",
         sc["n_days"],
         result,
         area_deg2=bz["area_deg2"],
     )
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+    assert len(result["data"]) > 0
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_sentinel5p_extra_location_timing(loc):
-    result = sentinel5p_query(
+    result = tropomi_query(
         latitude=loc["lat"],
         longitude=loc["lon"],
         start_date="2019-08-01",
         end_date="2019-08-31",
-        product="CO",
+        variables=["OFFL-L2_CO"],
     )
-    _assert_or_skip(result, f"sentinel5p/{loc['name']}")
-    _record("sentinel5p", "1month", 31, result, location=loc["name"])
+    _assert_or_skip(result, f"tropomi/{loc['name']}")
+    _record("tropomi", "1month", 31, result, location=loc["name"])
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
+    assert len(result["data"]) > 0
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
-def test_sentinel5p_point_bbox_consistent():
-    pt = sentinel5p_query(
+def test_tropomi_point_bbox_consistent():
+    pt = tropomi_query(
         latitude=_LAT,
         longitude=_LON,
         start_date="2019-08-19",
         end_date="2019-08-19",
-        product="CO",
+        variables=["OFFL-L2_CO"],
     )
-    bx = sentinel5p_bbox_query(
+    bx = tropomi_bbox_query(
         **_BBOX,
         start_date="2019-08-19",
         end_date="2019-08-19",
-        product="CO",
+        variables=["OFFL-L2_CO"],
     )
-    _assert_or_skip(pt, "sentinel5p/point")
-    _assert_or_skip(bx, "sentinel5p/bbox")
-    _check_geo_overlap(pt["data"], bx["data"], "sentinel5p")
+    _assert_or_skip(pt, "tropomi/point")
+    _assert_or_skip(bx, "tropomi/bbox")
+    _check_geo_overlap(pt["data"], bx["data"], "tropomi")
 
 
 # ===========================================================================

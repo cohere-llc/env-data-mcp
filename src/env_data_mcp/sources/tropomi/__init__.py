@@ -6,8 +6,10 @@ Auth required: No
 License: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice
 """
 
-from .tools import tropomi_available_variables
+from .tools import tropomi_available_variables, tropomi_bbox_query, tropomi_query
 
 __all__ = [
     "tropomi_available_variables",
+    "tropomi_bbox_query",
+    "tropomi_query",
 ]

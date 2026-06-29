@@ -27,7 +27,6 @@ from env_data_mcp.sources import ssurgo
 from env_data_mcp.sources import gbif
 from env_data_mcp.sources import tropomi
 from env_data_mcp.sources import openaq
-from env_data_mcp.sources import sentinel5p
 from env_data_mcp.sources import oco2
 from env_data_mcp.sources import emit
 from env_data_mcp.sources import essdive
