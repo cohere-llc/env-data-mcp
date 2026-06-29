@@ -454,7 +454,7 @@ def query_bbox(
         end_date: ISO 8601 date (YYYY-MM-DD).
         variables: list of variable names to query for.
     Returns:
-        Tupe of properties by geometry and list of unavailable variables.
+        Tuple of properties by geometry and list of unavailable variables.
     """
     var_info = _get_full_variable_info()
     unavailable: set[str] = {var for var in variables if var not in var_info}
