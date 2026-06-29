@@ -117,6 +117,7 @@ def _get_cogt_variable_name(product_type: ProductType, variable_folder: str) -> 
         },
         timeout=30,
     )
+    resp.raise_for_status()
     xml_resp = ET.fromstring(resp.text)
     keys = [(el.text or "").strip() for el in xml_resp.findall(f".//{{{_S3_NS}}}Key")]
     key = next((k for k in keys if "_PRODUCT_" in k and "qa_value" not in k), "")
