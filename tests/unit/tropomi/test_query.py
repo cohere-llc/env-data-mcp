@@ -389,8 +389,8 @@ def test_get_netcdf_file_paths_paginates(httpx_mock):
     )
 
     assert len(results) == _PAGE_SIZE + 3
-    assert results[0] == "/OFFL/L2__O3____/2024/01/01/S5P_OFFL_variable_00000.nc"
-    assert results[_PAGE_SIZE] == "/OFFL/L2__O3____/2024/01/02/S5P_OFFL_variable_00000.nc"
+    assert results[0] == "/eodata/Sentinel-5P/TROPOMI/L2__O3____/2024/01/01/S5P_OFFL_variable_00000.nc"
+    assert results[_PAGE_SIZE] == "/eodata/Sentinel-5P/TROPOMI/L2__O3____/2024/01/02/S5P_OFFL_variable_00000.nc"
 
 
 # ---------------------------------------------------------------------------
