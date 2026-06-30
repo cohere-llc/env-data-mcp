@@ -16,6 +16,26 @@ from functools import reduce
 from operator import getitem
 from typing import Any
 
+
+
+def date_range_days(start_date: str, end_date: str) -> int:
+    """
+    Return the number of calendar days in an inclusive date range.
+
+    Args:
+        start_date: ISO 8601 date string (YYYY-MM-DD)
+        end_date: ISO 8601 date string (YYYY-MM-DD)
+
+    Returns:
+        Inclusive day count.
+
+    Raises:
+        ValueError if either date is invalid.
+    """
+    start = parse_date(start_date)
+    end = parse_date(end_date)
+    return (end - start).days + 1
+
 # ---------------------------------------------------------------------------
 # dict helpers
 # ---------------------------------------------------------------------------
