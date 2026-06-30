@@ -72,7 +72,7 @@ For any CC BY or CC BY-NC records, cite the GBIF occurrence download DOI
 
 ## Sentinel-5P TROPOMI
 
-**Tool**: `sentinel5p_query`  
+**Tool**: `tropomi_query`  
 **License**: ESA Copernicus Open Access  
 **Terms**: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice  
 

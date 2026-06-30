@@ -35,6 +35,7 @@ With the server running, verify it works with this self-contained Python snippet
 ```python
 # hello_world.py — run with: uv run python hello_world.py
 import asyncio
+import json
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -46,7 +47,7 @@ async def main():
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            result = await session.call_tool(
+            raw_result = await session.call_tool(
                 "nasa_power_merra2_query",
                 arguments={
                     "latitude": 46.253,
@@ -56,6 +57,7 @@ async def main():
                     "temporal_resolution": "daily",
                 },
             )
+            result = json.loads(raw_result.content[0].text)
             print(result)
 
 asyncio.run(main())
@@ -140,8 +142,8 @@ See [Credential setup](#environment-variables) for how to obtain each token.
 | `gbif_occurrence_bbox_query` | GBIF | none | Species occurrence records within a bounding box |
 | `soilgrids_query` | ISRIC SoilGrids v2 | none | Global soil properties at a point |
 | `soilgrids_bbox_query` | ISRIC SoilGrids v2 | none | Global soil properties over a bounding box |
-| `sentinel5p_query` | Sentinel-5P TROPOMI | none | Atmospheric column at a point (CO / NO₂ / CH₄) |
-| `sentinel5p_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric column mean over a bounding box |
+| `tropomi_query` | Sentinel-5P TROPOMI | none | Atmospheric composition at a point location |
+| `tropomi_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric composition over a bounding box |
 | `oco2_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column at a point |
 | `oco2_bbox_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column over a bounding box |
 | `emit_query` | NASA EMIT L2B | NASA EarthData token | Mineral identification at a point |
