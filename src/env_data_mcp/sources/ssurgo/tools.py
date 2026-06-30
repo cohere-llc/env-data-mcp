@@ -216,7 +216,6 @@ def _point_query(
             }
             for mk, info in grouped.items()
         ]
-        total_records = sum(len(g["records"]) for g in data)
         # Derive vinfo from actual result columns so always-included context
         # columns (compname, hzname, depth bounds, etc.) appear in the metadata.
         result_cols = next(
@@ -238,7 +237,7 @@ def _point_query(
                     source="ssurgo",
                     variables=user_vars,
                     query_params=query_params,
-                    rows_returned=total_records,
+                    rows_returned=len(data),
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     variable_info=vinfo,
@@ -371,7 +370,7 @@ def _bbox_query(
                     source="ssurgo",
                     variables=user_vars,
                     query_params=query_params,
-                    rows_returned=total_records,
+                    rows_returned=len(data),
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     variable_info=vinfo,
@@ -858,14 +857,13 @@ def ssurgo_soil_suitability_query(
             }
             for mk, info in grouped.items()
         ]
-        total_records = sum(len(g["records"]) for g in data)
         return _validate_grouped_geometry_response(
             {
                 "data": data,
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=query_params,
-                    rows_returned=total_records,
+                    rows_returned=len(data),
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     error=_NO_COVERAGE_MSG if not data else None,
@@ -982,14 +980,13 @@ def ssurgo_soil_suitability_bbox_query(
             }
             for mk, info in grouped.items()
         ]
-        total_records = sum(len(g["records"]) for g in data)
         return _validate_grouped_geometry_response(
             {
                 "data": data,
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=query_params,
-                    rows_returned=total_records,
+                    rows_returned=len(data),
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     error=_NO_COVERAGE_MSG if not data else None,
