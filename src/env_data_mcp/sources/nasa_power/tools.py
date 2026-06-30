@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from env_data_mcp.helpers import bbox_area_deg2, build_meta, parse_date,date_range_days
+from env_data_mcp.helpers import bbox_area_deg2, build_meta, date_range_days
 from env_data_mcp.models import (
     AvailableVariablesResponse,
     BboxInput,
