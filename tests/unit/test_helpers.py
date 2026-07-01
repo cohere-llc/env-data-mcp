@@ -355,11 +355,6 @@ class TestEstimateRuntime:
         t_bbox = estimate_runtime("emit", n_days=30, area_deg2=100.0)
         assert t_bbox > t_point
 
-    def test_sentinel5p_override_applied(self) -> None:
-        # 30-day point: n_granules=30*1.0=30; ceil(30/16)=2 batches → 2.0+2*4.5=11.0 s
-        t = estimate_runtime("sentinel5p", n_days=30, area_deg2=0.0)
-        assert t >= 11.0
-
     def test_openaq_override_applied(self) -> None:
         # 100-day: override = 1.5 + 0.15*100 = 16.5 s
         t = estimate_runtime("openaq", n_days=100, area_deg2=0.0)
@@ -390,7 +385,7 @@ class TestEstimateRuntime:
             "nasa_power",
             "oco2",
             "openaq",
-            "sentinel5p",
+            "tropomi",
             "soilgrids",
             "ssurgo",
         ]
