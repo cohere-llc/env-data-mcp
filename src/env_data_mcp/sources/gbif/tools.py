@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from env_data_mcp.helpers import build_meta, parse_date, point_to_bbox
+from env_data_mcp.helpers import build_meta, date_range_days, point_to_bbox
 from env_data_mcp.models import (
     AvailableVariablesResponse,
     BboxInput,
@@ -116,9 +116,7 @@ def gbif_occurrence_query(
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
         unavailable_vars = [var for var in variables if var not in full_var_info]
 
-        _sd = parse_date(start_date)
-        _ed = parse_date(end_date)
-        n_days = (_ed - _sd).days + 1
+        n_days = date_range_days(start_date, end_date)
         bbox = point_to_bbox(
             latitude=point.latitude, longitude=point.longitude, radius_km=radius_km
         )
@@ -229,9 +227,7 @@ def gbif_occurrence_bbox_query(
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
         unavailable_vars = [var for var in variables if var not in full_var_info]
 
-        _sd = parse_date(start_date)
-        _ed = parse_date(end_date)
-        n_days = (_ed - _sd).days + 1
+        n_days = date_range_days(start_date, end_date)
         area_deg2 = (max_lat - min_lat) * (max_lon - min_lon)
         if warn := _estimate_query_runtime_s(n_days, area_deg2, max_runtime_s):
             return _validate_grouped_geometry_response(warn)

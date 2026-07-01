@@ -24,7 +24,7 @@ from env_data_mcp.helpers import (
     auth_missing_response,
     build_meta,
     check_runtime,
-    parse_date,
+    date_range_days,
 )
 from env_data_mcp.server import mcp
 
@@ -420,9 +420,7 @@ def oco2_query(
         ``longitude``, ``granule_id``.
     """
     t0 = time.perf_counter()
-    _sd = parse_date(start_date)
-    _ed = parse_date(end_date)
-    n_days = (_ed - _sd).days + 1
+    n_days = date_range_days(start_date, end_date)
     if warn := check_runtime("oco2", n_days, 0.0, max_runtime_s):
         return warn
     query_params: dict[str, Any] = {
@@ -526,10 +524,9 @@ def oco2_bbox_query(
         ``{"data": list[dict], "_meta": dict}``
     """
     t0 = time.perf_counter()
-    _sd = parse_date(start_date)
-    _ed = parse_date(end_date)
+
     bbox = {"min_lat": min_lat, "max_lat": max_lat, "min_lon": min_lon, "max_lon": max_lon}
-    n_days = (_ed - _sd).days + 1
+    n_days = date_range_days(start_date, end_date)
     area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
     if warn := check_runtime("oco2", n_days, area_deg2, max_runtime_s):
         return warn

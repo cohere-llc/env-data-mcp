@@ -25,7 +25,7 @@ import httpx
 from env_data_mcp.helpers import (
     build_meta,
     check_runtime,
-    parse_date,
+    date_range_days,
 )
 from env_data_mcp.server import mcp
 
@@ -278,9 +278,7 @@ def openaq_query(
     }
 
     try:
-        _sd = parse_date(start_date)
-        _ed = parse_date(end_date)
-        n_days = (_ed - _sd).days + 1
+        n_days = date_range_days(start_date, end_date)
         radius_deg_lat = radius_km / 111.0
         area_deg2 = (2 * radius_deg_lat) ** 2
         if warn := check_runtime("openaq", n_days, area_deg2, max_runtime_s):
