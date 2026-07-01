@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from env_data_mcp.helpers import build_meta, point_to_bbox, date_range_days
+from env_data_mcp.helpers import build_meta, date_range_days, point_to_bbox
 from env_data_mcp.models import (
     AvailableVariablesResponse,
     BboxInput,
@@ -115,7 +115,6 @@ def gbif_occurrence_query(
         full_var_info = _get_variable_info(_QueryType.OCCURRENCE)
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
         unavailable_vars = [var for var in variables if var not in full_var_info]
-
 
         n_days = date_range_days(start_date, end_date)
         bbox = point_to_bbox(
@@ -227,7 +226,6 @@ def gbif_occurrence_bbox_query(
         full_var_info = _get_variable_info(_QueryType.OCCURRENCE)
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
         unavailable_vars = [var for var in variables if var not in full_var_info]
-
 
         n_days = date_range_days(start_date, end_date)
         area_deg2 = (max_lat - min_lat) * (max_lon - min_lon)

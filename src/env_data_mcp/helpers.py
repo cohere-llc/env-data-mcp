@@ -17,7 +17,6 @@ from operator import getitem
 from typing import Any
 
 
-
 def date_range_days(start_date: str, end_date: str) -> int:
     """
     Return the number of calendar days in an inclusive date range.
@@ -35,6 +34,7 @@ def date_range_days(start_date: str, end_date: str) -> int:
     start = parse_date(start_date)
     end = parse_date(end_date)
     return (end - start).days + 1
+
 
 # ---------------------------------------------------------------------------
 # dict helpers

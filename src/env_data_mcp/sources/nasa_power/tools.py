@@ -124,7 +124,6 @@ def nasa_power_merra2_query(
         full_var_info = _get_variable_info(_open_store(DatasetType.MERRA2, temporal_resolution))
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
 
-
         n_days = date_range_days(start_date, end_date)
         if warn := _estimate_query_runtime_s(
             n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s
@@ -219,7 +218,6 @@ def nasa_power_syn1deg_query(
 
         full_var_info = _get_variable_info(_open_store(DatasetType.SYN1DEG, temporal_resolution))
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
-
 
         n_days = date_range_days(start_date, end_date)
         if warn := _estimate_query_runtime_s(
@@ -321,7 +319,6 @@ def nasa_power_merra2_bbox_query(
 
         full_var_info = _get_variable_info(_open_store(DatasetType.MERRA2, temporal_resolution))
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
-
 
         n_days = date_range_days(start_date, end_date)
         if warn := _estimate_query_runtime_s(
@@ -429,7 +426,6 @@ def nasa_power_syn1deg_bbox_query(
 
         full_var_info = _get_variable_info(_open_store(DatasetType.SYN1DEG, temporal_resolution))
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
-
 
         n_days = date_range_days(start_date, end_date)
         if warn := _estimate_query_runtime_s(

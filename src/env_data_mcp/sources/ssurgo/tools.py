@@ -97,7 +97,7 @@ def _available_vars_response(query_type: _QueryType) -> dict[str, Any]:
     """
     t0 = time.perf_counter()
     try:
-         = _get_variable_info(queinfory_type)
+        info = _get_variable_info(query_type)
         latency = time.perf_counter() - t0
         flat: dict[str, dict[str, Any]] = {
             col: {
