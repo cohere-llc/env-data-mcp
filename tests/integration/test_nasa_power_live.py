@@ -312,9 +312,7 @@ class TestTemporalResolution:
             f"got {len(temporal_result['data'][0]['records'])}"
         )
 
-    def test_temporal_resolution_echoed_in_meta(
-        self, tc: _TemporalCase, temporal_result: dict
-    ):
+    def test_temporal_resolution_echoed_in_meta(self, tc: _TemporalCase, temporal_result: dict):
         assert (
             temporal_result["_meta"]["query_params"]["temporal_resolution"] == tc.resolution.value
         )

@@ -35,7 +35,7 @@ def _get_variable_info(query_type: _QueryType) -> dict[str, dict[str, str]]:
         resp.raise_for_status()
         info = get_by_path(resp.json(), _QUERY_RESULT_SCHEMAS[query_type]["path"], {})
     _VARIABLE_INFO_CACHE[query_type] = {
-        key: {"description": val.get("description", ""), "units": ""} for key, val in info.items()
+        key: {"description": val.get("description", key), "units": ""} for key, val in info.items()
     }
     return _VARIABLE_INFO_CACHE[query_type]
 
