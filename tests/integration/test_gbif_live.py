@@ -525,13 +525,12 @@ class TestAvailableVariablesRoundtrip:
     discovery → selection → query workflow end-to-end.
     """
 
-    def test_avail_variables_usable_in_point_query(self, dc: _DatasetCase):
-        avail = dc.avail_fn()
-        assert avail["_meta"]["success"] is True, (
-            f"{dc.label}: avail_fn() failed — {avail['_meta'].get('error')}"
+    def test_avail_variables_usable_in_point_query(self, dc: _DatasetCase, avail_result: dict):
+        assert avail_result["_meta"]["success"] is True, (
+            f"{dc.label}: avail_fn() failed — {avail_result['_meta'].get('error')}"
         )
         default_set = set(dc.default_vars)
-        non_default = [v for v in avail["data"] if v not in default_set][:3]
+        non_default = [v for v in avail_result["data"] if v not in default_set][:3]
         if not non_default:
             pytest.skip(f"{dc.label}: no non-default variables found in avail result")
         result = dc.point_fn(
@@ -552,13 +551,12 @@ class TestAvailableVariablesRoundtrip:
             f"{dc.label}: expected data rows for non-default vars {non_default} but got none"
         )
 
-    def test_avail_variables_usable_in_bbox_query(self, dc: _DatasetCase):
-        avail = dc.avail_fn()
-        assert avail["_meta"]["success"] is True, (
-            f"{dc.label}: avail_fn() failed — {avail['_meta'].get('error')}"
+    def test_avail_variables_usable_in_bbox_query(self, dc: _DatasetCase, avail_result: dict):
+        assert avail_result["_meta"]["success"] is True, (
+            f"{dc.label}: avail_fn() failed — {avail_result['_meta'].get('error')}"
         )
         default_set = set(dc.default_vars)
-        non_default = [v for v in avail["data"] if v not in default_set][:3]
+        non_default = [v for v in avail_result["data"] if v not in default_set][:3]
         if not non_default:
             pytest.skip(f"{dc.label}: no non-default variables found in avail result")
         result = dc.bbox_fn(

@@ -473,7 +473,7 @@ class TestNonDefaultVariable:
 
 @pytest.fixture(scope="module")
 def unavail_result(dc: _DatasetCase) -> dict:
-    """Query for unavilable variables."""
+    """Query for unavailable variables."""
     return dc.point_fn(
         latitude=_LAT,
         longitude=_LON,
