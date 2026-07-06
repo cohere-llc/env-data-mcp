@@ -103,6 +103,12 @@ def dc(request) -> _DatasetCase:
 
 
 @pytest.fixture(scope="module")
+def avail_vars(dc: _DatasetCase) -> dict:
+    """Available variables; loaded once per module run."""
+    return dc.avail_fn()
+
+
+@pytest.fixture(scope="module")
 def baseline_daily(dc: _DatasetCase) -> dict:
     """Single-day DAILY result; loaded once per dataset per module run."""
     return dc.point_fn(
@@ -124,27 +130,23 @@ def baseline_daily(dc: _DatasetCase) -> dict:
 class TestAvailableVariables:
     """available_variables tool returns non-empty dict with correct shape."""
 
-    def test_returns_nonempty_dict(self, dc: _DatasetCase):
-        info = dc.avail_fn()
-        assert isinstance(info, dict)
-        assert len(info) > 0
+    def test_returns_nonempty_dict(self, dc: _DatasetCase, avail_vars: dict):
+        assert isinstance(avail_vars, dict)
+        assert len(avail_vars) > 0
 
-    def test_primary_var_present(self, dc: _DatasetCase):
-        info = dc.avail_fn()
-        assert dc.primary_var in info["data"], (
+    def test_primary_var_present(self, dc: _DatasetCase, avail_vars: dict):
+        assert dc.primary_var in avail_vars["data"], (
             f"{dc.label}: {dc.primary_var} missing from available variables"
             " — upstream schema change?"
         )
 
-    def test_primary_var_has_units_and_description(self, dc: _DatasetCase):
-        info = dc.avail_fn()
-        entry = info["data"][dc.primary_var]
+    def test_primary_var_has_units_and_description(self, dc: _DatasetCase, avail_vars: dict):
+        entry = avail_vars["data"][dc.primary_var]
         assert "units" in entry
         assert "description" in entry
 
-    def test_all_default_vars_present(self, dc: _DatasetCase):
-        info = dc.avail_fn()
-        missing = [v for v in dc.default_vars if v not in info["data"]]
+    def test_all_default_vars_present(self, dc: _DatasetCase, avail_vars: dict):
+        missing = [v for v in dc.default_vars if v not in avail_vars["data"]]
         assert not missing, f"{dc.label}: default variables absent from available set: {missing}"
 
 
@@ -218,84 +220,125 @@ class TestPointQueryStructure:
 # Temporal resolution parametrization
 # ---------------------------------------------------------------------------
 
+
+@dataclass
+class _TemporalCase:
+    resolution: TemporalResolution
+    start_date: str
+    end_date: str
+    expected_n: int
+    max_rt: float
+
+
 _TEMPORAL_CASES = [
-    pytest.param(TemporalResolution.DAILY, "2019-08-15", "2019-08-21", 7, 30.0, id="daily_7d"),
     pytest.param(
-        TemporalResolution.MONTHLY, "2019-01-01", "2019-12-31", 12, 30.0, id="monthly_12mo"
+        _TemporalCase(
+            resolution=TemporalResolution.DAILY,
+            start_date="2019-08-15",
+            end_date="2019-08-21",
+            expected_n=7,
+            max_rt=30.0,
+        ),
+        id="daily_7d",
     ),
-    pytest.param(TemporalResolution.ANNUAL, "2015-01-01", "2019-12-31", 5, 30.0, id="annual_5yr"),
-    pytest.param(TemporalResolution.HOURLY, "2019-08-19", "2019-08-19", 24, 120.0, id="hourly_1d"),
+    pytest.param(
+        _TemporalCase(
+            resolution=TemporalResolution.MONTHLY,
+            start_date="2019-01-01",
+            end_date="2019-12-31",
+            expected_n=12,
+            max_rt=30.0,
+        ),
+        id="monthly_12mo",
+    ),
+    pytest.param(
+        _TemporalCase(
+            resolution=TemporalResolution.ANNUAL,
+            start_date="2015-01-01",
+            end_date="2019-12-31",
+            expected_n=5,
+            max_rt=30.0,
+        ),
+        id="annual_5yr",
+    ),
+    pytest.param(
+        _TemporalCase(
+            resolution=TemporalResolution.HOURLY,
+            start_date="2019-08-19",
+            end_date="2019-08-19",
+            expected_n=24,
+            max_rt=120.0,
+        ),
+        id="hourly_1d",
+    ),
 ]
+
+
+@pytest.fixture(scope="module", params=_TEMPORAL_CASES)
+def tc(request) -> _TemporalCase:
+    return request.param
+
+
+@pytest.fixture(scope="module")
+def temporal_result(dc: _DatasetCase, tc: _TemporalCase) -> dict:
+    """Single point query for each temporal resolution and dataset; loaded once per resolution
+    per test run.
+    """
+    return dc.point_fn(
+        latitude=_LAT,
+        longitude=_LON,
+        start_date=tc.start_date,
+        end_date=tc.end_date,
+        temporal_resolution=tc.resolution,
+        variables=[dc.primary_var],
+        max_runtime_s=tc.max_rt,
+    )
 
 
 class TestTemporalResolution:
     """Point queries for DAILY / MONTHLY / ANNUAL / HOURLY produce expected record counts."""
 
-    @pytest.mark.parametrize("resolution,start,end,expected_n,max_rt", _TEMPORAL_CASES)
     def test_record_count_matches_date_range(
         self,
         dc: _DatasetCase,
-        resolution: TemporalResolution,
-        start: str,
-        end: str,
-        expected_n: int,
-        max_rt: float,
+        tc: _TemporalCase,
+        temporal_result: dict,
     ):
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date=start,
-            end_date=end,
-            temporal_resolution=resolution,
-            variables=[dc.primary_var],
-            max_runtime_s=max_rt,
+        assert temporal_result["_meta"]["success"] is True, (
+            f"{dc.label}/{tc.resolution.value}: query failed — {temporal_result['_meta'].get('error')}"  # noqa: E501
         )
-        assert result["_meta"]["success"] is True, (
-            f"{dc.label}/{resolution.value}: query failed — {result['_meta'].get('error')}"
-        )
-        assert len(result["data"][0]["records"]) == expected_n, (
-            f"{dc.label}/{resolution.value}: expected {expected_n} records, "
-            f"got {len(result['data'][0]['records'])}"
+        assert len(temporal_result["data"][0]["records"]) == tc.expected_n, (
+            f"{dc.label}/{tc.resolution.value}: expected {tc.expected_n} records, "
+            f"got {len(temporal_result['data'][0]['records'])}"
         )
 
-    @pytest.mark.parametrize("resolution,start,end,expected_n,max_rt", _TEMPORAL_CASES)
-    def test_temporal_resolution_echoed_in_meta(
-        self,
-        dc: _DatasetCase,
-        resolution: TemporalResolution,
-        start: str,
-        end: str,
-        expected_n: int,
-        max_rt: float,
-    ):
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date=start,
-            end_date=end,
-            temporal_resolution=resolution,
-            variables=[dc.primary_var],
-            max_runtime_s=max_rt,
+    def test_temporal_resolution_echoed_in_meta(self, tc: _TemporalCase, temporal_result: dict):
+        assert (
+            temporal_result["_meta"]["query_params"]["temporal_resolution"] == tc.resolution.value
         )
-        assert result["_meta"]["query_params"]["temporal_resolution"] == resolution.value
+
+
+@pytest.fixture(scope="module")
+def hourly_result(dc: _DatasetCase) -> dict:
+    """Point query for hourly tests."""
+    return dc.point_fn(
+        latitude=_LAT,
+        longitude=_LON,
+        start_date="2019-08-19",
+        end_date="2019-08-19",
+        temporal_resolution=TemporalResolution.HOURLY,
+        variables=[dc.primary_var],
+        max_runtime_s=120.0,
+    )
 
 
 class TestHourlyDetails:
     """HOURLY queries produce 24 records with distinct ISO-8601 datetime strings."""
 
-    def test_hourly_dates_are_distinct(self, dc: _DatasetCase):
+    def test_hourly_dates_are_distinct(self, dc: _DatasetCase, hourly_result: dict):
         """Verifies the int64-truncation fix in _get_coordinates for sub-day time values."""
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date="2019-08-19",
-            end_date="2019-08-19",
-            temporal_resolution=TemporalResolution.HOURLY,
-            variables=[dc.primary_var],
-            max_runtime_s=120.0,
-        )
-        assert result["_meta"]["success"] is True
-        records = result["data"][0]["records"]
+        assert hourly_result["_meta"]["success"] is True
+        records = hourly_result["data"][0]["records"]
         assert len(records) == 24, (
             f"{dc.label}: expected 24 hourly records, got {len(records)} — "
             "may indicate int64 truncation in _get_coordinates"
@@ -306,21 +349,26 @@ class TestHourlyDetails:
             "time axis still truncating to daily resolution"
         )
 
-    def test_hourly_date_format_includes_time(self, dc: _DatasetCase):
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date="2019-08-19",
-            end_date="2019-08-19",
-            temporal_resolution=TemporalResolution.HOURLY,
-            variables=[dc.primary_var],
-            max_runtime_s=120.0,
-        )
-        assert result["_meta"]["success"] is True
-        first_date = result["data"][0]["records"][0]["date"]
+    def test_hourly_date_format_includes_time(self, dc: _DatasetCase, hourly_result: dict):
+        assert hourly_result["_meta"]["success"] is True
+        first_date = hourly_result["data"][0]["records"][0]["date"]
         assert "T" in first_date, (
             f"{dc.label}: hourly date '{first_date}' missing time component — expected ISO datetime"
         )
+
+
+@pytest.fixture(scope="module")
+def clim_result(dc: _DatasetCase) -> dict:
+    """Point query for climatology tests."""
+    return dc.point_fn(
+        latitude=_LAT,
+        longitude=_LON,
+        start_date="2019-01-01",
+        end_date="2019-12-31",
+        temporal_resolution=TemporalResolution.CLIMATOLOGY,
+        variables=[dc.primary_var],
+        max_runtime_s=60.0,
+    )
 
 
 class TestClimatologyProbe:
@@ -340,21 +388,12 @@ class TestClimatologyProbe:
             f"{dc.label}: expected 13 climatology time steps (12 months + annual), got {len(times)}"
         )
 
-    def test_climatology_full_year_returns_13_records(self, dc: _DatasetCase):
+    def test_climatology_full_year_returns_13_records(self, dc: _DatasetCase, clim_result: dict):
         """Date range spanning all 12 calendar months → 13 records."""
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date="2019-01-01",
-            end_date="2019-12-31",
-            temporal_resolution=TemporalResolution.CLIMATOLOGY,
-            variables=[dc.primary_var],
-            max_runtime_s=60.0,
+        assert clim_result["_meta"]["success"] is True, (
+            f"{dc.label}: climatology query failed — {clim_result['_meta'].get('error')}"
         )
-        assert result["_meta"]["success"] is True, (
-            f"{dc.label}: climatology query failed — {result['_meta'].get('error')}"
-        )
-        n = len(result["data"][0]["records"])
+        n = len(clim_result["data"][0]["records"])
         assert n == 13, f"{dc.label}: expected 13 climatology records (full year), got {n}"
 
     def test_climatology_single_month_returns_2_records(self, dc: _DatasetCase):
@@ -401,19 +440,10 @@ class TestClimatologyProbe:
         for expected in ("month-06", "month-07", "month-08", "annual"):
             assert expected in dates, f"{dc.label}: '{expected}' missing from {dates}"
 
-    def test_climatology_full_year_date_labels(self, dc: _DatasetCase):
-        """Full-year query: records labeled month-01…month-12 and annual."""
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date="2019-01-01",
-            end_date="2019-12-31",
-            temporal_resolution=TemporalResolution.CLIMATOLOGY,
-            variables=[dc.primary_var],
-            max_runtime_s=60.0,
-        )
-        assert result["_meta"]["success"] is True
-        dates = {r["date"] for r in result["data"][0]["records"]}
+    def test_climatology_full_year_date_labels(self, dc: _DatasetCase, clim_result: dict):
+        """Full-year query: records labeled month-01...month-12 and annual."""
+        assert clim_result["_meta"]["success"] is True
+        dates = {r["date"] for r in clim_result["data"][0]["records"]}
         expected = {f"month-{m:02d}" for m in range(1, 13)} | {"annual"}
         assert dates == expected, f"{dc.label}: date labels mismatch — got {sorted(dates)}"
 
@@ -441,35 +471,31 @@ class TestNonDefaultVariable:
         )
 
 
+@pytest.fixture(scope="module")
+def unavail_result(dc: _DatasetCase) -> dict:
+    """Query for unavailable variables."""
+    return dc.point_fn(
+        latitude=_LAT,
+        longitude=_LON,
+        start_date=_DATE,
+        end_date=_DATE,
+        temporal_resolution=TemporalResolution.DAILY,
+        variables=[dc.primary_var, "DOES_NOT_EXIST_XYZ"],
+        max_runtime_s=60.0,
+    )
+
+
 class TestUnavailableVariable:
     """Requesting a non-existent variable name does not crash; it is reported."""
 
-    def test_nonexistent_variable_in_unavailable_list(self, dc: _DatasetCase):
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[dc.primary_var, "DOES_NOT_EXIST_XYZ"],
-            max_runtime_s=60.0,
-        )
-        assert result["_meta"]["success"] is True
-        assert "DOES_NOT_EXIST_XYZ" in result["_meta"]["unavailable_variables"], (
+    def test_nonexistent_variable_in_unavailable_list(self, dc: _DatasetCase, unavail_result: dict):
+        assert unavail_result["_meta"]["success"] is True
+        assert "DOES_NOT_EXIST_XYZ" in unavail_result["_meta"]["unavailable_variables"], (
             f"{dc.label}: non-existent variable not reported in unavailable_variables"
         )
 
-    def test_nonexistent_variable_absent_from_row(self, dc: _DatasetCase):
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[dc.primary_var, "DOES_NOT_EXIST_XYZ"],
-            max_runtime_s=60.0,
-        )
-        assert "DOES_NOT_EXIST_XYZ" not in result["data"][0]["records"][0]
+    def test_nonexistent_variable_absent_from_row(self, dc: _DatasetCase, unavail_result: dict):
+        assert "DOES_NOT_EXIST_XYZ" not in unavail_result["data"][0]["records"][0]
 
 
 class TestMaxRuntimeGate:
@@ -529,45 +555,34 @@ class TestMaxRuntimeGate:
         assert len(result["data"]) > 0
 
 
+@pytest.fixture(scope="module")
+def bbox_result(dc: _DatasetCase) -> dict:
+    """Bounding box query."""
+    return dc.bbox_fn(
+        **_BBOX,
+        start_date=_DATE,
+        end_date=_DATE,
+        temporal_resolution=TemporalResolution.DAILY,
+        variables=[dc.primary_var],
+        max_runtime_s=60.0,
+    )
+
+
 class TestBboxQuery:
     """Bbox queries return grid points with correct structure and plausible values."""
 
-    def test_returns_data(self, dc: _DatasetCase):
-        result = dc.bbox_fn(
-            **_BBOX,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[dc.primary_var],
-            max_runtime_s=60.0,
-        )
-        assert result["_meta"]["success"] is True
-        assert len(result["data"]) > 0
+    def test_returns_data(self, dc: _DatasetCase, bbox_result: dict):
+        assert bbox_result["_meta"]["success"] is True
+        assert len(bbox_result["data"]) > 0
 
-    def test_has_interior_and_buffer_points(self, dc: _DatasetCase):
-        result = dc.bbox_fn(
-            **_BBOX,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[dc.primary_var],
-            max_runtime_s=60.0,
-        )
-        in_bbox = [pt for pt in result["data"] if pt["in_bbox"]]
-        buffer = [pt for pt in result["data"] if not pt["in_bbox"]]
+    def test_has_interior_and_buffer_points(self, dc: _DatasetCase, bbox_result: dict):
+        in_bbox = [pt for pt in bbox_result["data"] if pt["in_bbox"]]
+        buffer = [pt for pt in bbox_result["data"] if not pt["in_bbox"]]
         assert len(in_bbox) >= 1, f"{dc.label}: no in_bbox=True grid points"
         assert len(buffer) >= 1, f"{dc.label}: no buffer (in_bbox=False) grid points"
 
-    def test_grid_point_structure(self, dc: _DatasetCase):
-        result = dc.bbox_fn(
-            **_BBOX,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[dc.primary_var],
-            max_runtime_s=60.0,
-        )
-        for pt in result["data"]:
+    def test_grid_point_structure(self, dc: _DatasetCase, bbox_result: dict):
+        for pt in bbox_result["data"]:
             assert "latitude" in pt
             assert "longitude" in pt
             assert "in_bbox" in pt
@@ -575,16 +590,8 @@ class TestBboxQuery:
             assert len(pt["records"]) == 1
             assert dc.primary_var in pt["records"][0]
 
-    def test_primary_var_plausible_at_all_points(self, dc: _DatasetCase):
-        result = dc.bbox_fn(
-            **_BBOX,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[dc.primary_var],
-            max_runtime_s=60.0,
-        )
-        for pt in result["data"]:
+    def test_primary_var_plausible_at_all_points(self, dc: _DatasetCase, bbox_result: dict):
+        for pt in bbox_result["data"]:
             val = pt["records"][0][dc.primary_var]
             assert dc.plausible_lo <= val <= dc.plausible_hi, (
                 f"{dc.label} bbox: {dc.primary_var}={val} out of plausible range at "
@@ -603,16 +610,8 @@ class TestBboxQuery:
         for pt in result["data"]:
             assert len(pt["records"]) == 3
 
-    def test_meta_query_params_echoed(self, dc: _DatasetCase):
-        result = dc.bbox_fn(
-            **_BBOX,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[dc.primary_var],
-            max_runtime_s=60.0,
-        )
-        qp = result["_meta"]["query_params"]
+    def test_meta_query_params_echoed(self, dc: _DatasetCase, bbox_result: dict):
+        qp = bbox_result["_meta"]["query_params"]
         assert qp["min_lat"] == _BBOX["min_lat"]
         assert qp["max_lat"] == _BBOX["max_lat"]
         assert qp["temporal_resolution"] == "daily"

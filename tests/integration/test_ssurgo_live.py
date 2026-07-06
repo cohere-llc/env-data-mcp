@@ -245,6 +245,12 @@ def baseline_bbox(qc: _QueryCase) -> dict:
     )
 
 
+@pytest.fixture(scope="module")
+def avail_result(qc: _QueryCase) -> dict:
+    """Results for available variables queries."""
+    return qc.avail_fn()
+
+
 # ---------------------------------------------------------------------------
 # Test classes — all parametrized by the `qc` fixture (8 query types)
 # ---------------------------------------------------------------------------
@@ -253,59 +259,53 @@ def baseline_bbox(qc: _QueryCase) -> dict:
 class TestAvailableVariables:
     """available_variables tool returns a non-empty result with the expected shape."""
 
-    def test_returns_nonempty(self, qc: _QueryCase):
-        result = qc.avail_fn()
+    def test_returns_nonempty(self, qc: _QueryCase, avail_result: dict):
         key = "data"
-        assert len(result[key]) > 0, f"{qc.label}: avail result is empty"
+        assert len(avail_result[key]) > 0, f"{qc.label}: avail result is empty"
 
-    def test_result_key_present(self, qc: _QueryCase):
-        result = qc.avail_fn()
+    def test_result_key_present(self, qc: _QueryCase, avail_result: dict):
         key = "data"
-        assert key in result, f"{qc.label}: expected key '{key}' missing from avail result"
+        assert key in avail_result, f"{qc.label}: expected key '{key}' missing from avail result"
 
-    def test_primary_col_listed(self, qc: _QueryCase):
-        result = qc.avail_fn()
+    def test_primary_col_listed(self, qc: _QueryCase, avail_result: dict):
         if qc.uses_rule_names:
-            rule_names = result["data"]
+            rule_names = avail_result["data"]
             assert any(r in rule_names for r in qc.default_rule_names), (
                 f"{qc.label}: none of the default rule names found in SDA cointerp"
             )
         else:
-            all_vars = list(result["data"].keys())
+            all_vars = list(avail_result["data"].keys())
             assert qc.primary_col in all_vars, (
                 f"{qc.label}: primary_col '{qc.primary_col}' absent from available variables"
                 " — SDA schema change?"
             )
 
-    def test_meta_success(self, qc: _QueryCase):
-        result = qc.avail_fn()
-        assert result["_meta"]["success"] is True, (
-            f"{qc.label}: avail_fn meta.success is False — {result['_meta'].get('error')}"
+    def test_meta_success(self, qc: _QueryCase, avail_result: dict):
+        assert avail_result["_meta"]["success"] is True, (
+            f"{qc.label}: avail_fn meta.success is False — {avail_result['_meta'].get('error')}"
         )
 
-    def test_all_default_vars_present(self, qc: _QueryCase):
+    def test_all_default_vars_present(self, qc: _QueryCase, avail_result: dict):
         if qc.uses_rule_names:
             pytest.skip("soil_suitability uses rule_names, not variable columns")
-        result = qc.avail_fn()
-        all_vars = list(result["data"].keys())
+        all_vars = list(avail_result["data"].keys())
         missing = [v for v in qc.default_vars if v not in all_vars]
         assert not missing, (
             f"{qc.label}: default variables missing from available set: {missing}"
             " — SDA schema change?"
         )
 
-    def test_more_than_defaults_available(self, qc: _QueryCase):
+    def test_more_than_defaults_available(self, qc: _QueryCase, avail_result: dict):
         """SDA exposes additional columns beyond the curated default set."""
         if qc.uses_rule_names:
             pytest.skip("soil_suitability uses rule_names, not variable columns")
-        result = qc.avail_fn()
-        all_vars = list(result["data"].keys())
+        all_vars = list(avail_result["data"].keys())
         assert len(all_vars) > len(qc.default_vars), (
             f"{qc.label}: expected more columns than the {len(qc.default_vars)} defaults,"
             f" but only got {len(all_vars)}"
         )
 
-    def test_each_entry_has_variable_name_and_metadata(self, qc: _QueryCase):
+    def test_each_entry_has_variable_name_and_metadata(self, qc: _QueryCase, avail_result: dict):
         """Every entry has non-empty 'description' and a 'units' key.
 
         Descriptions and units are parsed from the SDA Tables and Columns
@@ -315,21 +315,19 @@ class TestAvailableVariables:
         """
         if qc.uses_rule_names:
             pytest.skip("soil_suitability uses rule_names, not variable columns")
-        result = qc.avail_fn()
-        for col, entry in result["data"].items():
+        for col, entry in avail_result["data"].items():
             assert col, f"{qc.label}: empty column name in available variables"
             assert entry.get("description"), (
                 f"{qc.label}: column '{col}' missing non-empty 'description'"
             )
             assert "units" in entry, f"{qc.label}: column '{col}' missing 'units' key"
 
-    def test_schema_valid(self, qc: _QueryCase):
+    def test_schema_valid(self, qc: _QueryCase, avail_result: dict):
         """Full available_variables response validates against its Pydantic schema."""
-        result = qc.avail_fn()
         if qc.uses_rule_names:
-            SuitabilityRulesResponse.model_validate(result)
+            SuitabilityRulesResponse.model_validate(avail_result)
         else:
-            AvailableVariablesResponse.model_validate(result)
+            AvailableVariablesResponse.model_validate(avail_result)
 
 
 class TestPointQueryStructure:
