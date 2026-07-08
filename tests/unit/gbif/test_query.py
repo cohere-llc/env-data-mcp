@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import httpx
 import pytest
@@ -71,34 +71,43 @@ _EXPECTED_QUERY_OUTPUT: list[dict[str, Any]] = [
     },
 ]
 
+_SCHEMA_ENDPOINT = "https://techdocs.gbif.org/openapi/occurrence.json"
+
+_OCCURRENCE_RESPONSE = {
+    "components": {
+        "schemas": {
+            "Occurrence": {
+                "properties": {
+                    "foo": {"description": "fooness"},
+                    "bar": {"description": "baricity"},
+                }
+            }
+        }
+    }
+}
+
 
 def _make_mock_response(
     results: list[dict[str, Any]],
     count: int,
     end_of_records: bool = True,
-) -> MagicMock:
-    """Return a MagicMock that looks like an httpx.Response."""
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status.return_value = None
-    mock_resp.json.return_value = {
-        "count": count,
-        "endOfRecords": end_of_records,
-        "results": results,
-    }
-    return mock_resp
+) -> httpx.Response:
+    """Return an httpx.Response with a GBIF-style JSON body."""
+    return httpx.Response(
+        200,
+        json={"count": count, "endOfRecords": end_of_records, "results": results},
+    )
 
 
 def _make_mock_get(
     *,
     expected_taxon_key: int | None = None,
     number_of_results: int = 2,
-) -> Callable:
-    def mock_get(
-        url: str, *, params: dict[str, Any] | None = None, timeout: int | None = None
-    ) -> MagicMock:
-        assert url == _QUERY_ENDPOINTS[_QueryType.OCCURRENCE]
-        assert timeout == 30
-        assert params is not None
+) -> Callable[[httpx.Request], httpx.Response]:
+    def callback(request: httpx.Request) -> httpx.Response:
+        base_url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
+        assert base_url == _QUERY_ENDPOINTS[_QueryType.OCCURRENCE]
+        params = dict(request.url.params)
         lats = params["decimalLatitude"].split(",")
         assert len(lats) == 2
         assert float(lats[0]) == pytest.approx(46.2, rel=0.01)
@@ -109,9 +118,9 @@ def _make_mock_get(
         assert float(lons[1]) == pytest.approx(-119.4, rel=0.01)
         assert params["eventDate"] == "2019-08-01,2019-08-31"
         if expected_taxon_key:
-            assert params["taxonKey"] == expected_taxon_key
-        assert params["limit"] > 0
-        assert params["offset"] == 0
+            assert params["taxonKey"] == str(expected_taxon_key)
+        assert int(params["limit"]) > 0
+        assert int(params["offset"]) == 0
 
         return _make_mock_response(
             results=_SAMPLE_API_RECORDS[:number_of_results],
@@ -119,37 +128,7 @@ def _make_mock_get(
             end_of_records=True,
         )
 
-    return mock_get
-
-
-def _make_mock_variable_response() -> MagicMock:
-    """Return a MagicMock that looks like an httpx.Response for variable info."""
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status.return_value = None
-    mock_resp.json.return_value = {
-        "components": {
-            "schemas": {
-                "Occurrence": {
-                    "properties": {
-                        "foo": {"description": "fooness"},
-                        "bar": {"description": "baricity"},
-                    }
-                }
-            }
-        }
-    }
-    return mock_resp
-
-
-def _make_mock_error_status() -> MagicMock:
-    """Return a MagicMock that acts as an httpx.Response that returns an error status."""
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "Some HTTP error",
-        request=httpx.Request("GET", "http://some.url.com"),
-        response=httpx.Response(404),
-    )
-    return mock_resp
+    return callback
 
 
 # ---------------------------------------------------------------------------
@@ -158,13 +137,11 @@ def _make_mock_error_status() -> MagicMock:
 
 
 @patch("env_data_mcp.sources.gbif._query._VARIABLE_INFO_CACHE", {})
-def test_get_variable_info():
-    with patch("env_data_mcp.sources.gbif._query.httpx.Client") as mock_client_cls:
-        client = mock_client_cls.return_value.__enter__.return_value
-        client.get.return_value = _make_mock_variable_response()
+def test_get_variable_info(httpx_mock):
+    httpx_mock.add_response(url=_SCHEMA_ENDPOINT, json=_OCCURRENCE_RESPONSE)
 
-        var_info = _get_variable_info(_QueryType.OCCURRENCE)
-        var_info_2 = _get_variable_info(_QueryType.OCCURRENCE)
+    var_info = _get_variable_info(_QueryType.OCCURRENCE)
+    var_info_2 = _get_variable_info(_QueryType.OCCURRENCE)
 
     assert var_info == var_info_2
     assert len(var_info.items()) == 2
@@ -177,13 +154,11 @@ def test_get_variable_info():
 
 
 @patch("env_data_mcp.sources.gbif._query._VARIABLE_INFO_CACHE", {})
-def test_get_variable_info_raises_for_status():
-    with patch("env_data_mcp.sources.gbif._query.httpx.Client") as mock_client_cls:
-        client = mock_client_cls.return_value.__enter__.return_value
-        client.get.return_value = _make_mock_error_status()
+def test_get_variable_info_raises_for_status(httpx_mock):
+    httpx_mock.add_response(url=_SCHEMA_ENDPOINT, status_code=404)
 
-        with pytest.raises(httpx.HTTPStatusError):
-            _ = _get_variable_info(_QueryType.OCCURRENCE)
+    with pytest.raises(httpx.HTTPStatusError):
+        _ = _get_variable_info(_QueryType.OCCURRENCE)
 
 
 # ---------------------------------------------------------------------------
@@ -194,14 +169,8 @@ def test_get_variable_info_raises_for_status():
 class TestQueryPoint:
     """Tests of the GBIF _query_point() function"""
 
-    @pytest.fixture(autouse=True)
-    def _mock_http_get(self):
-        with patch("env_data_mcp.sources.gbif._query.httpx.get") as mock_get:
-            self.get = mock_get
-            self.get.side_effect = _make_mock_get()
-            yield
-
-    def test_returns_records(self):
+    def test_returns_records(self, httpx_mock):
+        httpx_mock.add_callback(_make_mock_get())
         results, unique_licenses = _query_point(
             lat=_YAKIMA_LAT,
             lon=_YAKIMA_LON,
@@ -226,94 +195,86 @@ class TestQueryPoint:
         assert "http://creativecommons.org/licenses/by/4.0/legalcode" in unique_licenses
         assert "http://creativecommons.org/publicdomain/zero/1.0/legalcode" in unique_licenses
 
-    def test_returns_results_with_taxon_key(self):
-        with patch("env_data_mcp.sources.gbif._query.httpx.get") as mock_get:
-            mock_get.side_effect = _make_mock_get(expected_taxon_key=2881663, number_of_results=1)
-
-            results, unique_licenses = _query_point(
-                lat=_YAKIMA_LAT,
-                lon=_YAKIMA_LON,
-                start_date="2019-08-01",
-                end_date="2019-08-31",
-                query_type=_QueryType.OCCURRENCE,
-                radius_km=5.0,
-                taxon_key=2881663,
-                variables=[
-                    "key",
-                    "species",
-                    "decimalLatitude",
-                    "decimalLongitude",
-                    "eventDate",
-                    "taxonKey",
-                    "license",
-                ],
-                limit=2,
-            )
+    def test_returns_results_with_taxon_key(self, httpx_mock):
+        httpx_mock.add_callback(_make_mock_get(expected_taxon_key=2881663, number_of_results=1))
+        results, unique_licenses = _query_point(
+            lat=_YAKIMA_LAT,
+            lon=_YAKIMA_LON,
+            start_date="2019-08-01",
+            end_date="2019-08-31",
+            query_type=_QueryType.OCCURRENCE,
+            radius_km=5.0,
+            taxon_key=2881663,
+            variables=[
+                "key",
+                "species",
+                "decimalLatitude",
+                "decimalLongitude",
+                "eventDate",
+                "taxonKey",
+                "license",
+            ],
+            limit=2,
+        )
         assert results == _EXPECTED_QUERY_OUTPUT[:1]
         assert len(unique_licenses) == 1
         assert "http://creativecommons.org/licenses/by/4.0/legalcode" in unique_licenses
 
-    def test_paginates_until_limit(self):
+    def test_paginates_until_limit(self, httpx_mock):
         extra_record = {**_SAMPLE_API_RECORDS[0], "key": 3333}
         extra_result = {**_EXPECTED_QUERY_OUTPUT[0], "records": [extra_record]}
-        with patch("env_data_mcp.sources.gbif._query.httpx.get") as mock_get:
-            mock_get.side_effect = [
-                _make_mock_response(_SAMPLE_API_RECORDS, count=2, end_of_records=False),
-                _make_mock_response([extra_record], count=1, end_of_records=False),
-            ]
-
-            results, unique_licenses = _query_point(
-                lat=_YAKIMA_LAT,
-                lon=_YAKIMA_LON,
-                start_date="2019-08-01",
-                end_date="2019-08-31",
-                query_type=_QueryType.OCCURRENCE,
-                radius_km=5.0,
-                taxon_key=None,
-                variables=[
-                    "key",
-                    "species",
-                    "decimalLatitude",
-                    "decimalLongitude",
-                    "eventDate",
-                    "taxonKey",
-                    "license",
-                ],
-                limit=3,
-            )
+        httpx_mock.add_response(
+            json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS}
+        )
+        httpx_mock.add_response(json={"count": 1, "endOfRecords": False, "results": [extra_record]})
+        results, unique_licenses = _query_point(
+            lat=_YAKIMA_LAT,
+            lon=_YAKIMA_LON,
+            start_date="2019-08-01",
+            end_date="2019-08-31",
+            query_type=_QueryType.OCCURRENCE,
+            radius_km=5.0,
+            taxon_key=None,
+            variables=[
+                "key",
+                "species",
+                "decimalLatitude",
+                "decimalLongitude",
+                "eventDate",
+                "taxonKey",
+                "license",
+            ],
+            limit=3,
+        )
         assert len(results) == 3
         assert results == [*_EXPECTED_QUERY_OUTPUT, extra_result]
         assert len(unique_licenses) == 2
         assert "http://creativecommons.org/licenses/by/4.0/legalcode" in unique_licenses
         assert "http://creativecommons.org/publicdomain/zero/1.0/legalcode" in unique_licenses
 
-    def test_returns_limited_results(self):
-        extra_record = {**_SAMPLE_API_RECORDS[0], "key": 3333}
-        with patch("env_data_mcp.sources.gbif._query.httpx.get") as mock_get:
-            mock_get.side_effect = [
-                _make_mock_response(_SAMPLE_API_RECORDS, count=2, end_of_records=False),
-                _make_mock_response([extra_record], count=1, end_of_records=False),
-            ]
-
-            results, unique_licenses = _query_point(
-                lat=_YAKIMA_LAT,
-                lon=_YAKIMA_LON,
-                start_date="2019-08-01",
-                end_date="2019-08-31",
-                query_type=_QueryType.OCCURRENCE,
-                radius_km=5.0,
-                taxon_key=None,
-                variables=[
-                    "key",
-                    "species",
-                    "decimalLatitude",
-                    "decimalLongitude",
-                    "eventDate",
-                    "taxonKey",
-                    "license",
-                ],
-                limit=2,
-            )
+    def test_returns_limited_results(self, httpx_mock):
+        httpx_mock.add_response(
+            json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS}
+        )
+        results, unique_licenses = _query_point(
+            lat=_YAKIMA_LAT,
+            lon=_YAKIMA_LON,
+            start_date="2019-08-01",
+            end_date="2019-08-31",
+            query_type=_QueryType.OCCURRENCE,
+            radius_km=5.0,
+            taxon_key=None,
+            variables=[
+                "key",
+                "species",
+                "decimalLatitude",
+                "decimalLongitude",
+                "eventDate",
+                "taxonKey",
+                "license",
+            ],
+            limit=2,
+        )
         assert len(results) == 2
         assert results == _EXPECTED_QUERY_OUTPUT
         assert len(unique_licenses) == 2
@@ -329,14 +290,8 @@ class TestQueryPoint:
 class TestQueryBbox:
     """Tests of the GBIF _query_bbox() function"""
 
-    @pytest.fixture(autouse=True)
-    def _mock_http_get(self):
-        with patch("env_data_mcp.sources.gbif._query.httpx.get") as mock_get:
-            self.get = mock_get
-            self.get.side_effect = _make_mock_get()
-            yield
-
-    def test_returns_records(self):
+    def test_returns_records(self, httpx_mock):
+        httpx_mock.add_callback(_make_mock_get())
         results, unique_licenses = _query_bbox(
             min_lat=46.2,
             max_lat=46.3,
@@ -362,97 +317,89 @@ class TestQueryBbox:
         assert "http://creativecommons.org/licenses/by/4.0/legalcode" in unique_licenses
         assert "http://creativecommons.org/publicdomain/zero/1.0/legalcode" in unique_licenses
 
-    def test_returns_results_with_taxon_key(self):
-        with patch("env_data_mcp.sources.gbif._query.httpx.get") as mock_get:
-            mock_get.side_effect = _make_mock_get(expected_taxon_key=2881663, number_of_results=1)
-
-            results, unique_licenses = _query_bbox(
-                min_lat=46.2,
-                max_lat=46.3,
-                min_lon=-119.5,
-                max_lon=-119.4,
-                start_date="2019-08-01",
-                end_date="2019-08-31",
-                query_type=_QueryType.OCCURRENCE,
-                taxon_key=2881663,
-                variables=[
-                    "key",
-                    "species",
-                    "decimalLatitude",
-                    "decimalLongitude",
-                    "eventDate",
-                    "taxonKey",
-                    "license",
-                ],
-                limit=2,
-            )
+    def test_returns_results_with_taxon_key(self, httpx_mock):
+        httpx_mock.add_callback(_make_mock_get(expected_taxon_key=2881663, number_of_results=1))
+        results, unique_licenses = _query_bbox(
+            min_lat=46.2,
+            max_lat=46.3,
+            min_lon=-119.5,
+            max_lon=-119.4,
+            start_date="2019-08-01",
+            end_date="2019-08-31",
+            query_type=_QueryType.OCCURRENCE,
+            taxon_key=2881663,
+            variables=[
+                "key",
+                "species",
+                "decimalLatitude",
+                "decimalLongitude",
+                "eventDate",
+                "taxonKey",
+                "license",
+            ],
+            limit=2,
+        )
         assert results == _EXPECTED_QUERY_OUTPUT[:1]
         assert len(unique_licenses) == 1
         assert "http://creativecommons.org/licenses/by/4.0/legalcode" in unique_licenses
 
-    def test_paginates_until_limit(self):
+    def test_paginates_until_limit(self, httpx_mock):
         extra_record = {**_SAMPLE_API_RECORDS[0], "key": 3333}
         extra_result = {**_EXPECTED_QUERY_OUTPUT[0], "records": [extra_record]}
-        with patch("env_data_mcp.sources.gbif._query.httpx.get") as mock_get:
-            mock_get.side_effect = [
-                _make_mock_response(_SAMPLE_API_RECORDS, count=2, end_of_records=False),
-                _make_mock_response([extra_record], count=1, end_of_records=False),
-            ]
-
-            results, unique_licenses = _query_bbox(
-                min_lat=46.2,
-                max_lat=46.3,
-                min_lon=-119.5,
-                max_lon=-119.4,
-                start_date="2019-08-01",
-                end_date="2019-08-31",
-                query_type=_QueryType.OCCURRENCE,
-                taxon_key=None,
-                variables=[
-                    "key",
-                    "species",
-                    "decimalLatitude",
-                    "decimalLongitude",
-                    "eventDate",
-                    "taxonKey",
-                    "license",
-                ],
-                limit=3,
-            )
+        httpx_mock.add_response(
+            json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS}
+        )
+        httpx_mock.add_response(json={"count": 1, "endOfRecords": False, "results": [extra_record]})
+        results, unique_licenses = _query_bbox(
+            min_lat=46.2,
+            max_lat=46.3,
+            min_lon=-119.5,
+            max_lon=-119.4,
+            start_date="2019-08-01",
+            end_date="2019-08-31",
+            query_type=_QueryType.OCCURRENCE,
+            taxon_key=None,
+            variables=[
+                "key",
+                "species",
+                "decimalLatitude",
+                "decimalLongitude",
+                "eventDate",
+                "taxonKey",
+                "license",
+            ],
+            limit=3,
+        )
         assert len(results) == 3
         assert results == [*_EXPECTED_QUERY_OUTPUT, extra_result]
         assert len(unique_licenses) == 2
         assert "http://creativecommons.org/licenses/by/4.0/legalcode" in unique_licenses
         assert "http://creativecommons.org/publicdomain/zero/1.0/legalcode" in unique_licenses
 
-    def test_returns_limited_results(self):
-        extra_record = {**_SAMPLE_API_RECORDS[0], "key": 3333}
-        with patch("env_data_mcp.sources.gbif._query.httpx.get") as mock_get:
-            mock_get.side_effect = [
-                _make_mock_response(_SAMPLE_API_RECORDS, count=2, end_of_records=False),
-                _make_mock_response([extra_record], count=1, end_of_records=False),
-            ]
-
-            results, unique_licenses = _query_bbox(
-                min_lat=46.2,
-                max_lat=46.3,
-                min_lon=-119.5,
-                max_lon=-119.4,
-                start_date="2019-08-01",
-                end_date="2019-08-31",
-                query_type=_QueryType.OCCURRENCE,
-                taxon_key=None,
-                variables=[
-                    "key",
-                    "species",
-                    "decimalLatitude",
-                    "decimalLongitude",
-                    "eventDate",
-                    "taxonKey",
-                    "license",
-                ],
-                limit=2,
-            )
+    def test_returns_limited_results(self, httpx_mock):
+        httpx_mock.add_response(
+            json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS}
+        )
+        results, unique_licenses = _query_bbox(
+            min_lat=46.2,
+            max_lat=46.3,
+            min_lon=-119.5,
+            max_lon=-119.4,
+            start_date="2019-08-01",
+            end_date="2019-08-31",
+            query_type=_QueryType.OCCURRENCE,
+            taxon_key=None,
+            variables=[
+                "key",
+                "species",
+                "decimalLatitude",
+                "decimalLongitude",
+                "eventDate",
+                "taxonKey",
+                "license",
+            ],
+            limit=2,
+        )
         assert len(results) == 2
         assert results == _EXPECTED_QUERY_OUTPUT
         assert len(unique_licenses) == 2
