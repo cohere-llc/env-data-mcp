@@ -24,6 +24,7 @@ from env_data_mcp.sources.soilgrids._query import (
     query_bbox,
 )
 from env_data_mcp.sources.soilgrids._types import Client
+from env_data_mcp.sources.soilgrids.constants import _LAYERS_INFO_URL
 
 _VARIABLE_INFO_HTML: str = """\
 <!DOCTYPE html>
@@ -133,28 +134,6 @@ _VARIABLE_INFO_HTML_MISSING_CONVERSION: str = """\
 """
 
 
-def _get_mock_httpx_client(html_text: str = _VARIABLE_INFO_HTML) -> MagicMock:
-    mock_resp = MagicMock()
-    mock_resp.text = html_text
-    mock_client = MagicMock()
-    mock_client.__enter__ = MagicMock(return_value=mock_client)
-    mock_client.__exit__ = MagicMock(return_value=False)
-    mock_client.get.return_value = mock_resp
-    return mock_client
-
-
-def _get_mock_httpx_client_status_errors() -> MagicMock:
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status.side_effect = HTTPStatusError(
-        "404 not found.", request=MagicMock(), response=MagicMock()
-    )
-    mock_client = MagicMock()
-    mock_client.__enter__ = MagicMock(return_value=mock_client)
-    mock_client.__exit__ = MagicMock(return_value=False)
-    mock_client.get.return_value = mock_resp
-    return mock_client
-
-
 def _get_mock_contents(contents: dict[str, Any] | None = None) -> WebCoverageService_1_0_0:
     # spec makes isinstance(mock, WebCoverageService_1_0_0) evaluate True.
     mock = MagicMock(spec=WebCoverageService_1_0_0)
@@ -185,15 +164,10 @@ def _get_mock_client_with_contents(contents: dict[str, Any]) -> Client:
 # ---------------------------------------------------------------------------
 
 
-def test_get_base_variable_list():
+def test_get_base_variable_list(httpx_mock):
     """Tests that get_base_variable_list returns variables."""
-    with (
-        patch(
-            "env_data_mcp.sources.soilgrids._query.httpx.Client",
-            return_value=_get_mock_httpx_client(),
-        ),
-        patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None),
-    ):
+    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
+    with patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None):
         variables = get_base_variable_list()
 
     assert len(variables) > 0
@@ -206,41 +180,28 @@ def test_get_base_variable_list():
     assert found
 
 
-def test_get_base_variable_list_raises_http_status_error():
+def test_get_base_variable_list_raises_http_status_error(httpx_mock):
     """Tests that HTTP status errors propogate."""
+    httpx_mock.add_response(url=_LAYERS_INFO_URL, status_code=404)
     with (
-        patch(
-            "env_data_mcp.sources.soilgrids._query.httpx.Client",
-            return_value=_get_mock_httpx_client_status_errors(),
-        ),
         patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None),
-        pytest.raises(HTTPStatusError, match="404 not found"),
+        pytest.raises(HTTPStatusError),
     ):
         _ = get_base_variable_list()
 
 
-def test_get_base_variable_list_returns_empty_for_bad_html():
+def test_get_base_variable_list_returns_empty_for_bad_html(httpx_mock):
     """Tests that an empty dict is returned for invalid HTML tables."""
-    with (
-        patch(
-            "env_data_mcp.sources.soilgrids._query.httpx.Client",
-            return_value=_get_mock_httpx_client(_VARIABLE_INFO_HTML_BAD_TABLE),
-        ),
-        patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None),
-    ):
+    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML_BAD_TABLE)
+    with patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None):
         variables = get_base_variable_list()
     assert variables == {}
 
 
-def test_get_base_variable_list_skips_invalid_conversion():
+def test_get_base_variable_list_skips_invalid_conversion(httpx_mock):
     """Tests that invalid values for conversion factor lead to a silent skip of that row."""
-    with (
-        patch(
-            "env_data_mcp.sources.soilgrids._query.httpx.Client",
-            return_value=_get_mock_httpx_client(_VARIABLE_INFO_HTML_MISSING_CONVERSION),
-        ),
-        patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None),
-    ):
+    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML_MISSING_CONVERSION)
+    with patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None):
         variables = get_base_variable_list()
     assert len(variables) == 3
     assert "phh2o" not in variables
@@ -250,12 +211,8 @@ def test_get_base_variable_list_uses_cache():
     """Tests that the first call sets the cache, and subsequent calls use it."""
     sentinel = {"bdod": MagicMock()}
 
-    with (
-        patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", sentinel),
-        patch("env_data_mcp.sources.soilgrids._query.httpx.Client") as mock_httpx,
-    ):
+    with patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", sentinel):
         result = get_base_variable_list()
-    mock_httpx.assert_not_called()
     assert result is sentinel
 
 
@@ -305,13 +262,12 @@ def test_get_specific_variable_info_raises_value_error(contents: dict[str, Any])
 # ---------------------------------------------------------------------------
 
 
-def test_get_variable_info_test():
+def test_get_variable_info_test(httpx_mock):
     """Test that get_variable_info returns results."""
+    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
     with (
-        patch(
-            "env_data_mcp.sources.soilgrids._query.httpx.Client",
-            return_value=_get_mock_httpx_client(),
-        ),
+        patch("env_data_mcp.sources.soilgrids._query._VARIABLE_INFO_CACHE", {}),
+        patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None),
         patch(
             "env_data_mcp.sources.soilgrids._query._get_specific_variable_info",
             side_effect=_mock_get_specific_variable_info,
@@ -336,14 +292,10 @@ def test_get_variable_info_test():
 def test_get_variable_info_uses_cache():
     """Tests that get_variable_info uses cached values when present."""
     mock_var_info = MagicMock()
-    with (
-        patch("env_data_mcp.sources.soilgrids._query.httpx.Client") as mock_httpx,
-        patch(
-            "env_data_mcp.sources.soilgrids._query._VARIABLE_INFO_CACHE", {"bdod": mock_var_info}
-        ),
+    with patch(
+        "env_data_mcp.sources.soilgrids._query._VARIABLE_INFO_CACHE", {"bdod": mock_var_info}
     ):
         var_info = get_variable_info("bdod")
-    mock_httpx.assert_not_called()
     assert var_info is mock_var_info
 
 
