@@ -5,13 +5,13 @@ All HTTP calls are mocked via a ``unittest.mock.patch``; no network access requi
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import patch
 
 import httpx
 import pytest
-import re
 
 from env_data_mcp.sources.gbif._query import (
     _estimate_query_runtime_s,
@@ -74,7 +74,7 @@ _EXPECTED_QUERY_OUTPUT: list[dict[str, Any]] = [
 
 _SCHEMA_ENDPOINT = "https://techdocs.gbif.org/openapi/occurrence.json"
 
-_OCCURRENCE_URL=re.compile(re.escape(_QUERY_ENDPOINTS[_QueryType.OCCURRENCE]) + ".*")
+_OCCURRENCE_URL = re.compile(re.escape(_QUERY_ENDPOINTS[_QueryType.OCCURRENCE]) + ".*")
 
 _OCCURRENCE_RESPONSE = {
     "components": {
