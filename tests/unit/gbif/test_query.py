@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import httpx
 import pytest
+import re
 
 from env_data_mcp.sources.gbif._query import (
     _estimate_query_runtime_s,
@@ -72,6 +73,8 @@ _EXPECTED_QUERY_OUTPUT: list[dict[str, Any]] = [
 ]
 
 _SCHEMA_ENDPOINT = "https://techdocs.gbif.org/openapi/occurrence.json"
+
+_OCCURRENCE_URL=re.compile(re.escape(_QUERY_ENDPOINTS[_QueryType.OCCURRENCE]) + ".*")
 
 _OCCURRENCE_RESPONSE = {
     "components": {
@@ -225,12 +228,12 @@ class TestQueryPoint:
         extra_result = {**_EXPECTED_QUERY_OUTPUT[0], "records": [extra_record]}
         httpx_mock.add_response(
             method="GET",
-            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            url=_OCCURRENCE_URL,
             json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS},
         )
         httpx_mock.add_response(
             method="GET",
-            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            url=_OCCURRENCE_URL,
             json={"count": 1, "endOfRecords": False, "results": [extra_record]},
         )
         results, unique_licenses = _query_point(
@@ -261,7 +264,7 @@ class TestQueryPoint:
     def test_returns_limited_results(self, httpx_mock):
         httpx_mock.add_response(
             method="GET",
-            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            url=_OCCURRENCE_URL,
             json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS},
         )
         results, unique_licenses = _query_point(
@@ -356,12 +359,12 @@ class TestQueryBbox:
         extra_result = {**_EXPECTED_QUERY_OUTPUT[0], "records": [extra_record]}
         httpx_mock.add_response(
             method="GET",
-            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            url=_OCCURRENCE_URL,
             json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS},
         )
         httpx_mock.add_response(
             method="GET",
-            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            url=_OCCURRENCE_URL,
             json={"count": 1, "endOfRecords": False, "results": [extra_record]},
         )
         results, unique_licenses = _query_bbox(
@@ -393,7 +396,7 @@ class TestQueryBbox:
     def test_returns_limited_results(self, httpx_mock):
         httpx_mock.add_response(
             method="GET",
-            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            url=_OCCURRENCE_URL,
             json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS},
         )
         results, unique_licenses = _query_bbox(
