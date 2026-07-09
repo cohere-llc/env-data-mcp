@@ -6,13 +6,15 @@ All HTTP and HDF5 I/O is mocked; no network access required.
 from __future__ import annotations
 
 import io
-from unittest.mock import MagicMock, patch
+import re
+from unittest.mock import patch
 
 import h5py
 import numpy as np
 import pytest
 
 from env_data_mcp.sources.oco2 import (
+    _CMR_GRANULES,
     LICENSE_INFO,
     _cmr_search,
     _fetch_granule_bytes,
@@ -35,6 +37,8 @@ from env_data_mcp.sources.oco2 import (
 
 _YAKIMA_LAT = 46.2531882
 _YAKIMA_LON = -119.4768203
+
+_CMR_URL = re.compile(re.escape(_CMR_GRANULES) + ".*")
 
 # OCO-2 L3 uses a 0.5° × 0.625° grid (360 rows × 576 cols)
 _NROWS = 360
@@ -527,15 +531,11 @@ def test_get_download_url_last_resort_https():
 # ---------------------------------------------------------------------------
 
 
-def test_cmr_search_success():
-    mock_resp = MagicMock()
-    mock_resp.json.return_value = {"feed": {"entry": [{"title": "oco2_granule"}]}}
-    mock_resp.raise_for_status.return_value = None
-    with patch("env_data_mcp.sources.oco2.httpx.get", return_value=mock_resp) as mock_get:
-        result = _cmr_search("2019-08-19", "2019-08-19", "test-token")
+def test_cmr_search_success(httpx_mock):
+    httpx_mock.add_response(url=_CMR_URL, json={"feed": {"entry": [{"title": "oco2_granule"}]}})
+    result = _cmr_search("2019-08-19", "2019-08-19", "test-token")
     assert result == [{"title": "oco2_granule"}]
-    call_kwargs = mock_get.call_args
-    assert "Authorization" in call_kwargs.kwargs["headers"]
+    assert "Authorization" in httpx_mock.get_requests()[0].headers
 
 
 # ---------------------------------------------------------------------------
@@ -543,13 +543,9 @@ def test_cmr_search_success():
 # ---------------------------------------------------------------------------
 
 
-def test_fetch_granule_bytes_401_raises():
-    mock_resp = MagicMock()
-    mock_resp.status_code = 401
-    with (
-        patch("env_data_mcp.sources.oco2.httpx.get", return_value=mock_resp),
-        pytest.raises(ValueError, match="HTTP 401"),
-    ):
+def test_fetch_granule_bytes_401_raises(httpx_mock):
+    httpx_mock.add_response(url="https://example.com/data.he5", status_code=401)
+    with pytest.raises(ValueError, match="HTTP 401"):
         _fetch_granule_bytes("https://example.com/data.he5", "bad-token")
 
 

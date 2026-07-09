@@ -12,6 +12,7 @@ EMIT OPeNDAP workflow per granule:
 from __future__ import annotations
 
 import io
+import re
 from unittest.mock import patch
 
 import h5py
@@ -19,6 +20,7 @@ import numpy as np
 import pytest
 
 from env_data_mcp.sources.emit import (
+    _CMR_GRANULES,
     LICENSE_INFO,
     _cmr_search,
     _decode_mineral_names,
@@ -39,6 +41,8 @@ from env_data_mcp.sources.emit import (
 
 _LAT = 36.1
 _LON = -115.2  # Nevada desert — should have interesting mineralogy
+
+_CMR_URL = re.compile(re.escape(_CMR_GRANULES) + ".*")
 
 _MINERAL_NAMES = ["Calcite", "Kaolinite", "Montmorillonite"]
 _ABUNDANCES = np.array([0.25, 0.10, 0.005], dtype=np.float32)  # 3rd is below threshold
@@ -488,15 +492,9 @@ def test_emit_bbox_query_echoes_clamped_bbox(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_fetch_opendap_nc4_401_raises():
-    from unittest.mock import MagicMock, patch
-
-    mock_resp = MagicMock()
-    mock_resp.status_code = 401
-    with (
-        patch("env_data_mcp.sources.emit.httpx.get", return_value=mock_resp),
-        pytest.raises(ValueError, match="HTTP 401"),
-    ):
+def test_fetch_opendap_nc4_401_raises(httpx_mock):
+    httpx_mock.add_response(status_code=401)
+    with pytest.raises(ValueError, match="HTTP 401"):
         _fetch_opendap_nc4(
             "https://opendap.earthdata.nasa.gov/emit/test",
             "/location/lat",
@@ -538,71 +536,50 @@ def test_emit_bbox_query_expired_token(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_cmr_search_paginates_through_all_results():
+def test_cmr_search_paginates_through_all_results(httpx_mock):
     """_cmr_search follows CMR-Search-After across multiple pages."""
-    from unittest.mock import MagicMock
-
     page1_granule = _make_cmr_granule(gid="g001")
     page2_granule = _make_cmr_granule(gid="g002")
-
-    call_count = 0
-
-    def _mock_get(url, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        resp = MagicMock()
-        resp.raise_for_status = lambda: None
-        if "CMR-Search-After" not in kwargs.get("headers", {}):
-            # First page: full page of results + cursor in response headers
-            resp.json.return_value = {"feed": {"entry": [page1_granule]}}
-            resp.headers = {"CMR-Search-After": '["token", 1, 2]'}
-        else:
-            # Second page: fewer results than page_size → last page
-            resp.json.return_value = {"feed": {"entry": [page2_granule]}}
-            resp.headers = {}
-        return resp
-
-    with patch("env_data_mcp.sources.emit.httpx.get", side_effect=_mock_get):
-        results = _cmr_search(
-            min_lon=-116.0,
-            min_lat=35.0,
-            max_lon=-114.0,
-            max_lat=37.0,
-            start_date="2020-01-01",
-            end_date="2023-12-31",
-            token="test-token",
-            page_size=1,  # force pagination at 1 result per page
-        )
-
+    httpx_mock.add_response(
+        url=_CMR_URL,
+        json={"feed": {"entry": [page1_granule]}},
+        headers={"CMR-Search-After": '["token", 1, 2]'},
+    )
+    httpx_mock.add_response(
+        url=_CMR_URL,
+        json={"feed": {"entry": [page2_granule]}},
+    )
+    results = _cmr_search(
+        min_lon=-116.0,
+        min_lat=35.0,
+        max_lon=-114.0,
+        max_lat=37.0,
+        start_date="2020-01-01",
+        end_date="2023-12-31",
+        token="test-token",
+        page_size=1,
+    )
     assert len(results) == 2
     assert results[0]["producer_granule_id"] == "g001"
     assert results[1]["producer_granule_id"] == "g002"
-    assert call_count == 2
+    assert len(httpx_mock.get_requests()) == 2
 
 
-def test_cmr_search_single_page_no_cursor():
+def test_cmr_search_single_page_no_cursor(httpx_mock):
     """_cmr_search stops after one request when CMR-Search-After header is absent."""
-    from unittest.mock import MagicMock
-
     granule = _make_cmr_granule()
-
-    def _mock_get(url, **kwargs):
-        resp = MagicMock()
-        resp.raise_for_status = lambda: None
-        resp.json.return_value = {"feed": {"entry": [granule]}}
-        resp.headers = {}  # no cursor → single page
-        return resp
-
-    with patch("env_data_mcp.sources.emit.httpx.get", side_effect=_mock_get) as mock_get:
-        results = _cmr_search(
-            min_lon=-116.0,
-            min_lat=35.0,
-            max_lon=-114.0,
-            max_lat=37.0,
-            start_date="2023-01-01",
-            end_date="2023-12-31",
-            token="test-token",
-        )
-
+    httpx_mock.add_response(
+        url=_CMR_URL,
+        json={"feed": {"entry": [granule]}},
+    )
+    results = _cmr_search(
+        min_lon=-116.0,
+        min_lat=35.0,
+        max_lon=-114.0,
+        max_lat=37.0,
+        start_date="2023-01-01",
+        end_date="2023-12-31",
+        token="test-token",
+    )
     assert len(results) == 1
-    assert mock_get.call_count == 1
+    assert len(httpx_mock.get_requests()) == 1
