@@ -224,9 +224,15 @@ class TestQueryPoint:
         extra_record = {**_SAMPLE_API_RECORDS[0], "key": 3333}
         extra_result = {**_EXPECTED_QUERY_OUTPUT[0], "records": [extra_record]}
         httpx_mock.add_response(
-            json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS}
+            method="GET",
+            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS},
         )
-        httpx_mock.add_response(json={"count": 1, "endOfRecords": False, "results": [extra_record]})
+        httpx_mock.add_response(
+            method="GET",
+            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            json={"count": 1, "endOfRecords": False, "results": [extra_record]},
+        )
         results, unique_licenses = _query_point(
             lat=_YAKIMA_LAT,
             lon=_YAKIMA_LON,
