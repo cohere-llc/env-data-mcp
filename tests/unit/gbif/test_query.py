@@ -392,7 +392,9 @@ class TestQueryBbox:
 
     def test_returns_limited_results(self, httpx_mock):
         httpx_mock.add_response(
-            json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS}
+            method="GET",
+            url=_QUERY_ENDPOINTS[_QueryType.OCCURRENCE],
+            json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS},
         )
         results, unique_licenses = _query_bbox(
             min_lat=46.2,
