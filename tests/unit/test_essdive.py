@@ -5,11 +5,13 @@ All HTTP calls are mocked; no network access required.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+import re
+from unittest.mock import patch
 
 import pytest
 
 from env_data_mcp.sources.essdive import (
+    _ESSDIVE_BASE,
     LICENSE_INFO,
     _aggregate_licenses,
     _extract_record,
@@ -193,63 +195,47 @@ def test_aggregate_licenses_blank_entries_skipped():
 
 
 # ---------------------------------------------------------------------------
-# _search_packages (mocked httpx.Client.get)
+# _search_packages (mocked via httpx_mock)
 # ---------------------------------------------------------------------------
 
-
-def _mock_get(response_body: dict, status_code: int = 200):
-    """Return a mock httpx response."""
-    mock_resp = MagicMock()
-    mock_resp.status_code = status_code
-    mock_resp.json.return_value = response_body
-    mock_resp.raise_for_status = MagicMock()
-    return mock_resp
+_ESSDIVE_URL = re.compile(re.escape(_ESSDIVE_BASE) + ".*")
 
 
-def test_search_packages_single_page():
+def test_search_packages_single_page(httpx_mock):
     body = _make_api_response(results=[_make_result(), _make_result(pkg_id="ess-dive-xyz")])
-    with patch("env_data_mcp.sources.essdive.httpx.Client") as MockClient:
-        instance = MockClient.return_value.__enter__.return_value
-        instance.get.return_value = _mock_get(body)
-        records = _search_packages({"lat": _YAKIMA_LAT, "lon": _YAKIMA_LON}, limit=25, token="tok")
+    httpx_mock.add_response(url=_ESSDIVE_URL, json=body)
+    records = _search_packages({"lat": _YAKIMA_LAT, "lon": _YAKIMA_LON}, limit=25, token="tok")
     assert len(records) == 2
 
 
-def test_search_packages_respects_limit():
+def test_search_packages_respects_limit(httpx_mock):
     results = [_make_result(pkg_id=f"ess-dive-{i}") for i in range(10)]
     body = _make_api_response(results=results)
-    with patch("env_data_mcp.sources.essdive.httpx.Client") as MockClient:
-        instance = MockClient.return_value.__enter__.return_value
-        instance.get.return_value = _mock_get(body)
-        records = _search_packages({}, limit=3, token="tok")
+    httpx_mock.add_response(url=_ESSDIVE_URL, json=body)
+    records = _search_packages({}, limit=3, token="tok")
     assert len(records) == 3
 
 
-def test_search_packages_401_raises_value_error():
-    mock_resp = MagicMock()
-    mock_resp.status_code = 401
-    with patch("env_data_mcp.sources.essdive.httpx.Client") as MockClient:
-        instance = MockClient.return_value.__enter__.return_value
-        instance.get.return_value = mock_resp
-        with pytest.raises(ValueError, match="401"):
-            _search_packages({}, limit=5, token="bad_token")
+def test_search_packages_401_raises_value_error(httpx_mock):
+    httpx_mock.add_response(url=_ESSDIVE_URL, status_code=401)
+    with pytest.raises(ValueError, match="401"):
+        _search_packages({}, limit=5, token="bad_token")
 
 
-def test_search_packages_pagination_follows_cursor():
+def test_search_packages_pagination_follows_cursor(httpx_mock):
     result1 = _make_result(pkg_id="pkg-1")
     result2 = _make_result(pkg_id="pkg-2")
     page1 = _make_api_response(results=[result1], next_cursor="cur_abc")
     page2 = _make_api_response(results=[result2], next_cursor=None)
-    with patch("env_data_mcp.sources.essdive.httpx.Client") as MockClient:
-        instance = MockClient.return_value.__enter__.return_value
-        instance.get.side_effect = [_mock_get(page1), _mock_get(page2)]
-        records = _search_packages({}, limit=25, token="tok")
+    httpx_mock.add_response(url=_ESSDIVE_URL, json=page1)
+    httpx_mock.add_response(url=_ESSDIVE_URL, json=page2)
+    records = _search_packages({}, limit=25, token="tok")
     assert len(records) == 2
     assert records[0]["id"] == "pkg-1"
     assert records[1]["id"] == "pkg-2"
     # second call must include the cursor
-    second_call_params = instance.get.call_args_list[1]
-    assert "cursor" in second_call_params.kwargs.get("params", {})
+    requests = httpx_mock.get_requests()
+    assert "cursor" in dict(requests[1].url.params)
 
 
 # ---------------------------------------------------------------------------
