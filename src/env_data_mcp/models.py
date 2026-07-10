@@ -133,30 +133,6 @@ class GroupedGeometryResponse(BaseModel):
     meta: ResponseMeta = Field(alias="_meta")
 
 
-class InlineGeometryRecord(BaseModel):
-    """One record from a tool that embeds geometry directly in each row.
-
-    ``extra="allow"`` absorbs all source-specific data columns.
-    """
-
-    model_config = ConfigDict(extra="allow")
-
-    geometry: GeoJsonGeometry | None
-
-
-class InlineGeometryResponse(BaseModel):
-    """Response schema for tools that embed per-record geometry.
-
-    Used by future GBIF, EMIT, and Sentinel-5P tools after inline geometry
-    is added.
-    """
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    data: list[InlineGeometryRecord]
-    meta: ResponseMeta = Field(alias="_meta")
-
-
 class ToolResponse(BaseModel):
     """Response schema for tools that return a flat list with no geometry.
 
