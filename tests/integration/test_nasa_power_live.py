@@ -126,6 +126,9 @@ _DATASET_CASES = [
 ]
 
 
+# A single confirmed date used for record-count and date-string tests.
+_SINGLE_DATE = "2019-08-19"
+
 # ---------------------------------------------------------------------------
 # Shared fixtures
 # ---------------------------------------------------------------------------
@@ -167,6 +170,19 @@ def nh_midlat_bbox_daily(dc: _DatasetCase) -> dict:
         end_date=NH_MIDLAT_BBOX.end_date,
         max_runtime_s=dc.spec.max_runtime_s,
         **dc.spec.extra_bbox_kwargs,
+    )
+
+
+@pytest.fixture(scope="module")
+def nh_rural_single_day(dc: _DatasetCase) -> dict:
+    """Daily point query at nh_rural for a single confirmed date."""
+    return dc.spec.point_query(
+        latitude=NH_RURAL.coordinates.latitude,
+        longitude=NH_RURAL.coordinates.longitude,
+        start_date=_SINGLE_DATE,
+        end_date=_SINGLE_DATE,
+        max_runtime_s=dc.spec.max_runtime_s,
+        **dc.spec.extra_point_kwargs,
     )
 
 
@@ -259,6 +275,14 @@ class TestPointQuery:
                     f"outside plausible range [{lo}, {hi}]"
                 )
 
+    def test_single_day_returns_one_record(self, nh_rural_single_day: dict) -> None:
+        """A single-day query returns exactly one temporal record."""
+        assert len(nh_rural_single_day["data"][0]["records"]) == 1
+
+    def test_single_day_date_matches_query(self, nh_rural_single_day: dict) -> None:
+        """The date string in the returned record matches the queried date."""
+        assert nh_rural_single_day["data"][0]["records"][0]["date"] == _SINGLE_DATE
+
 
 # ---------------------------------------------------------------------------
 # TestBboxQuery
@@ -342,6 +366,43 @@ class TestBboxQuery:
     ) -> None:
         """Every grid cell returned by the point query must also appear in the bbox results."""
         assert_point_results_in_bbox(nh_rural_daily["data"], nh_midlat_bbox_daily["data"])
+
+    def test_in_bbox_field_present_on_all_grid_points(self, nh_midlat_bbox_daily: dict) -> None:
+        """Every geometry group returned by a bbox query carries an ``in_bbox`` bool field."""
+        for pt in nh_midlat_bbox_daily["data"]:
+            assert "in_bbox" in pt, (
+                f"grid point at ({pt.get('latitude')}, {pt.get('longitude')}) "
+                "missing 'in_bbox' field"
+            )
+            assert isinstance(pt["in_bbox"], bool), (
+                f"'in_bbox' must be bool; got {type(pt['in_bbox'])}"
+            )
+
+    def test_has_interior_and_buffer_grid_points(
+        self, dc: _DatasetCase, nh_midlat_bbox_daily: dict
+    ) -> None:
+        """Bbox results include both interior (in_bbox=True) and buffer (in_bbox=False) cells."""
+        interior = [pt for pt in nh_midlat_bbox_daily["data"] if pt.get("in_bbox")]
+        buffer = [pt for pt in nh_midlat_bbox_daily["data"] if not pt.get("in_bbox")]
+        assert len(interior) >= 1, (
+            f"{dc.spec.name}: no interior (in_bbox=True) grid points in bbox result"
+        )
+        assert len(buffer) >= 1, (
+            f"{dc.spec.name}: no buffer (in_bbox=False) grid points in bbox result"
+        )
+
+    def test_record_count_per_grid_point(self, nh_midlat_bbox_daily: dict) -> None:
+        """Every grid point in a multi-day bbox query has one record per queried day.
+
+        The nh_midlat fixture uses the 7-day standard date window, so each grid
+        point must carry exactly 7 daily records.
+        """
+        for pt in nh_midlat_bbox_daily["data"]:
+            assert len(pt["records"]) == 7, (
+                f"Expected 7 records per grid point for 7-day query; "
+                f"got {len(pt['records'])} at "
+                f"({pt.get('latitude')}, {pt.get('longitude')})"
+            )
 
 
 # ---------------------------------------------------------------------------
