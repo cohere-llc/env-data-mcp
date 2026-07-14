@@ -310,6 +310,10 @@ class AdapterSpec:
     """Set to False for adapters that deliberately include buffer cells outside the queried bbox
     (e.g., NASA POWER expands by one grid cell on each edge)."""
 
+    supports_bbox_union_test: bool = True
+    """Set to False for adapters whose projected grid means that splitting a bbox into
+    east/west halves does not produce an exact pixel-set union of the full bbox."""
+
     use_small_bboxes: bool = False
     """Set to True for adapters with high data density (e.g. GBIF) so the common bbox tests
     use ``SMALL_BBOXES`` (1-degree) instead of ``STANDARD_BBOXES`` (4-degree). This keeps

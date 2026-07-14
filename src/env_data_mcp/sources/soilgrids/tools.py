@@ -35,6 +35,7 @@ def soilgrids_available_variables() -> dict[str, Any]:
 
     Creating the clients is slow, so we try to create them in parallel.
     """
+    t0 = time.perf_counter()
     base_info = get_base_variable_list()
     var_info_raw: dict[str, VariableInfo] = {}
 
@@ -59,7 +60,7 @@ def soilgrids_available_variables() -> dict[str, Any]:
                 query_params={},
                 geometries_returned=0,
                 total_records_returned=len(var_info),
-                latency_s=0.0,
+                latency_s=time.perf_counter() - t0,
                 license_info=LICENSE_INFO,
             ),
         }

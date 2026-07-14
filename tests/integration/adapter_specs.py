@@ -3,6 +3,7 @@
 from .common import AdapterSpec
 from .test_gbif_live import OCCURRENCE_SPEC as GBIF_OCCURRENCE_SPEC
 from .test_nasa_power_live import MERRA2_SPEC, SYN1DEG_SPEC
+from .test_soilgrids_live import SOILGRIDS_SPEC
 
 ALL_ADAPTER_SPECS: list[AdapterSpec] = [
     # NASA POWER specs
@@ -10,4 +11,6 @@ ALL_ADAPTER_SPECS: list[AdapterSpec] = [
     SYN1DEG_SPEC,
     # GBIF specs
     GBIF_OCCURRENCE_SPEC,
+    # SoilGrids specs
+    SOILGRIDS_SPEC,
 ]
