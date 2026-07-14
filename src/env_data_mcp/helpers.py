@@ -333,7 +333,7 @@ def build_meta(
         "unavailable_variables": unavailable_variables if unavailable_variables is not None else [],
         "geometries_returned": geometries_returned,
         "total_records_returned": total_records_returned,
-        "latency_s": round(latency_s, 3),
+        "latency_s": round(latency_s, 6),
         "auth_required": auth_required,
         "auth_present": auth_present,
         "success": success,

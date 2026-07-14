@@ -34,6 +34,7 @@ def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, A
 @mcp.tool()
 def gbif_occurrence_available_variables() -> dict[str, Any]:
     """Return a list of available GBIF Occurrence variables with descriptions."""
+    t0 = time.perf_counter()
     try:
         variable_info = _get_variable_info(_QueryType.OCCURRENCE)
         return _validate_available_variables_response(
@@ -44,7 +45,7 @@ def gbif_occurrence_available_variables() -> dict[str, Any]:
                     query_params={},
                     geometries_returned=0,
                     total_records_returned=len(variable_info),
-                    latency_s=0.0,
+                    latency_s=time.perf_counter() - t0,
                     license_info=LICENSE_INFO,
                 ),
             }
@@ -58,7 +59,7 @@ def gbif_occurrence_available_variables() -> dict[str, Any]:
                     query_params={},
                     geometries_returned=0,
                     total_records_returned=0,
-                    latency_s=0.0,
+                    latency_s=time.perf_counter() - t0,
                     license_info=LICENSE_INFO,
                     success=False,
                     error=str(e),
@@ -118,6 +119,27 @@ def gbif_occurrence_query(
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
         unavailable_vars = [var for var in variables if var not in full_var_info]
 
+        if not var_info:
+            # All requested variables are unknown; skip the API call and return empty data.
+            latency = time.perf_counter() - t0
+            return _validate_grouped_geometry_response(
+                {
+                    "data": [],
+                    "_meta": build_meta(
+                        source="gbif",
+                        query_params=query_params,
+                        geometries_returned=0,
+                        total_records_returned=0,
+                        latency_s=latency,
+                        license_info=LICENSE_INFO,
+                        variables=variables,
+                        variable_info={},
+                        unavailable_variables=unavailable_vars,
+                    ),
+                }
+            )
+
+        valid_vars = list(var_info.keys())
         n_days = date_range_days(start_date, end_date)
         bbox = point_to_bbox(
             latitude=point.latitude, longitude=point.longitude, radius_km=radius_km
@@ -133,7 +155,7 @@ def gbif_occurrence_query(
             query_type=_QueryType.OCCURRENCE,
             radius_km=radius_km,
             taxon_key=taxon_key,
-            variables=variables,
+            variables=valid_vars,
             limit=limit,
         )
         latency = time.perf_counter() - t0
@@ -231,6 +253,27 @@ def gbif_occurrence_bbox_query(
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
         unavailable_vars = [var for var in variables if var not in full_var_info]
 
+        if not var_info:
+            # All requested variables are unknown; skip the API call and return empty data.
+            latency = time.perf_counter() - t0
+            return _validate_grouped_geometry_response(
+                {
+                    "data": [],
+                    "_meta": build_meta(
+                        source="gbif",
+                        query_params=query_params,
+                        geometries_returned=0,
+                        total_records_returned=0,
+                        latency_s=latency,
+                        license_info=LICENSE_INFO,
+                        variables=variables,
+                        variable_info={},
+                        unavailable_variables=unavailable_vars,
+                    ),
+                }
+            )
+
+        valid_vars = list(var_info.keys())
         n_days = date_range_days(start_date, end_date)
         area_deg2 = (max_lat - min_lat) * (max_lon - min_lon)
         if warn := _estimate_query_runtime_s(n_days, area_deg2, max_runtime_s):
@@ -244,7 +287,7 @@ def gbif_occurrence_bbox_query(
             end_date=date_range.end_date,
             query_type=_QueryType.OCCURRENCE,
             taxon_key=taxon_key,
-            variables=variables,
+            variables=valid_vars,
             limit=limit,
         )
         latency = time.perf_counter() - t0

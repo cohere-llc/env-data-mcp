@@ -125,7 +125,9 @@ def _query_bbox(
         lic = rec.get("license", "")
         if lic:
             unique_licenses.add(lic)
-        data = {var: rec[var] for var in variables if var in rec}
+        # Include every requested variable; use None when the API omits the field for
+        # this particular record (GBIF occurrence responses have variable schemas).
+        data = {var: rec.get(var) for var in variables}
         records.append(
             {
                 "geometry": {

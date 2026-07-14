@@ -9,7 +9,9 @@ import pytest
 from .adapter_specs import ALL_ADAPTER_SPECS
 from .common import (
     NH_MIDLAT_BBOX,
+    NH_MIDLAT_SMALL_BBOX,
     NH_RURAL,
+    SMALL_BBOXES,
     STANDARD_BBOXES,
     STANDARD_LOCATIONS,
     AdapterSpec,
@@ -25,6 +27,17 @@ from .common import (
 )
 
 pytestmark = pytest.mark.integration
+
+# Pre-built label: small-bbox lookup for access inside tests.
+_SMALL_BBOXES_BY_LABEL: dict[str, BboxCase] = {b.label: b for b in SMALL_BBOXES}
+
+
+def _effective_bbox(spec: AdapterSpec, bbox: BboxCase) -> BboxCase:
+    """Return the spec-appropriate version of *bbox*."""
+    if not spec.use_small_bboxes:
+        return bbox
+    return _SMALL_BBOXES_BY_LABEL.get(bbox.label, bbox)
+
 
 # ---------------------------------------------------------------------------
 # Query kwarg builders
@@ -165,7 +178,8 @@ def nh_rural_result(spec: AdapterSpec) -> dict[str, Any]:
 @pytest.fixture(scope="module")
 def nh_midlat_bbox_result(spec: AdapterSpec) -> dict[str, Any]:
     """Cached bbox query at NH_MIDLAT_BBOX with default parameters; used by bbox tests."""
-    return spec.bbox_query(**_bbox_case_kwargs(spec, NH_MIDLAT_BBOX))
+    bbox = NH_MIDLAT_SMALL_BBOX if spec.use_small_bboxes else NH_MIDLAT_BBOX
+    return spec.bbox_query(**_bbox_case_kwargs(spec, bbox))
 
 
 # ---------------------------------------------------------------------------
@@ -269,9 +283,10 @@ class TestBboxQuery:
     """Bbox queries at all standard bboxes: metadata, schema, consistency, and adapter hooks."""
 
     def test_meta_at_bbox(self, spec: AdapterSpec, bbox_case: BboxCase) -> None:
-        result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox_case))
+        effective = _effective_bbox(spec, bbox_case)
+        result = spec.bbox_query(**_bbox_case_kwargs(spec, effective))
         assert_meta_success(result)
-        if spec.expects_data(bbox_case):
+        if spec.expects_data(effective):
             assert result["_meta"]["geometries_returned"] > 0
             assert result["_meta"]["total_records_returned"] > 0
         else:
@@ -281,9 +296,10 @@ class TestBboxQuery:
     def test_adapter_hook_at_bbox(self, spec: AdapterSpec, bbox_case: BboxCase) -> None:
         if spec.validate_bbox_result is None:
             pytest.skip(f"{spec.name}: no validate_bbox_result hook registered")
-        if not spec.expects_data(bbox_case):
+        effective = _effective_bbox(spec, bbox_case)
+        if not spec.expects_data(effective):
             pytest.skip(f"{spec.name}: no data expected at {bbox_case.label!r}; skipping hook")
-        result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox_case))
+        result = spec.bbox_query(**_bbox_case_kwargs(spec, effective))
         spec.validate_bbox_result(result)
 
     def test_point_in_bbox_consistency(
@@ -292,22 +308,23 @@ class TestBboxQuery:
         bbox_case: BboxCase,
     ) -> None:
         """Every (lat, lon) from a bbox-center point query appears in the full bbox result."""
-        if not spec.expects_data(bbox_case):
+        effective = _effective_bbox(spec, bbox_case)
+        if not spec.expects_data(effective):
             pytest.skip(
                 f"{spec.name}: no data expected at {bbox_case.label!r}; skipping consistency check"
             )
-        center_lat = (bbox_case.coordinates.min_lat + bbox_case.coordinates.max_lat) / 2.0
-        center_lon = (bbox_case.coordinates.min_lon + bbox_case.coordinates.max_lon) / 2.0
+        center_lat = (effective.coordinates.min_lat + effective.coordinates.max_lat) / 2.0
+        center_lon = (effective.coordinates.min_lon + effective.coordinates.max_lon) / 2.0
         point_result = spec.point_query(
             **_point_kwargs(
                 spec,
                 center_lat,
                 center_lon,
-                bbox_case.start_date,
-                bbox_case.end_date,
+                effective.start_date,
+                effective.end_date,
             )
         )
-        bbox_result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox_case))
+        bbox_result = spec.bbox_query(**_bbox_case_kwargs(spec, effective))
         assert_point_results_in_bbox(point_result["data"], bbox_result["data"])
 
     def test_adjacent_bbox_union(
@@ -318,20 +335,21 @@ class TestBboxQuery:
         """West and East sub-bboxes must union to equal the full bbox results."""
         if not getattr(spec, "supports_bbox_union_test", True):
             pytest.skip(f"{spec.name}: bbox union consistency not guaranteed for this adapter")
-        if not spec.expects_data(bbox_case):
+        effective = _effective_bbox(spec, bbox_case)
+        if not spec.expects_data(effective):
             pytest.skip(
                 f"{spec.name}: no data expected at {bbox_case.label!r}; skipping sub-box test"
             )
-        coords = bbox_case.coordinates
+        coords = effective.coordinates
         west_result = spec.bbox_query(
             **_bbox_kwargs(
                 spec,
                 coords.min_lat,
                 coords.max_lat,
                 coords.min_lon,
-                bbox_case.split_lon,
-                bbox_case.start_date,
-                bbox_case.end_date,
+                effective.split_lon,
+                effective.start_date,
+                effective.end_date,
             ),
         )
         east_result = spec.bbox_query(
@@ -339,13 +357,13 @@ class TestBboxQuery:
                 spec,
                 coords.min_lat,
                 coords.max_lat,
-                bbox_case.split_lon,
+                effective.split_lon,
                 coords.max_lon,
-                bbox_case.start_date,
-                bbox_case.end_date,
+                effective.start_date,
+                effective.end_date,
             ),
         )
-        full_result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox_case))
+        full_result = spec.bbox_query(**_bbox_case_kwargs(spec, effective))
 
         west_pairs = extract_lat_lon_pairs(west_result["data"], 2)
         east_pairs = extract_lat_lon_pairs(east_result["data"], 2)
@@ -375,13 +393,14 @@ class TestBboxQuery:
         """All returned coordinate pairs fall within the queried bbox (+-0.1 deg tolerance)."""
         if not spec.supports_bbox_bounds_test:
             pytest.skip(f"{spec.name}: adapter intentionally returns buffer cells outside bbox")
-        if not spec.expects_data(bbox_case):
+        effective = _effective_bbox(spec, bbox_case)
+        if not spec.expects_data(effective):
             pytest.skip(
                 f"{spec.name}: no data expected at {bbox_case.label!r}; skipping bounds check"
             )
-        result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox_case))
+        result = spec.bbox_query(**_bbox_case_kwargs(spec, effective))
         tol = 0.1  # degrees; covers raster pixel-centre overhang
-        c = bbox_case.coordinates
+        c = effective.coordinates
         for group in result["data"]:
             lat = group.get("latitude")
             lon = group.get("longitude")
@@ -463,9 +482,8 @@ class TestMaxRuntimeGate:
                 **_location_case_kwargs(spec, NH_RURAL, max_runtime_s_override=0.0)
             )
         else:
-            result = spec.bbox_query(
-                **_bbox_case_kwargs(spec, NH_MIDLAT_BBOX, max_runtime_s_override=0.0)
-            )
+            bbox = NH_MIDLAT_SMALL_BBOX if spec.use_small_bboxes else NH_MIDLAT_BBOX
+            result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox, max_runtime_s_override=0.0))
         assert_slow_query_blocked(result)
 
     @pytest.mark.parametrize("query_mode", ["point", "bbox"])
@@ -475,9 +493,8 @@ class TestMaxRuntimeGate:
                 **_location_case_kwargs(spec, NH_RURAL, max_runtime_s_override=3600.0)
             )
         else:
-            result = spec.bbox_query(
-                **_bbox_case_kwargs(spec, NH_MIDLAT_BBOX, max_runtime_s_override=3600.0)
-            )
+            bbox = NH_MIDLAT_SMALL_BBOX if spec.use_small_bboxes else NH_MIDLAT_BBOX
+            result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox, max_runtime_s_override=3600.0))
         assert_meta_success(result)
         assert len(result["data"]) > 0, (
             f"{spec.name}/{query_mode}: max_runtime_s=3600.0 should have returned data"

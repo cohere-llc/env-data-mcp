@@ -37,6 +37,7 @@ __all__ = [
     "assert_meta_valid",
     "assert_point_results_in_bbox",
     "assert_tool_response_valid",
+    "SMALL_BBOXES",
 ]
 
 # ---------------------------------------------------------------------------
@@ -197,6 +198,46 @@ STANDARD_BBOXES: list[BboxCase] = [
     ),
 ]
 
+# smaller bboxes centred at the same locations as STANDARD_BBOXES.
+# Use for adapters with high data density (e.g. GBIF) to keep common-test
+# query times manageable while preserving the same spatial coverage targets.
+SMALL_BBOXES: list[BboxCase] = [
+    BboxCase(
+        label="nh_midlat",
+        coordinates=BboxInput(min_lat=45.5, max_lat=46.5, min_lon=-120.5, max_lon=-119.5),
+        split_lon=-120,
+        hemisphere=Hemisphere.NORTH,
+        environment=Environment.RURAL,
+        description="Yakima River, WA (1x1-degree)",
+    ),
+    BboxCase(
+        label="sh_midlat",
+        coordinates=BboxInput(
+            min_lat=-50.5,
+            max_lat=-49.5,
+            min_lon=-70.5,
+            max_lon=-69.5,
+        ),
+        split_lon=-70,
+        hemisphere=Hemisphere.SOUTH,
+        environment=Environment.RURAL,
+        description="Patagonia, Argentina (1x1-degree)",
+    ),
+    BboxCase(
+        label="equatorial",
+        coordinates=BboxInput(
+            min_lat=-0.5,
+            max_lat=0.5,
+            min_lon=-30.5,
+            max_lon=-29.5,
+        ),
+        split_lon=-30,
+        hemisphere=Hemisphere.EQUATOR,
+        environment=Environment.OCEAN,
+        description="Mid-Atlantic Ocean (1x1-degree)",
+    ),
+]
+
 
 # ---------------------------------------------------------------------------
 # Module-level landmark references
@@ -204,6 +245,7 @@ STANDARD_BBOXES: list[BboxCase] = [
 
 NH_RURAL: LocationCase = next(p for p in STANDARD_LOCATIONS if p.label == "nh_rural")
 NH_MIDLAT_BBOX: BboxCase = next(b for b in STANDARD_BBOXES if b.label == "nh_midlat")
+NH_MIDLAT_SMALL_BBOX: BboxCase = next(b for b in SMALL_BBOXES if b.label == "nh_midlat")
 
 
 # ---------------------------------------------------------------------------
@@ -267,6 +309,11 @@ class AdapterSpec:
     supports_bbox_bounds_test: bool = True
     """Set to False for adapters that deliberately include buffer cells outside the queried bbox
     (e.g., NASA POWER expands by one grid cell on each edge)."""
+
+    use_small_bboxes: bool = False
+    """Set to True for adapters with high data density (e.g. GBIF) so the common bbox tests
+    use ``SMALL_BBOXES`` (1-degree) instead of ``STANDARD_BBOXES`` (4-degree). This keeps
+    query runtimes manageable without limiting record counts, which would break union tests."""
 
     validate_point_result: Callable[[dict], None] | None = None
     """Optional adapter-specific hook called after common assertions on a point query

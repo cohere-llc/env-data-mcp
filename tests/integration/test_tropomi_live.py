@@ -577,8 +577,10 @@ class TestTropomiBboxQuery:
         meta = bbox_result["_meta"]
         if bbox_case.expect_slow_warn:
             assert "exceeds" in meta["message"] and "threshold" in meta["message"]
+            assert "exceeds" in meta["error"] and "threshold" in meta["error"]
+        else:
+            assert meta["error"] is None
         assert meta["success"] == (not bbox_case.expect_slow_warn)
-        assert meta["error"] is None
         assert meta["source"] == "tropomi"
 
     def test_metadata_stats(self, bbox_case: _BboxCase, bbox_result: dict[str, Any]):
