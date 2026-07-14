@@ -43,16 +43,19 @@ def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, A
 @mcp.tool()
 def nasa_power_merra2_available_variables() -> dict[str, Any]:
     """Return a list of available NASA POWER MERRA-2 variables with descriptions and units."""
+    t0 = time.perf_counter()
     store = _open_store(DatasetType.MERRA2, TemporalResolution.DAILY)
     variable_info = _get_variable_info(store)
+    latency = time.perf_counter() - t0
     return _validate_available_variables_response(
         {
             "data": variable_info,
             "_meta": build_meta(
                 source="nasa_power",
                 query_params={},
-                rows_returned=len(variable_info),
-                latency_s=0.0,
+                geometries_returned=0,
+                total_records_returned=len(variable_info),
+                latency_s=latency,
                 license_info=SOURCE_INFO | MERRA2_INFO,
             ),
         }
@@ -62,16 +65,19 @@ def nasa_power_merra2_available_variables() -> dict[str, Any]:
 @mcp.tool()
 def nasa_power_syn1deg_available_variables() -> dict[str, Any]:
     """Return a list of available NASA POWER SYN1deg variables with descriptions and units."""
+    t0 = time.perf_counter()
     store = _open_store(DatasetType.SYN1DEG, TemporalResolution.DAILY)
     variable_info = _get_variable_info(store)
+    latency = time.perf_counter() - t0
     return _validate_available_variables_response(
         {
             "data": variable_info,
             "_meta": build_meta(
                 source="nasa_power",
                 query_params={},
-                rows_returned=len(variable_info),
-                latency_s=0.0,
+                geometries_returned=0,
+                total_records_returned=len(variable_info),
+                latency_s=latency,
                 license_info=SOURCE_INFO | SYN1DEG_INFO,
             ),
         }
@@ -145,7 +151,8 @@ def nasa_power_merra2_query(
                 "_meta": build_meta(
                     source="nasa_power",
                     query_params=query_params,
-                    rows_returned=len(data[0]["records"]) if data else 0,
+                    geometries_returned=len(data),
+                    total_records_returned=sum(len(r["records"]) for r in data),
                     latency_s=latency,
                     license_info=SOURCE_INFO | MERRA2_INFO,
                     variables=variables,
@@ -162,7 +169,8 @@ def nasa_power_merra2_query(
                 "_meta": build_meta(
                     source="nasa_power",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=SOURCE_INFO | MERRA2_INFO,
                     success=False,
@@ -240,7 +248,8 @@ def nasa_power_syn1deg_query(
                 "_meta": build_meta(
                     source="nasa_power",
                     query_params=query_params,
-                    rows_returned=len(data[0]["records"]) if data else 0,
+                    geometries_returned=len(data),
+                    total_records_returned=sum(len(r["records"]) for r in data),
                     latency_s=latency,
                     license_info=SOURCE_INFO | SYN1DEG_INFO,
                     variables=variables,
@@ -257,7 +266,8 @@ def nasa_power_syn1deg_query(
                 "_meta": build_meta(
                     source="nasa_power",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=SOURCE_INFO | SYN1DEG_INFO,
                     success=False,
@@ -347,7 +357,8 @@ def nasa_power_merra2_bbox_query(
                 "_meta": build_meta(
                     source="nasa_power",
                     query_params=query_params,
-                    rows_returned=sum(len(r["records"]) for r in data),
+                    geometries_returned=len(data),
+                    total_records_returned=sum(len(r["records"]) for r in data),
                     latency_s=latency,
                     license_info=SOURCE_INFO | MERRA2_INFO,
                     variables=variables,
@@ -364,7 +375,8 @@ def nasa_power_merra2_bbox_query(
                 "_meta": build_meta(
                     source="nasa_power",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=SOURCE_INFO | MERRA2_INFO,
                     success=False,
@@ -454,7 +466,8 @@ def nasa_power_syn1deg_bbox_query(
                 "_meta": build_meta(
                     source="nasa_power",
                     query_params=query_params,
-                    rows_returned=sum(len(r["records"]) for r in data),
+                    geometries_returned=len(data),
+                    total_records_returned=sum(len(r["records"]) for r in data),
                     latency_s=latency,
                     license_info=SOURCE_INFO | SYN1DEG_INFO,
                     variables=variables,
@@ -471,7 +484,8 @@ def nasa_power_syn1deg_bbox_query(
                 "_meta": build_meta(
                     source="nasa_power",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=SOURCE_INFO | SYN1DEG_INFO,
                     success=False,

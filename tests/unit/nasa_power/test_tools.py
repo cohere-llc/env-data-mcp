@@ -102,7 +102,8 @@ def test_merra2_query_meta_fields():
     assert meta["source"] == "nasa_power"
     assert meta["success"] is True
     assert meta["error"] is None
-    assert meta["rows_returned"] == 1
+    assert meta["geometries_returned"] == 1
+    assert meta["total_records_returned"] == 1
     assert meta["auth_required"] is False
     assert meta["license"] == SOURCE_INFO["license"]
 
@@ -162,7 +163,8 @@ def test_merra2_query_empty_date_range():
         )
     assert result["_meta"]["success"] is True
     assert result["data"] == []
-    assert result["_meta"]["rows_returned"] == 0
+    assert result["_meta"]["geometries_returned"] == 0
+    assert result["_meta"]["total_records_returned"] == 0
 
 
 def test_merra2_query_variable_info_in_meta():

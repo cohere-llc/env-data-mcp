@@ -74,7 +74,8 @@ Expected output shape:
   ],
   "_meta": {
     "source": "nasa_power",
-    "rows_returned": 3,
+    "geometries_returned": 3,
+    "total_records_returned": 9,
     "latency_s": 1.4,
     "auth_required": false,
     "success": true,

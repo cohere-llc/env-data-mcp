@@ -49,7 +49,8 @@ def test_soil_profile_available_variables_meta_success(httpx_mock):
     add_schema_responses(httpx_mock, _QueryType.SOIL_PROFILE)
     result = ssurgo_soil_profile_available_variables()
     assert result["_meta"]["success"] is True
-    assert result["_meta"]["rows_returned"] > 0
+    assert result["_meta"]["geometries_returned"] == 0
+    assert result["_meta"]["total_records_returned"] > 0
 
 
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
@@ -80,7 +81,8 @@ def test_soil_profile_query_meta_success(httpx_mock):
     assert meta["source"] == "ssurgo"
     assert meta["success"] is True
     assert meta["error"] is None
-    assert meta["rows_returned"] == 2
+    assert meta["geometries_returned"] == 1
+    assert meta["total_records_returned"] == 2
     assert meta["auth_required"] is False
 
 

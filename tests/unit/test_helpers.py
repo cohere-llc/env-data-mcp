@@ -208,33 +208,35 @@ class TestBuildMeta:
         meta = build_meta(
             source="test_source",
             query_params={"latitude": 1.0, "longitude": 2.0},
-            rows_returned=5,
+            geometries_returned=3,
+            total_records_returned=5,
             latency_s=1.23456,
             license_info=_LICENSE,
         )
         assert meta["source"] == "test_source"
-        assert meta["rows_returned"] == 5
+        assert meta["geometries_returned"] == 3
+        assert meta["total_records_returned"] == 5
         assert meta["success"] is True
         assert meta["error"] is None
         assert meta["auth_required"] is False
         assert meta["auth_present"] is True
 
     def test_license_propagated(self) -> None:
-        meta = build_meta("s", {}, 0, 0.0, _LICENSE)
+        meta = build_meta("s", {}, 0, 0, 0.0, _LICENSE)
         assert meta["license"] == _LICENSE["license"]
         assert meta["license_url"] == _LICENSE["license_url"]
 
     def test_query_params_echoed(self) -> None:
         params = {"latitude": 46.253, "longitude": -119.477, "start_date": "2019-08-19"}
-        meta = build_meta("s", params, 1, 0.5, _LICENSE)
+        meta = build_meta("s", params, 1, 1, 0.5, _LICENSE)
         assert meta["query_params"] == params
 
     def test_latency_rounded_to_three_places(self) -> None:
-        meta = build_meta("s", {}, 0, 1.23456789, _LICENSE)
+        meta = build_meta("s", {}, 0, 0, 1.23456789, _LICENSE)
         assert meta["latency_s"] == pytest.approx(1.235, abs=0.0005)
 
     def test_failure_case(self) -> None:
-        meta = build_meta("s", {}, 0, 0.0, _LICENSE, success=False, error="Something went wrong")
+        meta = build_meta("s", {}, 0, 0, 0.0, _LICENSE, success=False, error="Something went wrong")
         assert meta["success"] is False
         assert meta["error"] == "Something went wrong"
 
@@ -242,6 +244,7 @@ class TestBuildMeta:
         meta = build_meta(
             "s",
             {},
+            0,
             0,
             0.0,
             _LICENSE,
@@ -253,24 +256,25 @@ class TestBuildMeta:
         assert meta["auth_present"] is False
 
     def test_variables_included(self) -> None:
-        meta = build_meta("s", {}, 3, 0.5, _LICENSE, variables=["T2M", "RH2M"])
+        meta = build_meta("s", {}, 2, 3, 0.5, _LICENSE, variables=["T2M", "RH2M"])
         assert meta["variables"] == ["T2M", "RH2M"]
 
     def test_variables_defaults_to_empty_list(self) -> None:
-        meta = build_meta("s", {}, 3, 0.5, _LICENSE)
+        meta = build_meta("s", {}, 2, 3, 0.5, _LICENSE)
         assert meta["variables"] == []
 
     def test_empty_license_info(self) -> None:
-        meta = build_meta("s", {}, 0, 0.0, {})
+        meta = build_meta("s", {}, 2, 0, 0.0, {})
         assert meta["license"] == ""
         assert meta["license_url"] == ""
 
     def test_all_expected_keys_present(self) -> None:
-        meta = build_meta("s", {}, 0, 0.0, _LICENSE)
+        meta = build_meta("s", {}, 0, 0, 0.0, _LICENSE)
         required_keys = {
             "source",
             "variables",
-            "rows_returned",
+            "geometries_returned",
+            "total_records_returned",
             "latency_s",
             "auth_required",
             "auth_present",
@@ -299,7 +303,8 @@ class TestAuthMissingResponse:
         assert meta["success"] is False
         assert meta["auth_required"] is True
         assert meta["auth_present"] is False
-        assert meta["rows_returned"] == 0
+        assert meta["geometries_returned"] == 0
+        assert meta["total_records_returned"] == 0
 
     def test_error_message_propagated(self) -> None:
         msg = "EARTHDATA_USERNAME and EARTHDATA_PASSWORD required."

@@ -96,8 +96,8 @@ class TestSoilgridsAvailableVariables:
         assert meta["source"] == "soilgrids"
         assert "success" in meta
         assert meta["success"] is True
-        assert "rows_returned" in meta
-        assert meta["rows_returned"] == len(var_info["data"])
+        assert meta["geometries_returned"] == 0
+        assert meta["total_records_returned"] == len(var_info["data"])
         assert "license" in meta or "license_url" in meta
         if "license" in meta:
             assert len(meta["license"]) > 0
@@ -184,8 +184,10 @@ class TestSoilgridsQuery:
         meta = point_result["_meta"]
         if point_case.expect_slow_warn:
             assert "exceeds" in meta["message"] and "threshold" in meta["message"]
+            assert "exceeds" in meta["error"] and "threshold" in meta["error"]
+        else:
+            assert meta["error"] is None
         assert meta["success"] == (not point_case.expect_slow_warn)
-        assert meta["error"] is None
         assert meta["source"] == "soilgrids"
 
     def test_metadata_stats(self, point_case: _PointCase, point_result: dict[str, Any]):
@@ -193,9 +195,11 @@ class TestSoilgridsQuery:
         meta = point_result["_meta"]
         if len(point_case.expected_vars) > 0:
             assert meta["latency_s"] > 0.25  # should take at least a quarter second
-            assert meta["rows_returned"] > 0
+            assert meta["geometries_returned"] > 0
+            assert meta["total_records_returned"] > 0
         else:
-            assert meta["rows_returned"] == 0
+            assert meta["geometries_returned"] == 0
+            assert meta["total_records_returned"] == 0
 
     def test_metadata_variables_echoed(
         self, requested_vars_effective: list[str], point_result: dict[str, Any]
@@ -348,8 +352,10 @@ class TestSoilgridsBBoxQuery:
         meta = bbox_result["_meta"]
         if bbox_case.expect_slow_warn:
             assert "exceeds" in meta["message"] and "threshold" in meta["message"]
+            assert "exceeds" in meta["error"] and "threshold" in meta["error"]
+        else:
+            assert meta["error"] is None
         assert meta["success"] == (not bbox_case.expect_slow_warn)
-        assert meta["error"] is None
         assert meta["source"] == "soilgrids"
 
     def test_metadata_stats(self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]):
@@ -357,9 +363,11 @@ class TestSoilgridsBBoxQuery:
         meta = bbox_result["_meta"]
         if len(bbox_case.expected_vars) > 0:
             assert meta["latency_s"] > 0.25  # should take at least a quarter second
-            assert meta["rows_returned"] > 0
+            assert meta["geometries_returned"] > 0
+            assert meta["total_records_returned"] > 0
         else:
-            assert meta["rows_returned"] == 0
+            assert meta["geometries_returned"] == 0
+            assert meta["total_records_returned"] == 0
 
     def test_metadata_variables_echoed(
         self, requested_vars_effective_bbox: list[str], bbox_result: dict[str, Any]

@@ -94,8 +94,8 @@ class TestAvailableVariables:
         assert meta["source"] == "tropomi"
         assert "success" in meta
         assert meta["success"] is True
-        assert "rows_returned" in meta
-        assert meta["rows_returned"] == len(var_info["data"])
+        assert meta["geometries_returned"] == 0
+        assert meta["total_records_returned"] == len(var_info["data"])
         assert len(meta.get("license")) > 0 or len(meta.get("license_url")) > 0
 
     def test_contains_product_type(self, var_info: dict[str, Any]):
@@ -389,8 +389,10 @@ class TestTropomiQuery:
         meta = point_result["_meta"]
         if point_case.expect_slow_warn:
             assert "exceeds" in meta["message"] and "threshold" in meta["message"]
+            assert "exceeds" in meta["error"] and "threshold" in meta["error"]
+        else:
+            assert meta["error"] is None
         assert meta["success"] == (not point_case.expect_slow_warn)
-        assert meta["error"] is None
         assert meta["source"] == "tropomi"
 
     def test_metadata_stats(self, point_case: _PointCase, point_result: dict[str, Any]):
@@ -398,9 +400,11 @@ class TestTropomiQuery:
         meta = point_result["_meta"]
         if len(point_case.expected_vars) > 0:
             assert meta["latency_s"] > 0.25
-            assert meta["rows_returned"] > 0
+            assert meta["geometries_returned"] > 0
+            assert meta["total_records_returned"] > 0
         else:
-            assert meta["rows_returned"] == 0
+            assert meta["geometries_returned"] == 0
+            assert meta["total_records_returned"] == 0
 
     def test_metadata_variables_echoed(
         self,
@@ -582,9 +586,11 @@ class TestTropomiBboxQuery:
         meta = bbox_result["_meta"]
         if len(bbox_case.expected_vars) > 0:
             assert meta["latency_s"] > 0.25
-            assert meta["rows_returned"] > 0
+            assert meta["geometries_returned"] > 0
+            assert meta["total_records_returned"] > 0
         else:
-            assert meta["rows_returned"] == 0
+            assert meta["geometries_returned"] == 0
+            assert meta["total_records_returned"] == 0
 
     def test_metadata_variables_echoed(
         self,

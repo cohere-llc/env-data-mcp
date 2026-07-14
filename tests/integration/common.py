@@ -199,6 +199,14 @@ STANDARD_BBOXES: list[BboxCase] = [
 
 
 # ---------------------------------------------------------------------------
+# Module-level landmark references
+# ---------------------------------------------------------------------------
+
+NH_RURAL: LocationCase = next(p for p in STANDARD_LOCATIONS if p.label == "nh_rural")
+NH_MIDLAT_BBOX: BboxCase = next(b for b in STANDARD_BBOXES if b.label == "nh_midlat")
+
+
+# ---------------------------------------------------------------------------
 # AdapaterSpec and helper classes
 # ---------------------------------------------------------------------------
 
@@ -237,6 +245,12 @@ class AdapterSpec:
     supports_date_range: bool
     """True for adapters that accept ``start_date`` and ``end_date``."""
 
+    primary_variable: str
+    """A single reliable variable that can be used in point and bbox queries."""
+
+    default_variables: list[str]
+    """The list of default variables returned when none are explicitly requested."""
+
     max_runtime_s: float | None = None
     """Runtime forwarded to query functions when not None."""
 
@@ -273,18 +287,30 @@ def assert_meta_valid(meta: dict[str, Any]) -> None:
     ResponseMeta.model_validate(meta)
 
 
-def assert_meta_success(result: dict[str, Any]) -> None:
+def assert_meta_success(result: dict[str, Any], min_latency: float = 0.0) -> None:
     """Assert that *meta* represents a successful query result."""
     meta = result["_meta"]
     assert_meta_valid(meta)
     assert meta["success"] is True, f"Expected success=True; error={meta.get('error')!r}"
     assert meta["error"] is None, f"Expected error=None; got {meta['error']!r}"
-    assert isinstance(meta["rows_returned"], int)
-    assert meta["rows_returned"] == len(result["data"]), (
-        "rows_returned must match number of records returned; expected "
-        f"{len(result['data'])}; got {meta['rows_returned']}"
+    assert isinstance(meta["geometries_returned"], int)
+    assert isinstance(meta["total_records_returned"], int)
+    if isinstance(result["data"], dict):
+        # available variables returns data as a dict[str, Any]
+        assert meta["geometries_returned"] == 0
+        assert meta["total_records_returned"] == len(result["data"])
+    elif isinstance(result["data"], list):
+        # point/bbox queries return data as a list of geometry groups
+        assert meta["geometries_returned"] == len(result["data"]), (
+            "geometries_returned must match number of geometry groups returned; expected "
+            f"{len(result['data'])}; got {meta['geometries_returned']}"
+        )
+        assert meta["total_records_returned"] == sum(len(r["records"]) for r in result["data"])
+    else:
+        raise AssertionError("Invalid format for returned data")
+    assert meta["latency_s"] > min_latency, (
+        f"latency_s must be > {min_latency}; got {meta['latency_s']}"
     )
-    assert meta["latency_s"] > 0, f"latency_s must be > 0; got {meta['latency_s']}"
     assert meta["license"], "license must be a non-empty string"
     assert meta["citation"], "citation must be a non-empty string"
 
@@ -302,16 +328,18 @@ def assert_meta_error(result: dict[str, Any], substr: str = "") -> None:
         assert substr in meta["error"], (
             f"Expected {substr!r} in error message; got {meta['error']!r}"
         )
-    assert isinstance(meta["rows_returned"], int)
-    assert meta["rows_returned"] == 0
+    assert isinstance(meta["geometries_returned"], int)
+    assert isinstance(meta["total_records_returned"], int)
+    assert meta["geometries_returned"] == 0
+    assert meta["total_records_returned"] == 0
     assert len(result["data"]) == 0
 
 
-def assert_available_variables_valid(result: dict[str, Any]) -> None:
+def assert_available_variables_valid(result: dict[str, Any], min_latency: float = 0.0) -> None:
     """Assert that *result* satisfies the ``AvailableVariablesResponse`` schema."""
     AvailableVariablesResponse.model_validate(result)
     assert result["data"], "available_variables returned an empty dict"
-    assert_meta_success(result)
+    assert_meta_success(result, min_latency=min_latency)
     for var_name, info in result["data"].items():
         assert var_name, "variable name must be non-empty"
         assert info.get("description"), f"variable {var_name!r} missing a non-empty 'description'"
@@ -355,12 +383,20 @@ def assert_tool_response_valid(result: dict[str, Any]) -> None:
     ToolResponse.model_validate(result)
 
 
+def assert_slow_query_blocked(result: dict[str, Any]) -> None:
+    """Assert that a query was blocked by the ``max_runtime_s`` gate."""
+    assert_meta_error(result)
+    assert result["_meta"].get("slow_query_warning") is True, (
+        f"Expected slow_query_warning=True; got {result['_meta'].get('slow_query_warning')!r}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Point-in-bbox consistency helper
 # ---------------------------------------------------------------------------
 
 
-def _extract_lat_lon_pairs(data: list[dict[str, Any]], precision: int) -> set[tuple[float, float]]:
+def extract_lat_lon_pairs(data: list[dict[str, Any]], precision: int) -> set[tuple[float, float]]:
     """Extract ``(lat, lon)`` pairs from a response ``data`` list."""
     pairs: set[tuple[float, float]] = set()
     for group in data:
@@ -389,11 +425,11 @@ def assert_point_results_in_bbox(
     if not point_data:
         return
 
-    point_pairs = _extract_lat_lon_pairs(point_data, precision)
+    point_pairs = extract_lat_lon_pairs(point_data, precision)
     if not point_pairs:
         return  # non-Point geometries
 
-    bbox_pairs = _extract_lat_lon_pairs(bbox_data, precision)
+    bbox_pairs = extract_lat_lon_pairs(bbox_data, precision)
     missing = point_pairs - bbox_pairs
     assert not missing, (
         f"Point query returned (lat, lon) pairs absent from the bbox query result.\n"

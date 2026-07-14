@@ -373,9 +373,12 @@ class TestPointQueryStructure:
         assert isinstance(vi, dict)
         assert len(vi) > 0, f"{qc.label}: variable_info is empty"
 
-    def test_meta_rows_returned_consistent(self, baseline_point: dict):
+    def test_meta_data_returned_consistent(self, baseline_point: dict):
         data = baseline_point["data"]
-        assert baseline_point["_meta"]["rows_returned"] == sum(len(g["records"]) for g in data)
+        assert baseline_point["_meta"]["geometries_returned"] == len(data)
+        assert baseline_point["_meta"]["total_records_returned"] == sum(
+            len(g["records"]) for g in data
+        )
 
     def test_full_response_schema_valid(self, baseline_point: dict):
         """Full point-query response validates against GroupedGeometryResponse schema."""
@@ -585,9 +588,12 @@ class TestBboxQuery:
         assert qp["min_lon"] == _BBOX["min_lon"]
         assert qp["max_lon"] == _BBOX["max_lon"]
 
-    def test_meta_rows_returned_consistent(self, baseline_bbox: dict):
+    def test_meta_data_returned_consistent(self, baseline_bbox: dict):
         data = baseline_bbox["data"]
-        assert baseline_bbox["_meta"]["rows_returned"] == sum(len(g["records"]) for g in data)
+        assert baseline_bbox["_meta"]["geometries_returned"] == len(data)
+        assert baseline_bbox["_meta"]["total_records_returned"] == sum(
+            len(g["records"]) for g in data
+        )
 
     def test_custom_var_returned(self, qc: _QueryCase):
         if qc.uses_rule_names:
@@ -642,9 +648,12 @@ class TestSchemaStability:
         assert baseline_point["_meta"]["license"] != ""
         assert baseline_point["_meta"]["license_url"] != ""
 
-    def test_meta_rows_returned_consistent(self, baseline_point: dict):
+    def test_meta_data_returned_consistent(self, baseline_point: dict):
         data = baseline_point["data"]
-        assert baseline_point["_meta"]["rows_returned"] == sum(len(g["records"]) for g in data)
+        assert baseline_point["_meta"]["geometries_returned"] == len(data)
+        assert baseline_point["_meta"]["total_records_returned"] == sum(
+            len(g["records"]) for g in data
+        )
 
     def test_plausible_value_range(self, qc: _QueryCase, baseline_point: dict):
         """Numeric plausible-range check — currently configured for soil_profile sand %."""

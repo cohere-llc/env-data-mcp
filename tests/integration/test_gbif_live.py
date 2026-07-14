@@ -217,8 +217,10 @@ class TestPointQuery:
         meta = point_result["_meta"]
         assert meta["auth_required"] is False
         assert meta["latency_s"] > 0
-        assert meta["rows_returned"] > 10
-        assert meta["rows_returned"] <= 100
+        assert meta["geometries_returned"] > 10
+        assert meta["total_records_returned"] > 10
+        assert meta["geometries_returned"] <= 100
+        assert meta["total_records_returned"] <= 100
         assert meta["license"] != ""
 
     @pytest.mark.integration
@@ -285,9 +287,12 @@ class TestPointQuery:
     def test_meta_license_nonempty(self, point_result: dict):
         assert point_result["_meta"]["license"] != ""
 
-    def test_meta_rows_returned_consistent(self, point_result: dict):
+    def test_meta_data_returned_consistent(self, point_result: dict):
         data = point_result["data"]
-        assert point_result["_meta"]["rows_returned"] == len(data)
+        assert point_result["_meta"]["geometries_returned"] == len(data)
+        assert point_result["_meta"]["total_records_returned"] == sum(
+            len(r["records"]) for r in data
+        )
 
     def test_full_response_schema_valid(self, point_result: dict):
         """Full point-query response validates against GroupedGeometryResponse schema."""
@@ -445,9 +450,12 @@ class TestBboxQuery:
         assert qp["min_lon"] == _BBOX["min_lon"]
         assert qp["max_lon"] == _BBOX["max_lon"]
 
-    def test_meta_rows_returned_consistent(self, baseline_bbox: dict):
+    def test_meta_data_returned_consistent(self, baseline_bbox: dict):
         data = baseline_bbox["data"]
-        assert baseline_bbox["_meta"]["rows_returned"] == len(data)
+        assert baseline_bbox["_meta"]["geometries_returned"] == len(data)
+        assert baseline_bbox["_meta"]["total_records_returned"] == sum(
+            len(r["records"]) for r in data
+        )
 
     def test_meta_source_field(self, baseline_bbox: dict):
         assert baseline_bbox["_meta"]["source"] == "gbif"
@@ -499,9 +507,12 @@ class TestSchemaStability:
         # assert the key is present regardless
         assert "license_url" in point_result["_meta"]
 
-    def test_meta_rows_returned_consistent(self, point_result: dict):
+    def test_meta_data_returned_consistent(self, point_result: dict):
         data = point_result["data"]
-        assert point_result["_meta"]["rows_returned"] == len(data)
+        assert point_result["_meta"]["geometries_returned"] == len(data)
+        assert point_result["_meta"]["total_records_returned"] == sum(
+            len(r["records"]) for r in data
+        )
 
     def test_geometry_type_is_point(self, dc: _DatasetCase, point_result: dict):
         """GBIF occurrence records always produce Point geometries."""

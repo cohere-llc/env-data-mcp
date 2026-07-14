@@ -40,7 +40,8 @@ def tropomi_available_variables() -> dict[str, Any]:
                 "_meta": build_meta(
                     source="tropomi",
                     query_params={},
-                    rows_returned=len(variable_info),
+                    geometries_returned=0,
+                    total_records_returned=len(variable_info),
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                 ),
@@ -53,7 +54,8 @@ def tropomi_available_variables() -> dict[str, Any]:
                 "_meta": build_meta(
                     source="tropomi",
                     query_params={},
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -131,7 +133,8 @@ def tropomi_query(
                 "_meta": build_meta(
                     source="tropomi",
                     query_params=query_params,
-                    rows_returned=len(data),
+                    geometries_returned=len(data),
+                    total_records_returned=sum(len(r["records"]) for r in data),
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     variables=variables,
@@ -148,7 +151,8 @@ def tropomi_query(
                 "_meta": build_meta(
                     source="tropomi",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -236,7 +240,8 @@ def tropomi_bbox_query(
                 "_meta": build_meta(
                     source="tropomi",
                     query_params=query_params,
-                    rows_returned=len(data),
+                    geometries_returned=len(data),
+                    total_records_returned=sum(len(r["records"]) for r in data),
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     variables=variables,
@@ -253,7 +258,8 @@ def tropomi_bbox_query(
                 "_meta": build_meta(
                     source="tropomi",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,

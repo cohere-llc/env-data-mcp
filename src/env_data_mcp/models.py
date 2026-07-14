@@ -71,7 +71,8 @@ class ResponseMeta(BaseModel):
 
     source: str
     success: bool
-    rows_returned: int
+    geometries_returned: int
+    total_records_returned: int
     latency_s: float
     auth_required: bool
     auth_present: bool

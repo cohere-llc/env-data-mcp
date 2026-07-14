@@ -135,7 +135,8 @@ def test_openaq_query_success(_set_api_key, httpx_mock):
 
     assert result["_meta"]["success"] is True
     assert result["_meta"]["source"] == "openaq"
-    assert result["_meta"]["rows_returned"] == 3
+    assert result["_meta"]["geometries_returned"] == 3
+    assert result["_meta"]["total_records_returned"] == 3
     assert result["_meta"]["auth_required"] is True
     assert result["_meta"]["auth_present"] is True
 

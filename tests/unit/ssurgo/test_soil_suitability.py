@@ -43,7 +43,8 @@ def test_soil_suitability_available_variables_meta_success(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=RULES_XML)
     result = ssurgo_soil_suitability_available_rule_names()
     assert result["_meta"]["success"] is True
-    assert result["_meta"]["rows_returned"] == 3
+    assert result["_meta"]["geometries_returned"] == 0
+    assert result["_meta"]["total_records_returned"] == 3
 
 
 def test_soil_suitability_available_variables_http_error(httpx_mock):

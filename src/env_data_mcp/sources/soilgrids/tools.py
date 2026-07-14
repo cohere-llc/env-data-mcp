@@ -57,7 +57,8 @@ def soilgrids_available_variables() -> dict[str, Any]:
             "_meta": build_meta(
                 source="soilgrids",
                 query_params={},
-                rows_returned=len(var_info),
+                geometries_returned=0,
+                total_records_returned=len(var_info),
                 latency_s=0.0,
                 license_info=LICENSE_INFO,
             ),
@@ -135,7 +136,8 @@ def soilgrids_query(
                 "_meta": build_meta(
                     source="soilgrids",
                     query_params=query_params,
-                    rows_returned=len(data),
+                    geometries_returned=len(data),
+                    total_records_returned=sum(len(r["records"]) for r in data),
                     latency_s=latency,
                     license_info={**LICENSE_INFO},
                     variables=variables,
@@ -152,7 +154,8 @@ def soilgrids_query(
                 "_meta": build_meta(
                     source="soilgrids",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info={**LICENSE_INFO},
                     success=False,
@@ -233,7 +236,8 @@ def soilgrids_bbox_query(
                 "_meta": build_meta(
                     source="soilgrids",
                     query_params=query_params,
-                    rows_returned=len(data),
+                    geometries_returned=len(data),
+                    total_records_returned=sum(len(r["records"]) for r in data),
                     latency_s=latency,
                     license_info={**LICENSE_INFO},
                     variables=variables,
@@ -250,7 +254,8 @@ def soilgrids_bbox_query(
                 "_meta": build_meta(
                     source="soilgrids",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info={**LICENSE_INFO},
                     success=False,
