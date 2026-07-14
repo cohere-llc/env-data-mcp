@@ -264,6 +264,10 @@ class AdapterSpec:
     extra_bbox_kwargs: dict[str, Any] = field(default_factory=dict)
     """Extra kwargs forwarded to every ``bbox_query`` call for adapter-specific args."""
 
+    supports_bbox_bounds_test: bool = True
+    """Set to False for adapters that deliberately include buffer cells outside the queried bbox
+    (e.g., NASA POWER expands by one grid cell on each edge)."""
+
     validate_point_result: Callable[[dict], None] | None = None
     """Optional adapter-specific hook called after common assertions on a point query
     result. Raise ``AssertionError`` to fail the test."""

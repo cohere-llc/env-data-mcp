@@ -15,7 +15,9 @@ from .common import (
     AdapterSpec,
     BboxCase,
     LocationCase,
+    assert_all_geometry_groups_valid,
     assert_available_variables_valid,
+    assert_grouped_geometry_response_valid,
     assert_meta_success,
     assert_point_results_in_bbox,
     assert_slow_query_blocked,
@@ -154,6 +156,18 @@ def bbox_case(request) -> BboxCase:
     return request.param
 
 
+@pytest.fixture(scope="module")
+def nh_rural_result(spec: AdapterSpec) -> dict[str, Any]:
+    """Cached point query at NH_RURAL with default parameters; used by meta/schema tests."""
+    return spec.point_query(**_location_case_kwargs(spec, NH_RURAL))
+
+
+@pytest.fixture(scope="module")
+def nh_midlat_bbox_result(spec: AdapterSpec) -> dict[str, Any]:
+    """Cached bbox query at NH_MIDLAT_BBOX with default parameters; used by bbox tests."""
+    return spec.bbox_query(**_bbox_case_kwargs(spec, NH_MIDLAT_BBOX))
+
+
 # ---------------------------------------------------------------------------
 # TestAvailableVariables
 # ---------------------------------------------------------------------------
@@ -164,6 +178,22 @@ class TestAvailableVariables:
 
     def test_schema_and_meta(self, spec: AdapterSpec, avail_result: dict) -> None:
         assert_available_variables_valid(avail_result)
+
+    def test_all_default_variables_in_catalog(self, spec: AdapterSpec, avail_result: dict) -> None:
+        """Every variable in ``spec.default_variables`` must appear in the catalog."""
+        if not spec.default_variables:
+            pytest.skip(f"{spec.name}: no default_variables defined")
+        missing = [v for v in spec.default_variables if v not in avail_result["data"]]
+        assert not missing, f"{spec.name}: default variables absent from catalog: {missing}"
+
+    def test_catalog_larger_than_defaults(self, spec: AdapterSpec, avail_result: dict) -> None:
+        """The full catalog must contain more variables than the curated default set."""
+        if not spec.default_variables:
+            pytest.skip(f"{spec.name}: no default_variables defined")
+        assert len(avail_result["data"]) > len(spec.default_variables), (
+            f"{spec.name}: catalog has only {len(avail_result['data'])} entries, "
+            f"not more than the {len(spec.default_variables)} defaults"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -191,6 +221,43 @@ class TestPointQuery:
             pytest.skip(f"{spec.name}: no data expected at {loc.label!r}; skipping hook")
         result = spec.point_query(**_location_case_kwargs(spec, loc))
         spec.validate_point_result(result)
+
+    def test_full_response_schema_valid(self, spec: AdapterSpec, nh_rural_result: dict) -> None:
+        """Full point-query response at NH_RURAL validates against GroupedGeometryResponse."""
+        if not spec.expects_data(NH_RURAL):
+            pytest.skip(f"{spec.name}: no data expected at nh_rural; skipping schema check")
+        assert_grouped_geometry_response_valid(nh_rural_result)
+
+    def test_all_geometry_groups_valid(self, spec: AdapterSpec, nh_rural_result: dict) -> None:
+        """Each geometry group at NH_RURAL has a valid geometry and non-empty records."""
+        if not spec.expects_data(NH_RURAL):
+            pytest.skip(f"{spec.name}: no data expected at nh_rural; skipping geometry check")
+        assert_all_geometry_groups_valid(nh_rural_result)
+
+    def test_variable_info_content(self, spec: AdapterSpec, nh_rural_result: dict) -> None:
+        """``meta.variable_info`` carries description and units for every default variable."""
+        if not spec.expects_data(NH_RURAL):
+            pytest.skip(f"{spec.name}: no data expected at nh_rural; skipping variable_info check")
+        if not spec.default_variables:
+            pytest.skip(f"{spec.name}: no default_variables defined")
+        vi = nh_rural_result["_meta"]["variable_info"]
+        assert isinstance(vi, dict) and vi, f"{spec.name}: meta.variable_info is empty"
+        for var in spec.default_variables:
+            assert var in vi, f"{spec.name}: {var!r} absent from variable_info"
+            assert vi[var].get("description"), (
+                f"{spec.name}: {var!r} missing non-empty description in variable_info"
+            )
+            assert "units" in vi[var], f"{spec.name}: {var!r} missing units key in variable_info"
+
+    def test_query_params_echo_lat_lon(self, spec: AdapterSpec, nh_rural_result: dict) -> None:
+        """``meta.query_params`` echoes back the queried latitude and longitude."""
+        qp = nh_rural_result["_meta"]["query_params"]
+        assert qp["latitude"] == pytest.approx(NH_RURAL.coordinates.latitude), (
+            f"{spec.name}: query_params latitude mismatch"
+        )
+        assert qp["longitude"] == pytest.approx(NH_RURAL.coordinates.longitude), (
+            f"{spec.name}: query_params longitude mismatch"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +359,42 @@ class TestBboxQuery:
             f"  only in west + east: {(west_pairs | east_pairs) - full_pairs}\n"
             f"  only in full:       {full_pairs - (west_pairs | east_pairs)}"
         )
+
+    def test_bbox_returns_multiple_points(
+        self, spec: AdapterSpec, nh_midlat_bbox_result: dict
+    ) -> None:
+        """A 4x4-degree bbox at NH_MIDLAT returns more than one distinct geometry group."""
+        if not spec.expects_data(NH_MIDLAT_BBOX):
+            pytest.skip(f"{spec.name}: no data expected at nh_midlat; skipping count check")
+        assert len(nh_midlat_bbox_result["data"]) > 1, (
+            f"{spec.name}: expected multiple geometry groups for a 4x4-degree bbox, "
+            f"got {len(nh_midlat_bbox_result['data'])}"
+        )
+
+    def test_bbox_points_within_bounds(self, spec: AdapterSpec, bbox_case: BboxCase) -> None:
+        """All returned coordinate pairs fall within the queried bbox (+-0.1 deg tolerance)."""
+        if not spec.supports_bbox_bounds_test:
+            pytest.skip(f"{spec.name}: adapter intentionally returns buffer cells outside bbox")
+        if not spec.expects_data(bbox_case):
+            pytest.skip(
+                f"{spec.name}: no data expected at {bbox_case.label!r}; skipping bounds check"
+            )
+        result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox_case))
+        tol = 0.1  # degrees; covers raster pixel-centre overhang
+        c = bbox_case.coordinates
+        for group in result["data"]:
+            lat = group.get("latitude")
+            lon = group.get("longitude")
+            if lat is None or lon is None:
+                continue  # polygon-only groups (e.g., SSURGO map units without centroid)
+            assert c.min_lat - tol <= lat <= c.max_lat + tol, (
+                f"{spec.name}/{bbox_case.label}: latitude {lat} outside "
+                f"[{c.min_lat - tol:.2f}, {c.max_lat + tol:.2f}]"
+            )
+            assert c.min_lon - tol <= lon <= c.max_lon + tol, (
+                f"{spec.name}/{bbox_case.label}: longitude {lon} outside "
+                f"[{c.min_lon - tol:.2f}, {c.max_lon + tol:.2f}]"
+            )
 
 
 # ---------------------------------------------------------------------------

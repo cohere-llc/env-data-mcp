@@ -74,6 +74,7 @@ MERRA2_SPEC = AdapterSpec(
     max_runtime_s=60.0,
     extra_point_kwargs={"temporal_resolution": TemporalResolution.DAILY},
     extra_bbox_kwargs={"temporal_resolution": TemporalResolution.DAILY},
+    supports_bbox_bounds_test=False,
     validate_bbox_result=_validate_nasa_power_bbox_result,
     validate_point_result=_validate_nasa_power_point_result,
 )
@@ -89,6 +90,7 @@ SYN1DEG_SPEC = AdapterSpec(
     max_runtime_s=60.0,
     extra_point_kwargs={"temporal_resolution": TemporalResolution.DAILY},
     extra_bbox_kwargs={"temporal_resolution": TemporalResolution.DAILY},
+    supports_bbox_bounds_test=False,
     validate_bbox_result=_validate_nasa_power_bbox_result,
     validate_point_result=_validate_nasa_power_point_result,
 )
@@ -201,12 +203,6 @@ class TestAvailableVariables:
     def test_primary_var_present(self, dc: _DatasetCase, avail_vars: dict) -> None:
         assert dc.spec.primary_variable in avail_vars["data"], (
             f"{dc.spec.name}: {dc.spec.primary_variable!r} absent from available variables"
-        )
-
-    def test_all_default_vars_present(self, dc: _DatasetCase, avail_vars: dict) -> None:
-        missing = [v for v in dc.spec.default_variables if v not in avail_vars["data"]]
-        assert not missing, (
-            f"{dc.spec.name}: default variables absent from available set: {missing}"
         )
 
 
@@ -354,10 +350,6 @@ class TestBboxQuery:
                     f"{dc.spec.name}: {dc.spec.primary_variable}={val} "
                     f"outside plausible range [{lo}, {hi}]"
                 )
-
-    def test_multiple_geometry_groups_returned(self, nh_midlat_bbox_daily: dict) -> None:
-        """A 4 deg x 4 deg bbox must contain multiple grid cells for both MERRA-2 and SYN1deg."""
-        assert len(nh_midlat_bbox_daily["data"]) > 1
 
     def test_point_results_subset_of_bbox_results(
         self,
