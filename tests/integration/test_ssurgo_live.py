@@ -1,4 +1,4 @@
-"""Parameterized integration tests for all 8 SSURGO query types.
+"""Integration tests for the SSURGO adapter — requires live USDA SDA access.
 
 All tests require live USDA SDA HTTP access.  Run with:
     uv run pytest tests/integration/test_ssurgo_live.py -m integration -v --no-cov
@@ -12,13 +12,10 @@ from dataclasses import dataclass, field
 import pytest
 
 from env_data_mcp.models import (
-    AvailableVariablesResponse,
-    GeoJsonGeometry,
     GroupedGeometryResponse,
     SuitabilityRulesResponse,
 )
 from env_data_mcp.sources.ssurgo import (
-    _NO_COVERAGE_MSG,
     ssurgo_area_summary_available_variables,
     ssurgo_area_summary_bbox_query,
     ssurgo_area_summary_query,
@@ -55,6 +52,13 @@ from env_data_mcp.sources.ssurgo.constants import (
     DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
 )
 
+from .common import (
+    AdapterSpec,
+    DataExpectation,
+    assert_grouped_geometry_response_valid,
+    assert_meta_success,
+)
+
 pytestmark = pytest.mark.integration
 
 # ---------------------------------------------------------------------------
@@ -65,7 +69,7 @@ pytestmark = pytest.mark.integration
 _LAT = 46.2531882
 _LON = -119.4768203
 
-# 0.5° × 1° bbox in Yakima Valley — covers multiple map units, fast per timing model
+# 0.5x1-degree bbox in Yakima Valley - covers multiple map units, fast per timing model
 _BBOX = dict(min_lat=46.0, max_lat=46.5, min_lon=-120.0, max_lon=-119.0)
 
 # Paris, France: outside SSURGO coverage
@@ -74,25 +78,182 @@ _NON_US_LON = 2.3522
 
 
 # ---------------------------------------------------------------------------
-# Per-query-type parameter table
+# Adapter-specific validate hooks - called by test_common_live.py after
+# common assertions, and directly by adapter-specific tests below.
+# ---------------------------------------------------------------------------
+
+
+def _validate_ssurgo_point_result(result: dict) -> None:
+    """SSURGO-specific assertions for a point query result."""
+    assert_grouped_geometry_response_valid(result)
+    assert result["_meta"]["source"] == "ssurgo"
+    assert result["_meta"]["auth_required"] is False
+    for group in result["data"]:
+        assert "mukey" in group, "'mukey' absent from group wrapper"
+        assert "muname" in group, "'muname' absent from group wrapper"
+        assert len(group["records"]) > 0, f"mukey={group['mukey']!r} group has no records"
+
+
+def _validate_ssurgo_bbox_result(result: dict) -> None:
+    """SSURGO-specific assertions for a bbox query result."""
+    assert_grouped_geometry_response_valid(result)
+    assert result["_meta"]["source"] == "ssurgo"
+    assert result["_meta"]["auth_required"] is False
+    for group in result["data"]:
+        assert "mukey" in group, "'mukey' absent from group wrapper"
+        assert "muname" in group, "'muname' absent from group wrapper"
+        assert len(group["records"]) > 0, f"mukey={group['mukey']!r} group has no records"
+
+
+# ---------------------------------------------------------------------------
+# SSURGO AdapterSpec instances exported for test_common_live.py
+# ---------------------------------------------------------------------------
+
+# All non-US / ocean locations return empty data for this US-only dataset.
+_NON_US_EXPECTATIONS: dict[str, DataExpectation] = {
+    "sh_rural": DataExpectation(has_data=False, notes="Non-US: Patagonia, Argentina"),
+    "sh_urban": DataExpectation(has_data=False, notes="Non-US: Sao Paulo, Brazil"),
+    "nh_polar": DataExpectation(has_data=False, notes="Non-US: Svalbard, Norway"),
+    "sh_polar": DataExpectation(has_data=False, notes="Non-US: Antarctica"),
+    "ocean": DataExpectation(has_data=False, notes="Open ocean — no SSURGO coverage"),
+    "sh_midlat": DataExpectation(has_data=False, notes="Non-US: Patagonia, Argentina"),
+    "equatorial": DataExpectation(has_data=False, notes="Open ocean — no SSURGO coverage"),
+}
+
+SOIL_PROFILE_SPEC = AdapterSpec(
+    name="ssurgo_soil_profile",
+    available_variables=ssurgo_soil_profile_available_variables,
+    point_query=ssurgo_soil_profile_query,
+    bbox_query=ssurgo_soil_profile_bbox_query,
+    supports_date_range=False,
+    primary_variable="sandtotal_r",
+    default_variables=DEFAULT_SOIL_PROFILE_VARIABLES,
+    max_runtime_s=120.0,
+    data_expectations=_NON_US_EXPECTATIONS,
+    validate_point_result=_validate_ssurgo_point_result,
+    validate_bbox_result=_validate_ssurgo_bbox_result,
+)
+
+AREA_SUMMARY_SPEC = AdapterSpec(
+    name="ssurgo_area_summary",
+    available_variables=ssurgo_area_summary_available_variables,
+    point_query=ssurgo_area_summary_query,
+    bbox_query=ssurgo_area_summary_bbox_query,
+    supports_date_range=False,
+    primary_variable="drclassdcd",
+    default_variables=DEFAULT_AREA_SUMMARY_VARIABLES,
+    max_runtime_s=120.0,
+    data_expectations=_NON_US_EXPECTATIONS,
+    validate_point_result=_validate_ssurgo_point_result,
+    validate_bbox_result=_validate_ssurgo_bbox_result,
+)
+
+SUBSURFACE_BARRIERS_SPEC = AdapterSpec(
+    name="ssurgo_subsurface_barriers",
+    available_variables=ssurgo_subsurface_barriers_available_variables,
+    point_query=ssurgo_subsurface_barriers_query,
+    bbox_query=ssurgo_subsurface_barriers_bbox_query,
+    supports_date_range=False,
+    primary_variable="reshard",
+    default_variables=DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
+    max_runtime_s=120.0,
+    data_expectations=_NON_US_EXPECTATIONS,
+    validate_point_result=_validate_ssurgo_point_result,
+    validate_bbox_result=_validate_ssurgo_bbox_result,
+)
+
+SEASONAL_HYDROLOGY_SPEC = AdapterSpec(
+    name="ssurgo_seasonal_hydrology",
+    available_variables=ssurgo_seasonal_hydrology_available_variables,
+    point_query=ssurgo_seasonal_hydrology_query,
+    bbox_query=ssurgo_seasonal_hydrology_bbox_query,
+    supports_date_range=False,
+    primary_variable="month",
+    default_variables=DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
+    max_runtime_s=120.0,
+    data_expectations=_NON_US_EXPECTATIONS,
+    use_small_bboxes=True,  # 4-table join via comonth hits SDA row limit on 4x4-degree bbox
+    validate_point_result=_validate_ssurgo_point_result,
+    validate_bbox_result=_validate_ssurgo_bbox_result,
+)
+
+ECOLOGICAL_SITE_SPEC = AdapterSpec(
+    name="ssurgo_ecological_site",
+    available_variables=ssurgo_ecological_site_available_variables,
+    point_query=ssurgo_ecological_site_query,
+    bbox_query=ssurgo_ecological_site_bbox_query,
+    supports_date_range=False,
+    primary_variable="ecoclasstypename",
+    default_variables=DEFAULT_ECOLOGICAL_SITE_VARIABLES,
+    max_runtime_s=120.0,
+    data_expectations=_NON_US_EXPECTATIONS,
+    validate_point_result=_validate_ssurgo_point_result,
+    validate_bbox_result=_validate_ssurgo_bbox_result,
+)
+
+PARENT_MATERIAL_SPEC = AdapterSpec(
+    name="ssurgo_parent_material",
+    available_variables=ssurgo_parent_material_available_variables,
+    point_query=ssurgo_parent_material_query,
+    bbox_query=ssurgo_parent_material_bbox_query,
+    supports_date_range=False,
+    primary_variable="pmorder",
+    default_variables=DEFAULT_PARENT_MATERIAL_VARIABLES,
+    max_runtime_s=120.0,
+    data_expectations=_NON_US_EXPECTATIONS,
+    validate_point_result=_validate_ssurgo_point_result,
+    validate_bbox_result=_validate_ssurgo_bbox_result,
+)
+
+SOIL_TEMPERATURE_SPEC = AdapterSpec(
+    name="ssurgo_soil_temperature",
+    available_variables=ssurgo_soil_temperature_available_variables,
+    point_query=ssurgo_soil_temperature_query,
+    bbox_query=ssurgo_soil_temperature_bbox_query,
+    supports_date_range=False,
+    primary_variable="soitempmm",
+    default_variables=DEFAULT_SOIL_TEMPERATURE_VARIABLES,
+    max_runtime_s=120.0,
+    data_expectations=_NON_US_EXPECTATIONS,
+    use_small_bboxes=True,  # 4-table join via comonth hits SDA row limit on 4x4-degree bbox
+    validate_point_result=_validate_ssurgo_point_result,
+    validate_bbox_result=_validate_ssurgo_bbox_result,
+)
+
+# Exported for adapter_specs.py. soil_suitability is excluded because it uses
+# rule_names instead of variables and is incompatible with the common test framework.
+ALL_SSURGO_SPECS: list[AdapterSpec] = [
+    SOIL_PROFILE_SPEC,
+    AREA_SUMMARY_SPEC,
+    SUBSURFACE_BARRIERS_SPEC,
+    SEASONAL_HYDROLOGY_SPEC,
+    ECOLOGICAL_SITE_SPEC,
+    PARENT_MATERIAL_SPEC,
+    SOIL_TEMPERATURE_SPEC,
+]
+
+
+# ---------------------------------------------------------------------------
+# Adapter-specific parameter table (all 8 query types including suitability)
 # ---------------------------------------------------------------------------
 
 
 @dataclass
 class _QueryCase:
     label: str
+    spec: AdapterSpec | None  # None for soil_suitability (no AdapterSpec)
     point_fn: Callable
     bbox_fn: Callable
     avail_fn: Callable
-    # Variable-based query types (all except soil_suitability)
+    # Variable-based query types
     default_vars: list[str] = field(default_factory=list)
-    custom_var: str = ""  # A non-default column name to use in custom-var tests
-    # Suitability (rule_names-based)
+    custom_var: str = ""  # A non-default column to verify custom queries work
+    # Rule-based query types
     default_rule_names: list[str] = field(default_factory=list)
     uses_rule_names: bool = False
     # Structural assertions
-    primary_col: str = "mukey"  # Column expected in every result row
-    # Optional plausible-value check (soil_profile only)
+    primary_col: str = ""  # A column expected in every result row (inner record dict)
+    # Optional plausible-value numeric check
     plausible_col: str = ""
     plausible_lo: float = 0.0
     plausible_hi: float = 100.0
@@ -102,11 +263,12 @@ _QUERY_CASES = [
     pytest.param(
         _QueryCase(
             label="soil_profile",
+            spec=SOIL_PROFILE_SPEC,
             point_fn=ssurgo_soil_profile_query,
             bbox_fn=ssurgo_soil_profile_bbox_query,
             avail_fn=ssurgo_soil_profile_available_variables,
             default_vars=DEFAULT_SOIL_PROFILE_VARIABLES,
-            custom_var="dbtenthbar_r",  # bulk density at 0.1 bar, chorizon — not in defaults
+            custom_var="dbtenthbar_r",  # bulk density at 0.1 bar, chorizon - not in defaults
             primary_col="sandtotal_r",
             plausible_col="sandtotal_r",
             plausible_lo=0.0,
@@ -117,11 +279,12 @@ _QUERY_CASES = [
     pytest.param(
         _QueryCase(
             label="area_summary",
+            spec=AREA_SUMMARY_SPEC,
             point_fn=ssurgo_area_summary_query,
             bbox_fn=ssurgo_area_summary_bbox_query,
             avail_fn=ssurgo_area_summary_available_variables,
             default_vars=DEFAULT_AREA_SUMMARY_VARIABLES,
-            custom_var="aws025wta",  # available water storage 0–25 cm, muaggatt — not in defaults
+            custom_var="aws025wta",  # available water storage 0-25 cm - not in defaults
             primary_col="drclassdcd",
         ),
         id="area_summary",
@@ -129,11 +292,12 @@ _QUERY_CASES = [
     pytest.param(
         _QueryCase(
             label="subsurface_barriers",
+            spec=SUBSURFACE_BARRIERS_SPEC,
             point_fn=ssurgo_subsurface_barriers_query,
             bbox_fn=ssurgo_subsurface_barriers_bbox_query,
             avail_fn=ssurgo_subsurface_barriers_available_variables,
             default_vars=DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
-            custom_var="resdept_h",  # restriction top depth high, corestrictions — not in defaults
+            custom_var="resdept_h",  # restriction top depth high - not in defaults
             primary_col="compname",
         ),
         id="subsurface_barriers",
@@ -141,11 +305,12 @@ _QUERY_CASES = [
     pytest.param(
         _QueryCase(
             label="seasonal_hydrology",
+            spec=SEASONAL_HYDROLOGY_SPEC,
             point_fn=ssurgo_seasonal_hydrology_query,
             bbox_fn=ssurgo_seasonal_hydrology_bbox_query,
             avail_fn=ssurgo_seasonal_hydrology_available_variables,
             default_vars=DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
-            custom_var="soimoistdepb_r",  # bottom of saturation zone, cosoilmoist — not in defaults
+            custom_var="soimoistdepb_r",  # bottom of saturation zone - not in defaults
             primary_col="month",
         ),
         id="seasonal_hydrology",
@@ -153,6 +318,7 @@ _QUERY_CASES = [
     pytest.param(
         _QueryCase(
             label="soil_suitability",
+            spec=None,  # Not registered in common framework
             point_fn=ssurgo_soil_suitability_query,
             bbox_fn=ssurgo_soil_suitability_bbox_query,
             avail_fn=ssurgo_soil_suitability_available_rule_names,
@@ -165,11 +331,12 @@ _QUERY_CASES = [
     pytest.param(
         _QueryCase(
             label="ecological_site",
+            spec=ECOLOGICAL_SITE_SPEC,
             point_fn=ssurgo_ecological_site_query,
             bbox_fn=ssurgo_ecological_site_bbox_query,
             avail_fn=ssurgo_ecological_site_available_variables,
             default_vars=DEFAULT_ECOLOGICAL_SITE_VARIABLES,
-            custom_var="ecoclasstypename",  # class type name, coecoclass — not in defaults
+            custom_var="ecoclasstypename",  # class type name, coecoclass - not in defaults
             primary_col="ecoclassid",
         ),
         id="ecological_site",
@@ -177,11 +344,12 @@ _QUERY_CASES = [
     pytest.param(
         _QueryCase(
             label="parent_material",
+            spec=PARENT_MATERIAL_SPEC,
             point_fn=ssurgo_parent_material_query,
             bbox_fn=ssurgo_parent_material_bbox_query,
             avail_fn=ssurgo_parent_material_available_variables,
             default_vars=DEFAULT_PARENT_MATERIAL_VARIABLES,
-            custom_var="pmgenmod",  # parent material genetic modifier, copm — not in defaults
+            custom_var="pmgenmod",  # parent material genetic modifier - not in defaults
             primary_col="pmkind",
         ),
         id="parent_material",
@@ -189,11 +357,12 @@ _QUERY_CASES = [
     pytest.param(
         _QueryCase(
             label="soil_temperature",
+            spec=SOIL_TEMPERATURE_SPEC,
             point_fn=ssurgo_soil_temperature_query,
             bbox_fn=ssurgo_soil_temperature_bbox_query,
             avail_fn=ssurgo_soil_temperature_available_variables,
             default_vars=DEFAULT_SOIL_TEMPERATURE_VARIABLES,
-            custom_var="soitempdept_l",  # top depth low end, cosoiltemp — not in defaults
+            custom_var="soitempdept_l",  # top depth low end, cosoiltemp - not in defaults
             primary_col="soitempmm",
         ),
         id="soil_temperature",
@@ -209,6 +378,12 @@ _QUERY_CASES = [
 @pytest.fixture(scope="module", params=_QUERY_CASES)
 def qc(request) -> _QueryCase:
     return request.param
+
+
+@pytest.fixture(scope="module")
+def avail_result(qc: _QueryCase) -> dict:
+    """Available-variables/rule-names result; fetched once per query type."""
+    return qc.avail_fn()
 
 
 @pytest.fixture(scope="module")
@@ -245,217 +420,159 @@ def baseline_bbox(qc: _QueryCase) -> dict:
     )
 
 
-@pytest.fixture(scope="module")
-def avail_result(qc: _QueryCase) -> dict:
-    """Results for available variables queries."""
-    return qc.avail_fn()
-
-
 # ---------------------------------------------------------------------------
-# Test classes — all parametrized by the `qc` fixture (8 query types)
+# TestAvailableVariables - SSURGO-specific content checks
 # ---------------------------------------------------------------------------
 
 
 class TestAvailableVariables:
-    """available_variables tool returns a non-empty result with the expected shape."""
+    """SSURGO-specific available-variables content (schema/meta/catalog in common tests)."""
 
-    def test_returns_nonempty(self, qc: _QueryCase, avail_result: dict):
-        key = "data"
-        assert len(avail_result[key]) > 0, f"{qc.label}: avail result is empty"
+    def test_each_entry_has_description_and_units(self, qc: _QueryCase, avail_result: dict) -> None:
+        """Every catalog entry has a non-empty description and a 'units' key.
 
-    def test_result_key_present(self, qc: _QueryCase, avail_result: dict):
-        key = "data"
-        assert key in avail_result, f"{qc.label}: expected key '{key}' missing from avail result"
-
-    def test_primary_col_listed(self, qc: _QueryCase, avail_result: dict):
-        if qc.uses_rule_names:
-            rule_names = avail_result["data"]
-            assert any(r in rule_names for r in qc.default_rule_names), (
-                f"{qc.label}: none of the default rule names found in SDA cointerp"
-            )
-        else:
-            all_vars = list(avail_result["data"].keys())
-            assert qc.primary_col in all_vars, (
-                f"{qc.label}: primary_col '{qc.primary_col}' absent from available variables"
-                " — SDA schema change?"
-            )
-
-    def test_meta_success(self, qc: _QueryCase, avail_result: dict):
-        assert avail_result["_meta"]["success"] is True, (
-            f"{qc.label}: avail_fn meta.success is False — {avail_result['_meta'].get('error')}"
-        )
-
-    def test_all_default_vars_present(self, qc: _QueryCase, avail_result: dict):
-        if qc.uses_rule_names:
-            pytest.skip("soil_suitability uses rule_names, not variable columns")
-        all_vars = list(avail_result["data"].keys())
-        missing = [v for v in qc.default_vars if v not in all_vars]
-        assert not missing, (
-            f"{qc.label}: default variables missing from available set: {missing}"
-            " — SDA schema change?"
-        )
-
-    def test_more_than_defaults_available(self, qc: _QueryCase, avail_result: dict):
-        """SDA exposes additional columns beyond the curated default set."""
-        if qc.uses_rule_names:
-            pytest.skip("soil_suitability uses rule_names, not variable columns")
-        all_vars = list(avail_result["data"].keys())
-        assert len(all_vars) > len(qc.default_vars), (
-            f"{qc.label}: expected more columns than the {len(qc.default_vars)} defaults,"
-            f" but only got {len(all_vars)}"
-        )
-
-    def test_each_entry_has_variable_name_and_metadata(self, qc: _QueryCase, avail_result: dict):
-        """Every entry has non-empty 'description' and a 'units' key.
-
-        Descriptions and units are parsed from the SDA Tables and Columns
-        Report PDF (``TablesAndColumnsReport.pdf``) downloaded once per
-        process.  Units may legitimately be empty for dimensionless quantities
-        such as pH; the key is always present but may be an empty string.
+        Descriptions and units come from the SDA Tables and Columns Report PDF.
+        Units may legitimately be empty for dimensionless quantities; the key
+        must always be present.
         """
         if qc.uses_rule_names:
-            pytest.skip("soil_suitability uses rule_names, not variable columns")
+            pytest.skip(f"{qc.label}: soil_suitability uses rule_names, not variable columns")
         for col, entry in avail_result["data"].items():
             assert col, f"{qc.label}: empty column name in available variables"
             assert entry.get("description"), (
-                f"{qc.label}: column '{col}' missing non-empty 'description'"
+                f"{qc.label}: column {col!r} missing non-empty 'description'"
             )
-            assert "units" in entry, f"{qc.label}: column '{col}' missing 'units' key"
+            assert "units" in entry, f"{qc.label}: column {col!r} missing 'units' key"
 
-    def test_schema_valid(self, qc: _QueryCase, avail_result: dict):
-        """Full available_variables response validates against its Pydantic schema."""
-        if qc.uses_rule_names:
-            SuitabilityRulesResponse.model_validate(avail_result)
-        else:
-            AvailableVariablesResponse.model_validate(avail_result)
-
-
-class TestPointQueryStructure:
-    """Baseline default-variable point query: structure and meta fields."""
-
-    def test_success_is_true(self, baseline_point: dict):
-        assert baseline_point["_meta"]["success"] is True
-
-    def test_returns_data(self, qc: _QueryCase, baseline_point: dict):
-        assert len(baseline_point["data"]) > 0, (
-            f"{qc.label}: expected data rows at Yakima WA but got none"
+    def test_suitability_schema(self, qc: _QueryCase, avail_result: dict) -> None:
+        """soil_suitability available_rule_names validates against SuitabilityRulesResponse."""
+        if not qc.uses_rule_names:
+            pytest.skip(f"{qc.label}: variable-based type. schema checked by common tests")
+        SuitabilityRulesResponse.model_validate(avail_result)
+        assert len(avail_result["data"]) > 0, f"{qc.label}: no rule names returned"
+        assert any(r in avail_result["data"] for r in qc.default_rule_names), (
+            f"{qc.label}: none of the default rule names found in available rules"
         )
 
-    def test_primary_col_in_row(self, qc: _QueryCase, baseline_point: dict):
+
+# ---------------------------------------------------------------------------
+# TestPointQuery - SSURGO-specific structure checks
+# ---------------------------------------------------------------------------
+
+
+class TestPointQuery:
+    """SSURGO-specific point-query assertions: group wrapper and column presence."""
+
+    def test_group_wrapper_fields(self, qc: _QueryCase, baseline_point: dict) -> None:
+        """Every geometry group carries 'mukey' and 'muname' at the top level."""
         if not baseline_point["data"]:
-            pytest.skip(f"{qc.label}: no data rows returned")
-        group = baseline_point["data"][0]
-        assert qc.primary_col in group["records"][0], (
-            f"{qc.label}: primary_col '{qc.primary_col}' absent from first record"
+            pytest.skip(f"{qc.label}: no data rows returned at Yakima WA")
+        for group in baseline_point["data"]:
+            assert "mukey" in group, f"{qc.label}: 'mukey' absent from group wrapper"
+            assert "muname" in group, f"{qc.label}: 'muname' absent from group wrapper"
+
+    def test_primary_col_in_records(self, qc: _QueryCase, baseline_point: dict) -> None:
+        """The type-specific primary column appears in the first inner record."""
+        if not baseline_point["data"] or not qc.primary_col:
+            pytest.skip(f"{qc.label}: no data or no primary_col defined")
+        record = baseline_point["data"][0]["records"][0]
+        assert qc.primary_col in record, (
+            f"{qc.label}: primary_col {qc.primary_col!r} absent from first record"
         )
 
-    def test_meta_source_field(self, baseline_point: dict):
-        assert baseline_point["_meta"]["source"] == "ssurgo"
+    def test_plausible_values_at_yakima(self, qc: _QueryCase, baseline_point: dict) -> None:
+        """Numeric primary column values are within the expected plausible range."""
+        if not qc.plausible_col:
+            pytest.skip(f"{qc.label}: no plausible_col defined")
+        for group in baseline_point["data"]:
+            for record in group["records"]:
+                val = record.get(qc.plausible_col)
+                if val is None:
+                    continue
+                assert qc.plausible_lo <= float(val) <= qc.plausible_hi, (
+                    f"{qc.label}: {qc.plausible_col}={val} outside "
+                    f"[{qc.plausible_lo}, {qc.plausible_hi}]"
+                )
 
-    def test_meta_auth_not_required(self, baseline_point: dict):
-        assert baseline_point["_meta"]["auth_required"] is False
-
-    def test_meta_latency_positive(self, baseline_point: dict):
-        assert baseline_point["_meta"]["latency_s"] > 0
-
-    def test_meta_query_params_echoed(self, baseline_point: dict):
-        qp = baseline_point["_meta"]["query_params"]
-        assert qp["latitude"] == _LAT
-        assert qp["longitude"] == _LON
-
-    def test_meta_license_nonempty(self, baseline_point: dict):
-        assert baseline_point["_meta"]["license"] != ""
-
-    def test_meta_variable_info_present(self, qc: _QueryCase, baseline_point: dict):
+    def test_custom_var_in_point_query(self, qc: _QueryCase) -> None:
+        """Querying with a non-default variable returns that column in the result rows."""
         if qc.uses_rule_names:
-            pytest.skip("soil_suitability does not populate variable_info")
-        vi = baseline_point["_meta"]["variable_info"]
-        assert isinstance(vi, dict)
-        assert len(vi) > 0, f"{qc.label}: variable_info is empty"
-
-    def test_meta_data_returned_consistent(self, baseline_point: dict):
-        data = baseline_point["data"]
-        assert baseline_point["_meta"]["geometries_returned"] == len(data)
-        assert baseline_point["_meta"]["total_records_returned"] == sum(
-            len(g["records"]) for g in data
-        )
-
-    def test_full_response_schema_valid(self, baseline_point: dict):
-        """Full point-query response validates against GroupedGeometryResponse schema."""
-        GroupedGeometryResponse.model_validate(baseline_point)
-
-    def test_default_vars_present_in_rows(self, qc: _QueryCase, baseline_point: dict):
-        if not baseline_point["data"]:
-            pytest.skip(f"{qc.label}: no data rows returned")
-        row = baseline_point["data"][0]["records"][0]
-        if qc.uses_rule_names:
-            assert "mrulename" in row, f"{qc.label}: mrulename absent from suitability row"
-        else:
-            found = [v for v in qc.default_vars if v in row]
-            assert len(found) > 0, f"{qc.label}: no default variables found in output row"
-
-    def test_group_wrapper_fields(self, qc: _QueryCase, baseline_point: dict):
-        if not baseline_point["data"]:
-            pytest.skip(f"{qc.label}: no data returned")
-        group = baseline_point["data"][0]
-        assert "mukey" in group, f"{qc.label}: 'mukey' absent from group wrapper"
-        assert "muname" in group, f"{qc.label}: 'muname' absent from group wrapper"
-        assert len(group["records"]) > 0, f"{qc.label}: group has no inner records"
-
-    def test_group_has_geometry(self, qc: _QueryCase, baseline_point: dict):
-        if not baseline_point["data"]:
-            pytest.skip(f"{qc.label}: no data returned")
-        geom = baseline_point["data"][0]["geometry"]
-        assert geom is not None, f"{qc.label}: geometry is None for first group"
-        GeoJsonGeometry.model_validate(geom)
-
-
-class TestNonDefaultVariable:
-    """Requesting a non-default variable/rule returns that column in result rows."""
-
-    def test_custom_var_returned_in_point_query(self, qc: _QueryCase):
-        if qc.uses_rule_names:
-            # Dynamically pick a non-default rule from the available list
             avail = qc.avail_fn()
-            custom = next(
-                (r for r in avail["data"] if r not in qc.default_rule_names),
-                None,
-            )
+            custom = next((r for r in avail["data"] if r not in qc.default_rule_names), None)
             if custom is None:
                 pytest.skip(f"{qc.label}: all available rules are in the default set")
             result = qc.point_fn(
-                latitude=_LAT,
-                longitude=_LON,
-                rule_names=[custom],
-                max_runtime_s=120.0,
+                latitude=_LAT, longitude=_LON, rule_names=[custom], max_runtime_s=120.0
             )
-            assert result["_meta"]["success"] is True, (
-                f"{qc.label}: custom rule '{custom}' query failed — {result['_meta'].get('error')}"
-            )
-            # Rows may be empty if the soil has no rating for this rule
+            assert result["_meta"]["success"] is True
             if result["data"]:
                 assert "mrulename" in result["data"][0]["records"][0]
         else:
             result = qc.point_fn(
-                latitude=_LAT,
-                longitude=_LON,
-                variables=[qc.custom_var],
-                max_runtime_s=120.0,
+                latitude=_LAT, longitude=_LON, variables=[qc.custom_var], max_runtime_s=120.0
             )
             assert result["_meta"]["success"] is True, (
-                f"{qc.label}: custom variable '{qc.custom_var}' query failed"
-                f" — {result['_meta'].get('error')}"
+                f"{qc.label}: custom var {qc.custom_var!r} query failed: "
+                f"{result['_meta'].get('error')}"
             )
-            assert len(result["data"]) > 0, (
-                f"{qc.label}: no data returned for custom variable '{qc.custom_var}'"
-            )
+            assert len(result["data"]) > 0, f"{qc.label}: no data for custom var {qc.custom_var!r}"
             assert qc.custom_var in result["data"][0]["records"][0], (
-                f"{qc.label}: requested column '{qc.custom_var}' absent from output record"
+                f"{qc.label}: {qc.custom_var!r} absent from record"
             )
+
+
+# ---------------------------------------------------------------------------
+# TestBboxQuery - SSURGO-specific structure checks
+# ---------------------------------------------------------------------------
+
+
+class TestBboxQuery:
+    """SSURGO-specific bbox-query assertions: group wrapper and column presence."""
+
+    def test_group_wrapper_fields(self, qc: _QueryCase, baseline_bbox: dict) -> None:
+        """Every geometry group carries 'mukey' and 'muname' at the top level."""
+        if not baseline_bbox["data"]:
+            pytest.skip(f"{qc.label}: no bbox data rows returned")
+        for group in baseline_bbox["data"]:
+            assert "mukey" in group, f"{qc.label}: 'mukey' absent from bbox group wrapper"
+            assert "muname" in group, f"{qc.label}: 'muname' absent from bbox group wrapper"
+
+    def test_primary_col_in_rows(self, qc: _QueryCase, baseline_bbox: dict) -> None:
+        """The type-specific primary column appears in every bbox result row."""
+        if not baseline_bbox["data"] or not qc.primary_col:
+            pytest.skip(f"{qc.label}: no data or no primary_col defined")
+        for group in baseline_bbox["data"]:
+            assert qc.primary_col in group["records"][0], (
+                f"{qc.label}: primary_col {qc.primary_col!r} absent from bbox record"
+            )
+
+    def test_custom_var_in_bbox_query(self, qc: _QueryCase) -> None:
+        """Querying with a non-default variable in a bbox returns that column in result rows."""
+        if qc.uses_rule_names:
+            avail = qc.avail_fn()
+            custom = next((r for r in avail["data"] if r not in qc.default_rule_names), None)
+            if custom is None:
+                pytest.skip(f"{qc.label}: all available rules are in the default set")
+            result = qc.bbox_fn(**_BBOX, rule_names=[custom], max_runtime_s=120.0)
+            assert result["_meta"]["success"] is True
+        else:
+            result = qc.bbox_fn(**_BBOX, variables=[qc.custom_var], max_runtime_s=120.0)
+            assert result["_meta"]["success"] is True, (
+                f"{qc.label}: custom var {qc.custom_var!r} bbox query failed"
+            )
+            if result["data"]:
+                assert qc.custom_var in result["data"][0]["records"][0], (
+                    f"{qc.label}: {qc.custom_var!r} absent from bbox record"
+                )
+
+
+# ---------------------------------------------------------------------------
+# TestNonCoveragePoint - non-US points return empty data without error
+# ---------------------------------------------------------------------------
 
 
 class TestNonCoveragePoint:
-    """Queries outside SSURGO coverage return empty data with the no-coverage message."""
+    """Queries outside SSURGO coverage return empty data (success=True, error=None)."""
 
     def _run_non_us(self, qc: _QueryCase) -> dict:
         if qc.uses_rule_names:
@@ -472,265 +589,138 @@ class TestNonCoveragePoint:
             max_runtime_s=120.0,
         )
 
-    def test_non_us_point_returns_empty(self, qc: _QueryCase):
+    def test_non_us_returns_empty_data(self, qc: _QueryCase) -> None:
         result = self._run_non_us(qc)
-        assert result["_meta"]["success"] is True, (
-            f"{qc.label}: non-US query should succeed (no exception), but success=False"
-        )
+        assert_meta_success(result)
         assert result["data"] == [], (
-            f"{qc.label}: expected empty data for non-US point, got {len(result['data'])} rows"
+            f"{qc.label}: expected empty data for non-US point; got {len(result['data'])} groups"
         )
 
-    def test_non_us_point_error_message(self, qc: _QueryCase):
+    def test_non_us_schema_valid(self, qc: _QueryCase) -> None:
         result = self._run_non_us(qc)
-        assert result["_meta"]["error"] == _NO_COVERAGE_MSG, (
-            f"{qc.label}: expected _NO_COVERAGE_MSG, got: {result['_meta'].get('error')!r}"
-        )
+        GroupedGeometryResponse.model_validate(result)
 
 
-class TestMaxRuntimeGate:
-    """max_runtime_s=0.0 must block; max_runtime_s=3600.0 must allow."""
+# ---------------------------------------------------------------------------
+# TestSuitabilityMaxRuntimeGate - soil_suitability only
+# ---------------------------------------------------------------------------
+
+
+class TestSuitabilityMaxRuntimeGate:
+    """soil_suitability max_runtime_s gate (not registered in common framework)."""
 
     @pytest.mark.parametrize("query_mode", ["point", "bbox"])
-    def test_zero_max_runtime_blocks_query(self, qc: _QueryCase, query_mode: str):
+    def test_zero_max_runtime_blocks_query(self, query_mode: str) -> None:
         if query_mode == "point":
-            if qc.uses_rule_names:
-                result = qc.point_fn(
-                    latitude=_LAT,
-                    longitude=_LON,
-                    rule_names=qc.default_rule_names,
-                    max_runtime_s=0.0,
-                )
-            else:
-                result = qc.point_fn(
-                    latitude=_LAT,
-                    longitude=_LON,
-                    variables=qc.default_vars,
-                    max_runtime_s=0.0,
-                )
+            result = ssurgo_soil_suitability_query(
+                latitude=_LAT,
+                longitude=_LON,
+                rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
+                max_runtime_s=0.0,
+            )
         else:
-            if qc.uses_rule_names:
-                result = qc.bbox_fn(
-                    **_BBOX,
-                    rule_names=qc.default_rule_names,
-                    max_runtime_s=0.0,
-                )
-            else:
-                result = qc.bbox_fn(
-                    **_BBOX,
-                    variables=qc.default_vars,
-                    max_runtime_s=0.0,
-                )
-        assert result["_meta"]["success"] is False, (
-            f"{qc.label}/{query_mode}: max_runtime_s=0.0 should have blocked the query"
-        )
-        assert result["_meta"]["slow_query_warning"] is True
+            result = ssurgo_soil_suitability_bbox_query(
+                **_BBOX,
+                rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
+                max_runtime_s=0.0,
+            )
+        assert result["_meta"]["success"] is False
+        assert result["_meta"].get("slow_query_warning") is True
         assert result["data"] == []
 
     @pytest.mark.parametrize("query_mode", ["point", "bbox"])
-    def test_generous_max_runtime_allows_query(self, qc: _QueryCase, query_mode: str):
+    def test_generous_max_runtime_allows_query(self, query_mode: str) -> None:
         if query_mode == "point":
-            if qc.uses_rule_names:
-                result = qc.point_fn(
-                    latitude=_LAT,
-                    longitude=_LON,
-                    rule_names=qc.default_rule_names,
-                    max_runtime_s=3600.0,
-                )
-            else:
-                result = qc.point_fn(
-                    latitude=_LAT,
-                    longitude=_LON,
-                    variables=qc.default_vars,
-                    max_runtime_s=3600.0,
-                )
+            result = ssurgo_soil_suitability_query(
+                latitude=_LAT,
+                longitude=_LON,
+                rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
+                max_runtime_s=3600.0,
+            )
         else:
-            if qc.uses_rule_names:
-                result = qc.bbox_fn(
-                    **_BBOX,
-                    rule_names=qc.default_rule_names,
-                    max_runtime_s=3600.0,
-                )
-            else:
-                result = qc.bbox_fn(
-                    **_BBOX,
-                    variables=qc.default_vars,
-                    max_runtime_s=3600.0,
-                )
+            result = ssurgo_soil_suitability_bbox_query(
+                **_BBOX,
+                rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
+                max_runtime_s=3600.0,
+            )
         assert result["_meta"]["success"] is True, (
-            f"{qc.label}/{query_mode}: max_runtime_s=3600.0 should have allowed the query,"
-            f" got error: {result['_meta'].get('error')}"
+            f"soil_suitability/{query_mode}: max_runtime_s=3600 should allow query; "
+            f"error={result['_meta'].get('error')}"
         )
         assert len(result["data"]) > 0
 
 
-class TestBboxQuery:
-    """Bbox queries return map-unit records with correct structure."""
-
-    def test_returns_data(self, qc: _QueryCase, baseline_bbox: dict):
-        assert baseline_bbox["_meta"]["success"] is True, (
-            f"{qc.label}: bbox query failed — {baseline_bbox['_meta'].get('error')}"
-        )
-        assert len(baseline_bbox["data"]) > 0, f"{qc.label}: bbox query returned no data rows"
-
-    def test_primary_col_in_rows(self, qc: _QueryCase, baseline_bbox: dict):
-        if not baseline_bbox["data"]:
-            pytest.skip(f"{qc.label}: no bbox data rows returned")
-        for group in baseline_bbox["data"]:
-            assert qc.primary_col in group["records"][0], (
-                f"{qc.label}: primary_col '{qc.primary_col}' absent from bbox record"
-            )
-
-    def test_meta_query_params_echoed(self, qc: _QueryCase, baseline_bbox: dict):
-        qp = baseline_bbox["_meta"]["query_params"]
-        assert qp["min_lat"] == _BBOX["min_lat"]
-        assert qp["max_lat"] == _BBOX["max_lat"]
-        assert qp["min_lon"] == _BBOX["min_lon"]
-        assert qp["max_lon"] == _BBOX["max_lon"]
-
-    def test_meta_data_returned_consistent(self, baseline_bbox: dict):
-        data = baseline_bbox["data"]
-        assert baseline_bbox["_meta"]["geometries_returned"] == len(data)
-        assert baseline_bbox["_meta"]["total_records_returned"] == sum(
-            len(g["records"]) for g in data
-        )
-
-    def test_custom_var_returned(self, qc: _QueryCase):
-        if qc.uses_rule_names:
-            avail = qc.avail_fn()
-            custom = next(
-                (r for r in avail["data"] if r not in qc.default_rule_names),
-                None,
-            )
-            if custom is None:
-                pytest.skip(f"{qc.label}: all available rules are in the default set")
-            result = qc.bbox_fn(
-                **_BBOX,
-                rule_names=[custom],
-                max_runtime_s=120.0,
-            )
-            assert result["_meta"]["success"] is True, (
-                f"{qc.label}: bbox custom rule '{custom}' query failed"
-            )
-        else:
-            result = qc.bbox_fn(
-                **_BBOX,
-                variables=[qc.custom_var],
-                max_runtime_s=120.0,
-            )
-            assert result["_meta"]["success"] is True, (
-                f"{qc.label}: bbox custom var '{qc.custom_var}' query failed"
-            )
-            if result["data"]:
-                assert qc.custom_var in result["data"][0]["records"][0], (
-                    f"{qc.label}: custom column '{qc.custom_var}' absent from bbox record"
-                )
+# ---------------------------------------------------------------------------
+# TestSoilSuitability - soil_suitability-specific tests
+# ---------------------------------------------------------------------------
 
 
-class TestSchemaStability:
-    """Schema-stability assertions — catch SDA structural changes early."""
+class TestSoilSuitability:
+    """soil_suitability point and bbox queries — rule_names API."""
 
-    def test_primary_col_present(self, qc: _QueryCase, baseline_point: dict):
-        if not baseline_point["data"]:
-            pytest.skip(f"{qc.label}: no data rows returned")
-        assert qc.primary_col in baseline_point["data"][0]["records"][0], (
-            f"{qc.label}: primary_col '{qc.primary_col}' missing — SDA schema change?"
-        )
-
-    def test_meta_variable_info_present(self, qc: _QueryCase, baseline_point: dict):
-        if qc.uses_rule_names:
-            pytest.skip("soil_suitability does not populate variable_info")
-        vi = baseline_point["_meta"]["variable_info"]
-        assert isinstance(vi, dict)
-        assert len(vi) > 0, f"{qc.label}: variable_info empty — mdstatcolmas catalogue unavailable?"
-
-    def test_meta_license_nonempty(self, baseline_point: dict):
-        assert baseline_point["_meta"]["license"] != ""
-        assert baseline_point["_meta"]["license_url"] != ""
-
-    def test_meta_data_returned_consistent(self, baseline_point: dict):
-        data = baseline_point["data"]
-        assert baseline_point["_meta"]["geometries_returned"] == len(data)
-        assert baseline_point["_meta"]["total_records_returned"] == sum(
-            len(g["records"]) for g in data
-        )
-
-    def test_plausible_value_range(self, qc: _QueryCase, baseline_point: dict):
-        """Numeric plausible-range check — currently configured for soil_profile sand %."""
-        if not qc.plausible_col:
-            pytest.skip(f"{qc.label}: no plausible_col configured")
-        col = qc.plausible_col
-        values = [
-            float(r[col])
-            for g in baseline_point["data"]
-            for r in g["records"]
-            if r.get(col) is not None
-        ]
-        if not values:
-            pytest.skip(f"{qc.label}: all rows have NULL for '{col}'")
-        for v in values:
-            assert qc.plausible_lo <= v <= qc.plausible_hi, (
-                f"{qc.label}: {col}={v} outside expected range"
-                f" [{qc.plausible_lo}, {qc.plausible_hi}] — fill value or unit change?"
-            )
-
-
-class TestAvailableVariablesRoundtrip:
-    """Verify that non-default variables returned by available_variables can be
-    used directly in point and bbox query functions.
-
-    For each query type, this test calls ``avail_fn()`` to discover available
-    variables, selects up to three columns that are *not* in the curated
-    default set, then issues a live query with those non-default columns and
-    asserts the query succeeds and returns data.  This proves the full
-    discovery → selection → query workflow end-to-end.
-    """
-
-    def test_avail_variables_usable_in_point_query(self, qc: _QueryCase):
-        if qc.uses_rule_names:
-            pytest.skip(f"{qc.label}: soil_suitability uses rule_names, not variable columns")
-        avail = qc.avail_fn()
-        assert avail["_meta"]["success"] is True, (
-            f"{qc.label}: avail_fn() failed — {avail['_meta'].get('error')}"
-        )
-        default_set = set(qc.default_vars)
-        non_default = [v for v in avail["data"] if v not in default_set][:3]
-        if not non_default:
-            pytest.skip(f"{qc.label}: no non-default variables found in avail result")
-        result = qc.point_fn(
+    @pytest.fixture(scope="class")
+    def suitability_point(self) -> dict:
+        return ssurgo_soil_suitability_query(
             latitude=_LAT,
             longitude=_LON,
-            variables=non_default,
+            rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
             max_runtime_s=120.0,
-        )
-        assert result["_meta"]["success"] is True, (
-            f"{qc.label}: point query with non-default vars {non_default} failed"
-            f" — {result['_meta'].get('error')}"
-        )
-        assert len(result["data"]) > 0, (
-            f"{qc.label}: expected data rows for non-default vars {non_default} but got none"
         )
 
-    def test_avail_variables_usable_in_bbox_query(self, qc: _QueryCase):
-        if qc.uses_rule_names:
-            pytest.skip(f"{qc.label}: soil_suitability uses rule_names, not variable columns")
-        avail = qc.avail_fn()
-        assert avail["_meta"]["success"] is True, (
-            f"{qc.label}: avail_fn() failed — {avail['_meta'].get('error')}"
-        )
-        default_set = set(qc.default_vars)
-        non_default = [v for v in avail["data"] if v not in default_set][:3]
-        if not non_default:
-            pytest.skip(f"{qc.label}: no non-default variables found in avail result")
-        result = qc.bbox_fn(
+    @pytest.fixture(scope="class")
+    def suitability_bbox(self) -> dict:
+        return ssurgo_soil_suitability_bbox_query(
             **_BBOX,
-            variables=non_default,
+            rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
             max_runtime_s=120.0,
         )
-        assert result["_meta"]["success"] is True, (
-            f"{qc.label}: bbox query with non-default vars {non_default} failed"
-            f" — {result['_meta'].get('error')}"
+
+    @pytest.fixture(scope="class")
+    def suitability_avail(self) -> dict:
+        return ssurgo_soil_suitability_available_rule_names()
+
+    def test_avail_returns_rule_names_list(self, suitability_avail: dict) -> None:
+        assert suitability_avail["_meta"]["success"] is True
+        assert isinstance(suitability_avail["data"], list)
+        assert len(suitability_avail["data"]) > 0
+
+    def test_default_rule_names_present(self, suitability_avail: dict) -> None:
+        assert any(r in suitability_avail["data"] for r in DEFAULT_SOIL_SUITABILITY_RULE_NAMES), (
+            "None of the default rule names found in available rules"
         )
-        assert len(result["data"]) > 0, (
-            f"{qc.label}: expected data rows for non-default vars {non_default} but got none"
+
+    def test_point_returns_data(self, suitability_point: dict) -> None:
+        assert_meta_success(suitability_point)
+        assert len(suitability_point["data"]) > 0
+
+    def test_point_mrulename_in_records(self, suitability_point: dict) -> None:
+        if not suitability_point["data"]:
+            pytest.skip("no data returned")
+        assert "mrulename" in suitability_point["data"][0]["records"][0]
+
+    def test_point_mukey_muname_in_groups(self, suitability_point: dict) -> None:
+        if not suitability_point["data"]:
+            pytest.skip("no data returned")
+        for group in suitability_point["data"]:
+            assert "mukey" in group
+            assert "muname" in group
+
+    def test_bbox_returns_data(self, suitability_bbox: dict) -> None:
+        assert_meta_success(suitability_bbox)
+        assert len(suitability_bbox["data"]) > 0
+
+    def test_non_us_point_returns_empty(self) -> None:
+        result = ssurgo_soil_suitability_query(
+            latitude=_NON_US_LAT,
+            longitude=_NON_US_LON,
+            rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
+            max_runtime_s=120.0,
         )
+        assert_meta_success(result)
+        assert result["data"] == []
+
+    def test_schema_valid(self, suitability_point: dict) -> None:
+        GroupedGeometryResponse.model_validate(suitability_point)
+
+    def test_avail_schema_valid(self, suitability_avail: dict) -> None:
+        SuitabilityRulesResponse.model_validate(suitability_avail)

@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field, ValidationError
 
 from env_data_mcp.models import GroupedGeometryResponse
 from env_data_mcp.sources.ssurgo import (
-    _NO_COVERAGE_MSG,
     LICENSE_INFO,
     ssurgo_soil_profile_available_variables,
     ssurgo_soil_profile_bbox_query,
@@ -107,7 +106,7 @@ def test_soil_profile_query_non_us_returns_no_coverage(httpx_mock):
     result = ssurgo_soil_profile_query(latitude=48.8566, longitude=2.3522)
     assert result["_meta"]["success"] is True
     assert result["data"] == []
-    assert result["_meta"]["error"] == _NO_COVERAGE_MSG
+    assert result["_meta"]["error"] is None
 
 
 def test_soil_profile_query_http_error_returns_failure(httpx_mock):
