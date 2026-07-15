@@ -211,7 +211,7 @@ def test_get_full_variable_info(httpx_mock):
 
 def test_get_variable_info_raises_http_status_error(httpx_mock):
     """Tests that HTTP status errors propagate."""
-    httpx_mock.add_response(url=_NRTI_URL, status_code=503)
+    httpx_mock.add_response(url=_OFFL_URL, status_code=503)
 
     with pytest.raises(httpx.HTTPStatusError):
         _get_full_variable_info()

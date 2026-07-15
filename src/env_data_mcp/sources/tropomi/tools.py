@@ -32,8 +32,10 @@ def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, A
 @mcp.tool()
 def tropomi_available_variables() -> dict[str, Any]:
     """Return a list of available TROPOMI variables with descriptions."""
+    t0 = time.perf_counter()
     try:
         variable_info = get_variable_info()
+        latency = time.perf_counter() - t0
         return _validate_available_variables_response(
             {
                 "data": variable_info,
@@ -42,12 +44,13 @@ def tropomi_available_variables() -> dict[str, Any]:
                     query_params={},
                     geometries_returned=0,
                     total_records_returned=len(variable_info),
-                    latency_s=0.0,
+                    latency_s=latency,
                     license_info=LICENSE_INFO,
                 ),
             }
         )
     except Exception as e:
+        latency = time.perf_counter() - t0
         return _validate_available_variables_response(
             {
                 "data": {},
@@ -56,7 +59,7 @@ def tropomi_available_variables() -> dict[str, Any]:
                     query_params={},
                     geometries_returned=0,
                     total_records_returned=0,
-                    latency_s=0.0,
+                    latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,
                     error=str(e),
