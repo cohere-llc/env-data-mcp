@@ -319,7 +319,7 @@ class TestBboxQuery:
             f"{dc.spec.primary_variable} missing non-empty units"
         )
         assert var_info[dc.spec.primary_variable]["description"], (
-            f"{dc.spec.primary_variable} missing non-emptry description"
+            f"{dc.spec.primary_variable} missing non-empty description"
         )
         for var in dc.spec.default_variables:
             assert var in var_info, f"{dc.spec.name}: {var} not in variable_info"
