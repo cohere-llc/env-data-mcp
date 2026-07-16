@@ -418,7 +418,7 @@ def assert_geometry_group_valid(group: dict[str, Any]) -> None:
     # TODO Add validation of Polygon geometries (SSURGO)
     assert "records" in group, "geometry group missing 'records' key"
     assert isinstance(group["records"], list), "'records' must be a list"
-    assert len(group["records"]) > 0, "'records' cannot be emtpy"
+    assert len(group["records"]) > 0, "'records' cannot be empty"
 
 
 def assert_all_geometry_groups_valid(result: dict[str, Any]) -> None:
