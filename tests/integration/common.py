@@ -473,7 +473,7 @@ def assert_point_results_in_bbox(
     """Assert that every (lat, lon) from a point query also appears in the
     corresponding bbox query result.
 
-    Coordinate values are rounded to *precision* decimal places before comarison.
+    Coordinate values are rounded to *precision* decimal places before comparison.
 
     Silently skips non-Point geometries (e.g., Polygon from SSURGO).
     """
