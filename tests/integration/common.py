@@ -1,4 +1,4 @@
-"""Common fixtures, data structues, and assertions for integration tests.
+"""Common fixtures, data structures, and assertions for integration tests.
 
 Provides a common set of test conditions for all adapters.
 """
