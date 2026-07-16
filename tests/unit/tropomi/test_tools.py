@@ -92,7 +92,10 @@ _SLOW_WARN = {
         "variables": [],
         "variable_info": {},
         "unavailable_variables": [],
-        "error": None,
+        "error": (
+            "Estimated runtime 100.0s exceeds the 72.0s threshold."
+            " Pass max_runtime_s=126 to allow this query to proceed."
+        ),
     },
 }
 
