@@ -177,7 +177,8 @@ def check_runtime(
             ),
             # Standard _meta fields (with safe defaults) so callers get a
             # uniform schema whether the gate fires or the query completes.
-            "rows_returned": 0,
+            "geometries_returned": 0,
+            "total_records_returned": 0,
             "latency_s": 0.0,
             "query_params": {},
             "auth_required": False,
@@ -192,7 +193,10 @@ def check_runtime(
             "variables": [],
             "variable_info": {},
             "unavailable_variables": [],
-            "error": None,
+            "error": (
+                f"Estimated runtime {t_est:.1f}s exceeds the {threshold:.1f}s threshold. "
+                f"Pass max_runtime_s={headroom} to allow this query to proceed."
+            ),
         },
     }
 
@@ -288,7 +292,8 @@ def bbox_area_deg2(bbox: dict[str, float]) -> float:
 def build_meta(
     source: str,
     query_params: dict[str, Any],
-    rows_returned: int,
+    geometries_returned: int,
+    total_records_returned: int,
     latency_s: float,
     license_info: Mapping[str, str | list[str]],
     *,
@@ -306,7 +311,9 @@ def build_meta(
         source: Short identifier for the data source (e.g. "nasa_power").
         query_params: The exact resolved inputs used for the query, echoed
             back verbatim so any result can be reproduced from a log record.
-        rows_returned: Number of data records in the response.
+        geometries_returned: Number of geometry groups in returned data
+        total_records_returned: Total number of all data records across geometry groups
+            in the response.
         latency_s: Wall-clock seconds for the data fetch.
         license_info: Dict with at least "license" and "license_url" keys,
             typically the LICENSE_INFO constant from the source module.
@@ -324,8 +331,9 @@ def build_meta(
         "variables": variables if variables is not None else [],
         "variable_info": variable_info if variable_info is not None else {},
         "unavailable_variables": unavailable_variables if unavailable_variables is not None else [],
-        "rows_returned": rows_returned,
-        "latency_s": round(latency_s, 3),
+        "geometries_returned": geometries_returned,
+        "total_records_returned": total_records_returned,
+        "latency_s": round(latency_s, 6),
         "auth_required": auth_required,
         "auth_present": auth_present,
         "success": success,
@@ -357,7 +365,8 @@ def auth_missing_response(
         "_meta": build_meta(
             source=source,
             query_params=query_params,
-            rows_returned=0,
+            geometries_returned=0,
+            total_records_returned=0,
             latency_s=0.0,
             license_info=license_info,
             auth_required=True,

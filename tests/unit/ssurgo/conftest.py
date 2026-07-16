@@ -223,6 +223,11 @@ _COLUMN_TABLE_MAP_TEST_DATA: dict[str, str] = {
     "pmkind": "copm",
     "pmorigin": "copm",
     "pmmodified": "copm",
+    "pmorder": "copm",
+    "pmdept_r": "copm",
+    "pmdepb_r": "copm",
+    "pmmodifier": "copm",
+    "pmgenmod": "copm",
     # cosoiltemp
     "soitempdept_l": "cosoiltemp",
     "soitempdept_r": "cosoiltemp",
@@ -517,6 +522,15 @@ SOIL_TEMP_XML = textwrap.dedent("""\
 # Shared autouse fixture
 # ---------------------------------------------------------------------------
 
+# Stub variable-info dict built from the same column-table test data used to
+# seed _COLUMN_TABLE_CACHE.  Values have the minimal keys the tool code
+# accesses ("label", "units").  Used to make _VARIABLE_INFO_CACHE non-empty
+# so that the variable-filtering logic in _point_query / _bbox_query passes
+# all recognised columns through to the SQL layer without HTTP round-trips.
+_STUB_VAR_INFO: dict[str, dict[str, str]] = {
+    col: {"label": "", "units": ""} for col in _COLUMN_TABLE_MAP_TEST_DATA
+}
+
 
 @pytest.fixture(autouse=True)
 def _reset_ssurgo_caches(request):
@@ -524,11 +538,13 @@ def _reset_ssurgo_caches(request):
     _VARIABLE_INFO_CACHE.clear()
     _COLUMN_TABLE_CACHE.clear()
     _COLUMN_TABLE_CACHE.update(_COLUMN_TABLE_MAP_TEST_DATA)
-    # Pre-seed variable info cache with empty dicts so _get_variable_info()
-    # returns immediately without making HTTP requests during unit tests.
+    # Pre-seed variable info cache so _get_variable_info() returns immediately
+    # without making HTTP requests during unit tests.  Each query type receives
+    # a copy of the full stub catalog so that the variable-filtering pass in
+    # _point_query / _bbox_query recognises all test columns as valid.
     # Tests for available_variables functions are excluded: they register HTTP
     # mocks specifically to exercise the fetch path, so the cache must be cold.
     if "available_variables" not in request.node.name:
         for _qt in _QueryType:
-            _VARIABLE_INFO_CACHE[_qt] = {}
+            _VARIABLE_INFO_CACHE[_qt] = dict(_STUB_VAR_INFO)
     yield

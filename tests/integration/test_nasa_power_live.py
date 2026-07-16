@@ -6,7 +6,6 @@ All tests require live S3/Zarr access.  Run with:
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 
 import pytest
@@ -26,71 +25,111 @@ from env_data_mcp.sources.nasa_power import (
     nasa_power_syn1deg_query,
 )
 
+from .common import (
+    NH_MIDLAT_BBOX,
+    NH_RURAL,
+    AdapterSpec,
+    assert_available_variables_valid,
+    assert_grouped_geometry_response_valid,
+    assert_meta_success,
+    assert_point_results_in_bbox,
+)
+
 pytestmark = pytest.mark.integration
 
-# ---------------------------------------------------------------------------
-# Query geometry constants
-# ---------------------------------------------------------------------------
-
-# Yakima River WA: confirmed coverage in both MERRA-2 (1980–present) and SYN1deg (2001–present)
-_LAT = 46.2531882
-_LON = -119.4768203
-_DATE = "2019-08-19"
-
-# 2° × 2° bbox: wide enough to guarantee interior grid points on both the
-# 0.5° MERRA-2 grid and the 1° SYN1deg grid.
-_BBOX = dict(min_lat=45.5, max_lat=47.5, min_lon=-120.5, max_lon=-118.5)
-
 
 # ---------------------------------------------------------------------------
-# Per-dataset parameter table
+# Adapter-specific validate hooks - called by test_common_live.py after
+# common assertions, and directly by adapter-specific tests
+# ---------------------------------------------------------------------------
+
+
+def _validate_nasa_power_point_result(result: dict) -> None:
+    """NASA POWER-specific assertions for a point query result."""
+    assert_grouped_geometry_response_valid(result)
+    assert result["_meta"]["source"] == "nasa_power"
+    assert result["_meta"]["auth_required"] is False
+
+
+def _validate_nasa_power_bbox_result(result: dict) -> None:
+    """NASA POWER-specific assertions for a bbox query result."""
+    assert_grouped_geometry_response_valid(result)
+    assert result["_meta"]["source"] == "nasa_power"
+    assert result["_meta"]["auth_required"] is False
+
+
+# ---------------------------------------------------------------------------
+# NASA POWER AdapterSpec instances - exported for test_common_live.py
+# common assertions, and directly by adapter-specific tests
+# ---------------------------------------------------------------------------
+
+MERRA2_SPEC = AdapterSpec(
+    name="nasa_power_merra2",
+    available_variables=nasa_power_merra2_available_variables,
+    point_query=nasa_power_merra2_query,
+    bbox_query=nasa_power_merra2_bbox_query,
+    supports_date_range=True,
+    primary_variable="T2M",
+    default_variables=DEFAULT_MERRA2_VARIABLES,
+    max_runtime_s=60.0,
+    extra_point_kwargs={"temporal_resolution": TemporalResolution.DAILY},
+    extra_bbox_kwargs={"temporal_resolution": TemporalResolution.DAILY},
+    supports_bbox_bounds_test=False,
+    validate_bbox_result=_validate_nasa_power_bbox_result,
+    validate_point_result=_validate_nasa_power_point_result,
+)
+
+SYN1DEG_SPEC = AdapterSpec(
+    name="nasa_power_syn1deg",
+    available_variables=nasa_power_syn1deg_available_variables,
+    point_query=nasa_power_syn1deg_query,
+    bbox_query=nasa_power_syn1deg_bbox_query,
+    supports_date_range=True,
+    primary_variable="ALLSKY_SFC_SW_DWN",
+    default_variables=DEFAULT_SYN1DEG_VARIABLES,
+    max_runtime_s=60.0,
+    extra_point_kwargs={"temporal_resolution": TemporalResolution.DAILY},
+    extra_bbox_kwargs={"temporal_resolution": TemporalResolution.DAILY},
+    supports_bbox_bounds_test=False,
+    validate_bbox_result=_validate_nasa_power_bbox_result,
+    validate_point_result=_validate_nasa_power_point_result,
+)
+
+
+# ---------------------------------------------------------------------------
+# Adapter-specific dataset parameter table
 # ---------------------------------------------------------------------------
 
 
 @dataclass
 class _DatasetCase:
-    label: str
-    point_fn: Callable
-    bbox_fn: Callable
-    avail_fn: Callable
-    default_vars: list[str]
+    spec: AdapterSpec
     dataset_type: DatasetType
-    primary_var: str
-    plausible_lo: float
-    plausible_hi: float
+    primary_variable_plausible_range: tuple[float, float]
 
 
 _DATASET_CASES = [
     pytest.param(
         _DatasetCase(
-            label="merra2",
-            point_fn=nasa_power_merra2_query,
-            bbox_fn=nasa_power_merra2_bbox_query,
-            avail_fn=nasa_power_merra2_available_variables,
-            default_vars=DEFAULT_MERRA2_VARIABLES,
+            spec=MERRA2_SPEC,
             dataset_type=DatasetType.MERRA2,
-            primary_var="T2M",
-            plausible_lo=5.0,
-            plausible_hi=50.0,
+            primary_variable_plausible_range=(-90.0, 60.0),
         ),
         id="merra2",
     ),
     pytest.param(
         _DatasetCase(
-            label="syn1deg",
-            point_fn=nasa_power_syn1deg_query,
-            bbox_fn=nasa_power_syn1deg_bbox_query,
-            avail_fn=nasa_power_syn1deg_available_variables,
-            default_vars=DEFAULT_SYN1DEG_VARIABLES,
+            spec=SYN1DEG_SPEC,
             dataset_type=DatasetType.SYN1DEG,
-            primary_var="ALLSKY_SFC_SW_DWN",
-            plausible_lo=0.0,
-            plausible_hi=1000.0,
+            primary_variable_plausible_range=(0.0, 1500.0),
         ),
         id="syn1deg",
     ),
 ]
 
+
+# A single confirmed date used for record-count and date-string tests.
+_SINGLE_DATE = "2019-08-19"
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -105,119 +144,261 @@ def dc(request) -> _DatasetCase:
 @pytest.fixture(scope="module")
 def avail_vars(dc: _DatasetCase) -> dict:
     """Available variables; loaded once per module run."""
-    return dc.avail_fn()
+    return dc.spec.available_variables()
 
 
 @pytest.fixture(scope="module")
-def baseline_daily(dc: _DatasetCase) -> dict:
-    """Single-day DAILY result; loaded once per dataset per module run."""
-    return dc.point_fn(
-        latitude=_LAT,
-        longitude=_LON,
-        start_date=_DATE,
-        end_date=_DATE,
-        temporal_resolution=TemporalResolution.DAILY,
-        variables=[dc.primary_var],
-        max_runtime_s=60.0,
+def nh_rural_daily(dc: _DatasetCase) -> dict:
+    """Daily point query at nh_rural over the standard date window."""
+    return dc.spec.point_query(
+        latitude=NH_RURAL.coordinates.latitude,
+        longitude=NH_RURAL.coordinates.longitude,
+        start_date=NH_RURAL.start_date,
+        end_date=NH_RURAL.end_date,
+        max_runtime_s=dc.spec.max_runtime_s,
+        **dc.spec.extra_point_kwargs,
+    )
+
+
+@pytest.fixture(scope="module")
+def nh_midlat_bbox_daily(dc: _DatasetCase) -> dict:
+    """Daily bbox query at nh_midlat over the standard date window."""
+    return dc.spec.bbox_query(
+        min_lat=NH_MIDLAT_BBOX.coordinates.min_lat,
+        max_lat=NH_MIDLAT_BBOX.coordinates.max_lat,
+        min_lon=NH_MIDLAT_BBOX.coordinates.min_lon,
+        max_lon=NH_MIDLAT_BBOX.coordinates.max_lon,
+        start_date=NH_MIDLAT_BBOX.start_date,
+        end_date=NH_MIDLAT_BBOX.end_date,
+        max_runtime_s=dc.spec.max_runtime_s,
+        **dc.spec.extra_bbox_kwargs,
+    )
+
+
+@pytest.fixture(scope="module")
+def nh_rural_single_day(dc: _DatasetCase) -> dict:
+    """Daily point query at nh_rural for a single confirmed date."""
+    return dc.spec.point_query(
+        latitude=NH_RURAL.coordinates.latitude,
+        longitude=NH_RURAL.coordinates.longitude,
+        start_date=_SINGLE_DATE,
+        end_date=_SINGLE_DATE,
+        max_runtime_s=dc.spec.max_runtime_s,
+        **dc.spec.extra_point_kwargs,
     )
 
 
 # ---------------------------------------------------------------------------
-# Test classes — all parametrized by the `dc` fixture (merra2 | syn1deg)
+# TestAvailableVariables
 # ---------------------------------------------------------------------------
 
 
 class TestAvailableVariables:
-    """available_variables tool returns non-empty dict with correct shape."""
+    """available_variables tool returns a valid schema containing expected NASA POWER variables."""
 
-    def test_returns_nonempty_dict(self, dc: _DatasetCase, avail_vars: dict):
-        assert isinstance(avail_vars, dict)
-        assert len(avail_vars) > 0
+    def test_schema_and_meta(self, avail_vars: dict) -> None:
+        # cached results can have 0 latency
+        assert_available_variables_valid(avail_vars, min_latency=-0.01)
 
-    def test_primary_var_present(self, dc: _DatasetCase, avail_vars: dict):
-        assert dc.primary_var in avail_vars["data"], (
-            f"{dc.label}: {dc.primary_var} missing from available variables"
-            " — upstream schema change?"
+    def test_primary_var_present(self, dc: _DatasetCase, avail_vars: dict) -> None:
+        assert dc.spec.primary_variable in avail_vars["data"], (
+            f"{dc.spec.name}: {dc.spec.primary_variable!r} absent from available variables"
         )
-
-    def test_primary_var_has_units_and_description(self, dc: _DatasetCase, avail_vars: dict):
-        entry = avail_vars["data"][dc.primary_var]
-        assert "units" in entry
-        assert "description" in entry
-
-    def test_all_default_vars_present(self, dc: _DatasetCase, avail_vars: dict):
-        missing = [v for v in dc.default_vars if v not in avail_vars["data"]]
-        assert not missing, f"{dc.label}: default variables absent from available set: {missing}"
-
-
-class TestPointQueryStructure:
-    """Baseline single-day DAILY point query: structure and meta fields."""
-
-    def test_success_is_true(self, baseline_daily: dict):
-        assert baseline_daily["_meta"]["success"] is True
-
-    def test_returns_one_row(self, baseline_daily: dict):
-        assert len(baseline_daily["data"][0]["records"]) == 1
-
-    def test_date_matches_query(self, baseline_daily: dict):
-        assert baseline_daily["data"][0]["records"][0]["date"] == _DATE
-
-    def test_primary_var_present_in_row(self, dc: _DatasetCase, baseline_daily: dict):
-        assert dc.primary_var in baseline_daily["data"][0]["records"][0]
-
-    def test_primary_var_units_present(self, dc: _DatasetCase, baseline_daily: dict):
-        assert f"{dc.primary_var}_units" in baseline_daily["data"][0]["records"][0]
-
-    def test_primary_var_plausible(self, dc: _DatasetCase, baseline_daily: dict):
-        val = baseline_daily["data"][0]["records"][0][dc.primary_var]
-        assert dc.plausible_lo <= val <= dc.plausible_hi, (
-            f"{dc.label}: {dc.primary_var}={val} outside expected range "
-            f"[{dc.plausible_lo}, {dc.plausible_hi}]"
-        )
-
-    def test_meta_source_field(self, baseline_daily: dict):
-        assert baseline_daily["_meta"]["source"] == "nasa_power"
-
-    def test_meta_auth_not_required(self, baseline_daily: dict):
-        assert baseline_daily["_meta"]["auth_required"] is False
-
-    def test_meta_latency_positive(self, baseline_daily: dict):
-        assert baseline_daily["_meta"]["latency_s"] > 0
-
-    def test_meta_query_params_echoed(self, baseline_daily: dict):
-        qp = baseline_daily["_meta"]["query_params"]
-        assert qp["latitude"] == _LAT
-        assert qp["longitude"] == _LON
-        assert qp["start_date"] == _DATE
-        assert qp["end_date"] == _DATE
-        assert qp["temporal_resolution"] == "daily"
-
-    def test_meta_variable_info_present(self, dc: _DatasetCase, baseline_daily: dict):
-        vi = baseline_daily["_meta"]["variable_info"]
-        assert dc.primary_var in vi
-        assert "units" in vi[dc.primary_var]
-        assert "description" in vi[dc.primary_var]
-
-    def test_meta_license_nonempty(self, baseline_daily: dict):
-        assert baseline_daily["_meta"]["license"] != ""
-
-    def test_default_variables_returned(self, dc: _DatasetCase):
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            max_runtime_s=60.0,
-        )
-        assert result["_meta"]["success"] is True
-        row = result["data"][0]["records"][0]
-        found = [v for v in dc.default_vars if v in row]
-        assert len(found) > 0, f"{dc.label}: no default variables present in output row"
 
 
 # ---------------------------------------------------------------------------
-# Temporal resolution parametrization
+# TestPointQuery
+# ---------------------------------------------------------------------------
+
+
+class TestPointQuery:
+    """Daily point query at nh_rural: metadata, schema, variable info, and plausible values."""
+
+    def test_meta_and_schema(self, nh_rural_daily: dict) -> None:
+        assert_meta_success(nh_rural_daily)
+        assert_grouped_geometry_response_valid(nh_rural_daily)
+
+    def test_source_and_auth_fields(self, nh_rural_daily: dict) -> None:
+        assert nh_rural_daily["_meta"]["source"] == "nasa_power"
+        assert nh_rural_daily["_meta"]["auth_required"] is False
+
+    def test_query_params_echoed(self, nh_rural_daily: dict, dc: _DatasetCase) -> None:
+        qp = nh_rural_daily["_meta"]["query_params"]
+        assert qp["latitude"] == pytest.approx(NH_RURAL.coordinates.latitude)
+        assert qp["longitude"] == pytest.approx(NH_RURAL.coordinates.longitude)
+        assert qp["start_date"] == NH_RURAL.start_date
+        assert qp["end_date"] == NH_RURAL.end_date
+        assert qp["temporal_resolution"] == TemporalResolution.DAILY.value
+        assert qp["variables"] == dc.spec.default_variables
+        assert qp["max_runtime_s"] == dc.spec.max_runtime_s
+
+    def test_variable_info_for_requested_vars(self, dc: _DatasetCase, nh_rural_daily: dict) -> None:
+        var_info = nh_rural_daily["_meta"]["variable_info"]
+        assert dc.spec.primary_variable in var_info, (
+            f"{dc.spec.name}: {dc.spec.primary_variable} not in variable_info"
+        )
+        assert var_info[dc.spec.primary_variable]["units"], (
+            f"{dc.spec.primary_variable} missing non-empty units"
+        )
+        assert var_info[dc.spec.primary_variable]["description"], (
+            f"{dc.spec.primary_variable} missing non-empty description"
+        )
+        for var in dc.spec.default_variables:
+            assert var in var_info, f"{dc.spec.name}: {var} not in variable_info"
+            assert var_info[var]["units"], f"{var} missing non-empty units"
+            assert var_info[var]["description"], f"{var} missing non-empty description"
+
+    def test_default_variables_in_records(self, dc: _DatasetCase, nh_rural_daily: dict) -> None:
+        record = nh_rural_daily["data"][0]["records"][0]
+        for v in dc.spec.default_variables:
+            assert v in record, f"{dc.spec.name}: default variable {v} not found in output record"
+
+    def test_primary_var_units_field_in_records(
+        self, dc: _DatasetCase, nh_rural_daily: dict
+    ) -> None:
+        """Each variable has a co-located ``<var>_units`` field in the record."""
+        record = nh_rural_daily["data"][0]["records"][0]
+        assert f"{dc.spec.primary_variable}_units" in record
+
+    def test_primary_var_plausible(self, dc: _DatasetCase, nh_rural_daily: dict) -> None:
+        lo, hi = dc.primary_variable_plausible_range
+        for location in nh_rural_daily["data"]:
+            for record in location["records"]:
+                assert dc.spec.primary_variable in record
+                val = record[dc.spec.primary_variable]
+                assert lo <= val <= hi, (
+                    f"{dc.spec.name}: {dc.spec.primary_variable}={val} "
+                    f"outside plausible range [{lo}, {hi}]"
+                )
+
+    def test_single_day_returns_one_record(self, nh_rural_single_day: dict) -> None:
+        """A single-day query returns exactly one temporal record."""
+        assert len(nh_rural_single_day["data"][0]["records"]) == 1
+
+    def test_single_day_date_matches_query(self, nh_rural_single_day: dict) -> None:
+        """The date string in the returned record matches the queried date."""
+        assert nh_rural_single_day["data"][0]["records"][0]["date"] == _SINGLE_DATE
+
+
+# ---------------------------------------------------------------------------
+# TestBboxQuery
+# ---------------------------------------------------------------------------
+
+
+class TestBboxQuery:
+    """Daily bbox query at nh_midlat: schema, metadata, and point-in-bbox consistency."""
+
+    def test_meta_and_schema(self, nh_midlat_bbox_daily: dict) -> None:
+        assert_meta_success(nh_midlat_bbox_daily)
+        assert_grouped_geometry_response_valid(nh_midlat_bbox_daily)
+
+    def test_source_and_auth_fields(self, nh_midlat_bbox_daily: dict) -> None:
+        assert nh_midlat_bbox_daily["_meta"]["source"] == "nasa_power"
+        assert nh_midlat_bbox_daily["_meta"]["auth_required"] is False
+
+    def test_query_params_echoed(self, nh_midlat_bbox_daily: dict, dc: _DatasetCase) -> None:
+        qp = nh_midlat_bbox_daily["_meta"]["query_params"]
+        assert qp["min_lat"] == pytest.approx(NH_MIDLAT_BBOX.coordinates.min_lat)
+        assert qp["max_lat"] == pytest.approx(NH_MIDLAT_BBOX.coordinates.max_lat)
+        assert qp["min_lon"] == pytest.approx(NH_MIDLAT_BBOX.coordinates.min_lon)
+        assert qp["max_lon"] == pytest.approx(NH_MIDLAT_BBOX.coordinates.max_lon)
+        assert qp["start_date"] == NH_MIDLAT_BBOX.start_date
+        assert qp["end_date"] == NH_MIDLAT_BBOX.end_date
+        assert qp["temporal_resolution"] == TemporalResolution.DAILY.value
+        assert qp["variables"] == dc.spec.default_variables
+        assert qp["max_runtime_s"] == dc.spec.max_runtime_s
+
+    def test_variable_info_for_requested_vars(
+        self, dc: _DatasetCase, nh_midlat_bbox_daily: dict
+    ) -> None:
+        var_info = nh_midlat_bbox_daily["_meta"]["variable_info"]
+        assert dc.spec.primary_variable in var_info, (
+            f"{dc.spec.name}: {dc.spec.primary_variable} not in variable_info"
+        )
+        assert var_info[dc.spec.primary_variable]["units"], (
+            f"{dc.spec.primary_variable} missing non-empty units"
+        )
+        assert var_info[dc.spec.primary_variable]["description"], (
+            f"{dc.spec.primary_variable} missing non-empty description"
+        )
+        for var in dc.spec.default_variables:
+            assert var in var_info, f"{dc.spec.name}: {var} not in variable_info"
+            assert var_info[var]["units"], f"{var} missing non-empty units"
+            assert var_info[var]["description"], f"{var} missing non-empty description"
+
+    def test_default_variables_in_records(
+        self, dc: _DatasetCase, nh_midlat_bbox_daily: dict
+    ) -> None:
+        record = nh_midlat_bbox_daily["data"][0]["records"][0]
+        for v in dc.spec.default_variables:
+            assert v in record, f"{dc.spec.name}: default variable {v} not found in output record"
+
+    def test_primary_var_units_field_in_records(
+        self, dc: _DatasetCase, nh_midlat_bbox_daily: dict
+    ) -> None:
+        """Each variable has a co-located ``<var>_units`` field in the record."""
+        record = nh_midlat_bbox_daily["data"][0]["records"][0]
+        assert f"{dc.spec.primary_variable}_units" in record
+
+    def test_primary_var_plausible(self, dc: _DatasetCase, nh_midlat_bbox_daily: dict) -> None:
+        lo, hi = dc.primary_variable_plausible_range
+        for location in nh_midlat_bbox_daily["data"]:
+            for record in location["records"]:
+                assert dc.spec.primary_variable in record
+                val = record[dc.spec.primary_variable]
+                assert lo <= val <= hi, (
+                    f"{dc.spec.name}: {dc.spec.primary_variable}={val} "
+                    f"outside plausible range [{lo}, {hi}]"
+                )
+
+    def test_point_results_subset_of_bbox_results(
+        self,
+        nh_rural_daily: dict,
+        nh_midlat_bbox_daily: dict,
+    ) -> None:
+        """Every grid cell returned by the point query must also appear in the bbox results."""
+        assert_point_results_in_bbox(nh_rural_daily["data"], nh_midlat_bbox_daily["data"])
+
+    def test_in_bbox_field_present_on_all_grid_points(self, nh_midlat_bbox_daily: dict) -> None:
+        """Every geometry group returned by a bbox query carries an ``in_bbox`` bool field."""
+        for pt in nh_midlat_bbox_daily["data"]:
+            assert "in_bbox" in pt, (
+                f"grid point at ({pt.get('latitude')}, {pt.get('longitude')}) "
+                "missing 'in_bbox' field"
+            )
+            assert isinstance(pt["in_bbox"], bool), (
+                f"'in_bbox' must be bool; got {type(pt['in_bbox'])}"
+            )
+
+    def test_has_interior_and_buffer_grid_points(
+        self, dc: _DatasetCase, nh_midlat_bbox_daily: dict
+    ) -> None:
+        """Bbox results include both interior (in_bbox=True) and buffer (in_bbox=False) cells."""
+        interior = [pt for pt in nh_midlat_bbox_daily["data"] if pt.get("in_bbox")]
+        buffer = [pt for pt in nh_midlat_bbox_daily["data"] if not pt.get("in_bbox")]
+        assert len(interior) >= 1, (
+            f"{dc.spec.name}: no interior (in_bbox=True) grid points in bbox result"
+        )
+        assert len(buffer) >= 1, (
+            f"{dc.spec.name}: no buffer (in_bbox=False) grid points in bbox result"
+        )
+
+    def test_record_count_per_grid_point(self, nh_midlat_bbox_daily: dict) -> None:
+        """Every grid point in a multi-day bbox query has one record per queried day.
+
+        The nh_midlat fixture uses the 7-day standard date window, so each grid
+        point must carry exactly 7 daily records.
+        """
+        for pt in nh_midlat_bbox_daily["data"]:
+            assert len(pt["records"]) == 7, (
+                f"Expected 7 records per grid point for 7-day query; "
+                f"got {len(pt['records'])} at "
+                f"({pt.get('latitude')}, {pt.get('longitude')})"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Temporal resolution parametrization (NASA POWER-specific)
 # ---------------------------------------------------------------------------
 
 
@@ -226,8 +407,8 @@ class _TemporalCase:
     resolution: TemporalResolution
     start_date: str
     end_date: str
-    expected_n: int
-    max_rt: float
+    expected_record_count: int
+    max_runtime_s: float
 
 
 _TEMPORAL_CASES = [
@@ -236,8 +417,8 @@ _TEMPORAL_CASES = [
             resolution=TemporalResolution.DAILY,
             start_date="2019-08-15",
             end_date="2019-08-21",
-            expected_n=7,
-            max_rt=30.0,
+            expected_record_count=7,
+            max_runtime_s=30.0,
         ),
         id="daily_7d",
     ),
@@ -246,8 +427,8 @@ _TEMPORAL_CASES = [
             resolution=TemporalResolution.MONTHLY,
             start_date="2019-01-01",
             end_date="2019-12-31",
-            expected_n=12,
-            max_rt=30.0,
+            expected_record_count=12,
+            max_runtime_s=30.0,
         ),
         id="monthly_12mo",
     ),
@@ -256,8 +437,8 @@ _TEMPORAL_CASES = [
             resolution=TemporalResolution.ANNUAL,
             start_date="2015-01-01",
             end_date="2019-12-31",
-            expected_n=5,
-            max_rt=30.0,
+            expected_record_count=5,
+            max_runtime_s=30.0,
         ),
         id="annual_5yr",
     ),
@@ -266,8 +447,8 @@ _TEMPORAL_CASES = [
             resolution=TemporalResolution.HOURLY,
             start_date="2019-08-19",
             end_date="2019-08-19",
-            expected_n=24,
-            max_rt=120.0,
+            expected_record_count=24,
+            max_runtime_s=120.0,
         ),
         id="hourly_1d",
     ),
@@ -281,22 +462,23 @@ def tc(request) -> _TemporalCase:
 
 @pytest.fixture(scope="module")
 def temporal_result(dc: _DatasetCase, tc: _TemporalCase) -> dict:
-    """Single point query for each temporal resolution and dataset; loaded once per resolution
-    per test run.
-    """
-    return dc.point_fn(
-        latitude=_LAT,
-        longitude=_LON,
+    """Point query at nh_rural for each temporal resolution; loaded once per combination."""
+    return dc.spec.point_query(
+        latitude=NH_RURAL.coordinates.latitude,
+        longitude=NH_RURAL.coordinates.longitude,
         start_date=tc.start_date,
         end_date=tc.end_date,
         temporal_resolution=tc.resolution,
-        variables=[dc.primary_var],
-        max_runtime_s=tc.max_rt,
+        variables=[dc.spec.primary_variable],
+        max_runtime_s=tc.max_runtime_s,
     )
 
 
 class TestTemporalResolution:
     """Point queries for DAILY / MONTHLY / ANNUAL / HOURLY produce expected record counts."""
+
+    def test_meta_success(self, temporal_result: dict) -> None:
+        assert_meta_success(temporal_result)
 
     def test_record_count_matches_date_range(
         self,
@@ -304,12 +486,10 @@ class TestTemporalResolution:
         tc: _TemporalCase,
         temporal_result: dict,
     ):
-        assert temporal_result["_meta"]["success"] is True, (
-            f"{dc.label}/{tc.resolution.value}: query failed — {temporal_result['_meta'].get('error')}"  # noqa: E501
-        )
-        assert len(temporal_result["data"][0]["records"]) == tc.expected_n, (
-            f"{dc.label}/{tc.resolution.value}: expected {tc.expected_n} records, "
-            f"got {len(temporal_result['data'][0]['records'])}"
+        records = temporal_result["data"][0]["records"]
+        assert len(records) == tc.expected_record_count, (
+            f"{dc.spec.name}/{tc.resolution.value}: expected {tc.expected_record_count} records, "
+            f"got {len(records)}"
         )
 
     def test_temporal_resolution_echoed_in_meta(self, tc: _TemporalCase, temporal_result: dict):
@@ -318,34 +498,46 @@ class TestTemporalResolution:
         )
 
 
+# ---------------------------------------------------------------------------
+# TestHourlyQuery (NASA POWER-specific)
+# ---------------------------------------------------------------------------
+
+
 @pytest.fixture(scope="module")
 def hourly_result(dc: _DatasetCase) -> dict:
     """Point query for hourly tests."""
-    return dc.point_fn(
-        latitude=_LAT,
-        longitude=_LON,
+    return dc.spec.point_query(
+        latitude=NH_RURAL.coordinates.latitude,
+        longitude=NH_RURAL.coordinates.longitude,
         start_date="2019-08-19",
         end_date="2019-08-19",
         temporal_resolution=TemporalResolution.HOURLY,
-        variables=[dc.primary_var],
+        variables=[dc.spec.primary_variable],
         max_runtime_s=120.0,
     )
 
 
-class TestHourlyDetails:
+class TestHourlyQuery:
     """HOURLY queries produce 24 records with distinct ISO-8601 datetime strings."""
+
+    def test_meta_success(self, hourly_result: dict) -> None:
+        assert_meta_success(hourly_result)
+
+    def test_hourly_record_count(self, dc: _DatasetCase, hourly_result) -> None:
+        records = hourly_result["data"][0]["records"]
+        assert len(records) == 24, f"{dc.spec.name}: expected 24 hourly records, got {len(records)}"
 
     def test_hourly_dates_are_distinct(self, dc: _DatasetCase, hourly_result: dict):
         """Verifies the int64-truncation fix in _get_coordinates for sub-day time values."""
         assert hourly_result["_meta"]["success"] is True
         records = hourly_result["data"][0]["records"]
         assert len(records) == 24, (
-            f"{dc.label}: expected 24 hourly records, got {len(records)} — "
+            f"{dc.spec.name}: expected 24 hourly records, got {len(records)}. "
             "may indicate int64 truncation in _get_coordinates"
         )
         dates = [row["date"] for row in records]
         assert len(set(dates)) == 24, (
-            f"{dc.label}: 24 hourly records but only {len(set(dates))} distinct date strings — "
+            f"{dc.spec.name}: 24 hourly records but only {len(set(dates))} distinct date strings. "
             "time axis still truncating to daily resolution"
         )
 
@@ -353,20 +545,26 @@ class TestHourlyDetails:
         assert hourly_result["_meta"]["success"] is True
         first_date = hourly_result["data"][0]["records"][0]["date"]
         assert "T" in first_date, (
-            f"{dc.label}: hourly date '{first_date}' missing time component — expected ISO datetime"
+            f"{dc.spec.name}: hourly date '{first_date}' missing time component. "
+            "expected ISO datetime"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestClimatologyQuery (NASA POWER-specific)
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")
 def clim_result(dc: _DatasetCase) -> dict:
     """Point query for climatology tests."""
-    return dc.point_fn(
-        latitude=_LAT,
-        longitude=_LON,
+    return dc.spec.point_query(
+        latitude=NH_RURAL.coordinates.latitude,
+        longitude=NH_RURAL.coordinates.longitude,
         start_date="2019-01-01",
         end_date="2019-12-31",
         temporal_resolution=TemporalResolution.CLIMATOLOGY,
-        variables=[dc.primary_var],
+        variables=[dc.spec.primary_variable],
         max_runtime_s=60.0,
     )
 
@@ -385,268 +583,66 @@ class TestClimatologyProbe:
         store = _open_store(dc.dataset_type, TemporalResolution.CLIMATOLOGY)
         _, _, times = _get_coordinates(store)
         assert len(times) == 13, (
-            f"{dc.label}: expected 13 climatology time steps (12 months + annual), got {len(times)}"
+            f"{dc.spec.name}: expected 13 climatology time steps (12 months + annual), "
+            f"got {len(times)}"
         )
 
     def test_climatology_full_year_returns_13_records(self, dc: _DatasetCase, clim_result: dict):
-        """Date range spanning all 12 calendar months → 13 records."""
+        """Date range spanning all 12 calendar months; 13 records."""
         assert clim_result["_meta"]["success"] is True, (
-            f"{dc.label}: climatology query failed — {clim_result['_meta'].get('error')}"
+            f"{dc.spec.name}: climatology query failed - {clim_result['_meta'].get('error')}"
         )
         n = len(clim_result["data"][0]["records"])
-        assert n == 13, f"{dc.label}: expected 13 climatology records (full year), got {n}"
+        assert n == 13, f"{dc.spec.name}: expected 13 climatology records (full year), got {n}"
 
     def test_climatology_single_month_returns_2_records(self, dc: _DatasetCase):
         """Single-month range → 1 month + annual = 2 records."""
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
+        result = dc.spec.point_query(
+            latitude=NH_RURAL.coordinates.latitude,
+            longitude=NH_RURAL.coordinates.longitude,
             start_date="2019-08-01",
             end_date="2019-08-31",
             temporal_resolution=TemporalResolution.CLIMATOLOGY,
-            variables=[dc.primary_var],
+            variables=[dc.spec.primary_variable],
             max_runtime_s=60.0,
         )
         assert result["_meta"]["success"] is True, (
-            f"{dc.label}: climatology single-month query failed — {result['_meta'].get('error')}"
+            f"{dc.spec.name}: climatology single-month query failed - "
+            f"{result['_meta'].get('error')}"
         )
         records = result["data"][0]["records"]
         assert len(records) == 2, (
-            f"{dc.label}: expected 2 records (month-08 + annual), got {len(records)}"
+            f"{dc.spec.name}: expected 2 records (month-08 + annual), got {len(records)}"
         )
         dates = {r["date"] for r in records}
-        assert "month-08" in dates, f"{dc.label}: 'month-08' missing from {dates}"
-        assert "annual" in dates, f"{dc.label}: 'annual' missing from {dates}"
+        assert "month-08" in dates, f"{dc.spec.name}: 'month-08' missing from {dates}"
+        assert "annual" in dates, f"{dc.spec.name}: 'annual' missing from {dates}"
 
     def test_climatology_multi_month_returns_months_plus_annual(self, dc: _DatasetCase):
-        """Jun–Aug range → months 6, 7, 8 + annual = 4 records."""
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
+        """Jun-Aug range: months 6, 7, 8 + annual = 4 records."""
+        result = dc.spec.point_query(
+            latitude=NH_RURAL.coordinates.latitude,
+            longitude=NH_RURAL.coordinates.longitude,
             start_date="2019-06-01",
             end_date="2019-08-31",
             temporal_resolution=TemporalResolution.CLIMATOLOGY,
-            variables=[dc.primary_var],
+            variables=[dc.spec.primary_variable],
             max_runtime_s=60.0,
         )
         assert result["_meta"]["success"] is True, (
-            f"{dc.label}: climatology multi-month query failed — {result['_meta'].get('error')}"
+            f"{dc.spec.name}: climatology multi-month query failed - {result['_meta'].get('error')}"
         )
         records = result["data"][0]["records"]
         assert len(records) == 4, (
-            f"{dc.label}: expected 4 records (months 6-8 + annual), got {len(records)}"
+            f"{dc.spec.name}: expected 4 records (months 6-8 + annual), got {len(records)}"
         )
         dates = {r["date"] for r in records}
         for expected in ("month-06", "month-07", "month-08", "annual"):
-            assert expected in dates, f"{dc.label}: '{expected}' missing from {dates}"
+            assert expected in dates, f"{dc.spec.name}: '{expected}' missing from {dates}"
 
     def test_climatology_full_year_date_labels(self, dc: _DatasetCase, clim_result: dict):
         """Full-year query: records labeled month-01...month-12 and annual."""
         assert clim_result["_meta"]["success"] is True
         dates = {r["date"] for r in clim_result["data"][0]["records"]}
         expected = {f"month-{m:02d}" for m in range(1, 13)} | {"annual"}
-        assert dates == expected, f"{dc.label}: date labels mismatch — got {sorted(dates)}"
-
-
-class TestNonDefaultVariable:
-    """Requesting a non-default variable returns data with that variable present."""
-
-    def test_non_default_variable_returned(self, dc: _DatasetCase):
-        all_vars = dc.avail_fn()
-        extra = next((v for v in all_vars["data"] if v not in dc.default_vars), None)
-        if extra is None:
-            pytest.skip(f"{dc.label}: all available variables are in the default set")
-        result = dc.point_fn(
-            latitude=_LAT,
-            longitude=_LON,
-            start_date=_DATE,
-            end_date=_DATE,
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[extra],
-            max_runtime_s=60.0,
-        )
-        assert result["_meta"]["success"] is True
-        assert extra in result["data"][0]["records"][0], (
-            f"{dc.label}: non-default variable '{extra}' absent from output row"
-        )
-
-
-@pytest.fixture(scope="module")
-def unavail_result(dc: _DatasetCase) -> dict:
-    """Query for unavailable variables."""
-    return dc.point_fn(
-        latitude=_LAT,
-        longitude=_LON,
-        start_date=_DATE,
-        end_date=_DATE,
-        temporal_resolution=TemporalResolution.DAILY,
-        variables=[dc.primary_var, "DOES_NOT_EXIST_XYZ"],
-        max_runtime_s=60.0,
-    )
-
-
-class TestUnavailableVariable:
-    """Requesting a non-existent variable name does not crash; it is reported."""
-
-    def test_nonexistent_variable_in_unavailable_list(self, dc: _DatasetCase, unavail_result: dict):
-        assert unavail_result["_meta"]["success"] is True
-        assert "DOES_NOT_EXIST_XYZ" in unavail_result["_meta"]["unavailable_variables"], (
-            f"{dc.label}: non-existent variable not reported in unavailable_variables"
-        )
-
-    def test_nonexistent_variable_absent_from_row(self, dc: _DatasetCase, unavail_result: dict):
-        assert "DOES_NOT_EXIST_XYZ" not in unavail_result["data"][0]["records"][0]
-
-
-class TestMaxRuntimeGate:
-    """max_runtime_s=0.0 must block; max_runtime_s=3600.0 must allow."""
-
-    @pytest.mark.parametrize("query_mode", ["point", "bbox"])
-    def test_zero_max_runtime_blocks_query(self, dc: _DatasetCase, query_mode: str):
-        if query_mode == "point":
-            result = dc.point_fn(
-                latitude=_LAT,
-                longitude=_LON,
-                start_date=_DATE,
-                end_date=_DATE,
-                temporal_resolution=TemporalResolution.DAILY,
-                variables=[dc.primary_var],
-                max_runtime_s=0.0,
-            )
-        else:
-            result = dc.bbox_fn(
-                **_BBOX,
-                start_date=_DATE,
-                end_date=_DATE,
-                temporal_resolution=TemporalResolution.DAILY,
-                variables=[dc.primary_var],
-                max_runtime_s=0.0,
-            )
-        assert result["_meta"]["success"] is False, (
-            f"{dc.label}/{query_mode}: max_runtime_s=0.0 should have blocked the query"
-        )
-        assert result["_meta"]["slow_query_warning"] is True
-        assert result["data"] == []
-
-    @pytest.mark.parametrize("query_mode", ["point", "bbox"])
-    def test_generous_max_runtime_allows_query(self, dc: _DatasetCase, query_mode: str):
-        if query_mode == "point":
-            result = dc.point_fn(
-                latitude=_LAT,
-                longitude=_LON,
-                start_date=_DATE,
-                end_date=_DATE,
-                temporal_resolution=TemporalResolution.DAILY,
-                variables=[dc.primary_var],
-                max_runtime_s=3600.0,
-            )
-        else:
-            result = dc.bbox_fn(
-                **_BBOX,
-                start_date=_DATE,
-                end_date=_DATE,
-                temporal_resolution=TemporalResolution.DAILY,
-                variables=[dc.primary_var],
-                max_runtime_s=3600.0,
-            )
-        assert result["_meta"]["success"] is True, (
-            f"{dc.label}/{query_mode}: max_runtime_s=3600.0 should have allowed the query"
-        )
-        assert len(result["data"]) > 0
-
-
-@pytest.fixture(scope="module")
-def bbox_result(dc: _DatasetCase) -> dict:
-    """Bounding box query."""
-    return dc.bbox_fn(
-        **_BBOX,
-        start_date=_DATE,
-        end_date=_DATE,
-        temporal_resolution=TemporalResolution.DAILY,
-        variables=[dc.primary_var],
-        max_runtime_s=60.0,
-    )
-
-
-class TestBboxQuery:
-    """Bbox queries return grid points with correct structure and plausible values."""
-
-    def test_returns_data(self, dc: _DatasetCase, bbox_result: dict):
-        assert bbox_result["_meta"]["success"] is True
-        assert len(bbox_result["data"]) > 0
-
-    def test_has_interior_and_buffer_points(self, dc: _DatasetCase, bbox_result: dict):
-        in_bbox = [pt for pt in bbox_result["data"] if pt["in_bbox"]]
-        buffer = [pt for pt in bbox_result["data"] if not pt["in_bbox"]]
-        assert len(in_bbox) >= 1, f"{dc.label}: no in_bbox=True grid points"
-        assert len(buffer) >= 1, f"{dc.label}: no buffer (in_bbox=False) grid points"
-
-    def test_grid_point_structure(self, dc: _DatasetCase, bbox_result: dict):
-        for pt in bbox_result["data"]:
-            assert "latitude" in pt
-            assert "longitude" in pt
-            assert "in_bbox" in pt
-            assert "records" in pt
-            assert len(pt["records"]) == 1
-            assert dc.primary_var in pt["records"][0]
-
-    def test_primary_var_plausible_at_all_points(self, dc: _DatasetCase, bbox_result: dict):
-        for pt in bbox_result["data"]:
-            val = pt["records"][0][dc.primary_var]
-            assert dc.plausible_lo <= val <= dc.plausible_hi, (
-                f"{dc.label} bbox: {dc.primary_var}={val} out of plausible range at "
-                f"({pt['latitude']}, {pt['longitude']})"
-            )
-
-    def test_multi_day_records_per_grid_point(self, dc: _DatasetCase):
-        result = dc.bbox_fn(
-            **_BBOX,
-            start_date="2019-08-17",
-            end_date="2019-08-19",
-            temporal_resolution=TemporalResolution.DAILY,
-            variables=[dc.primary_var],
-            max_runtime_s=60.0,
-        )
-        for pt in result["data"]:
-            assert len(pt["records"]) == 3
-
-    def test_meta_query_params_echoed(self, dc: _DatasetCase, bbox_result: dict):
-        qp = bbox_result["_meta"]["query_params"]
-        assert qp["min_lat"] == _BBOX["min_lat"]
-        assert qp["max_lat"] == _BBOX["max_lat"]
-        assert qp["temporal_resolution"] == "daily"
-
-
-class TestSchemaStability:
-    """Detects upstream variable renames, unit changes, and missing meta fields."""
-
-    def test_primary_var_field_present(self, dc: _DatasetCase, baseline_daily: dict):
-        row = baseline_daily["data"][0]["records"][0]
-        assert dc.primary_var in row, (
-            f"{dc.label}: {dc.primary_var} missing — upstream may have renamed it"
-        )
-
-    def test_primary_var_units_field_present(self, dc: _DatasetCase, baseline_daily: dict):
-        row = baseline_daily["data"][0]["records"][0]
-        assert f"{dc.primary_var}_units" in row, (
-            f"{dc.label}: {dc.primary_var}_units missing — units no longer echoed"
-        )
-
-    def test_primary_var_physical_range(self, dc: _DatasetCase, baseline_daily: dict):
-        val = baseline_daily["data"][0]["records"][0][dc.primary_var]
-        assert dc.plausible_lo - 5 <= val <= dc.plausible_hi + 5, (
-            f"{dc.label}: {dc.primary_var}={val} outside physical range — "
-            "fill value leaked or unit changed?"
-        )
-
-    def test_variable_info_in_meta(self, dc: _DatasetCase, baseline_daily: dict):
-        vi = baseline_daily["_meta"]["variable_info"]
-        assert dc.primary_var in vi
-        assert "units" in vi[dc.primary_var]
-        assert "description" in vi[dc.primary_var]
-
-    def test_meta_license_nonempty(self, baseline_daily: dict):
-        assert baseline_daily["_meta"]["license"] != ""
-
-    def test_meta_rows_returned_consistent(self, baseline_daily: dict):
-        assert baseline_daily["_meta"]["rows_returned"] == len(baseline_daily["data"][0]["records"])
+        assert dates == expected, f"{dc.spec.name}: date labels mismatch - got {sorted(dates)}"

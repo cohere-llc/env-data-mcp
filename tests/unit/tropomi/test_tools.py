@@ -76,7 +76,8 @@ _SLOW_WARN = {
             "Estimated runtime 100.0s exceeds the 72.0s threshold."
             " Pass max_runtime_s=126 to allow this query to proceed."
         ),
-        "rows_returned": 0,
+        "geometries_returned": 0,
+        "total_records_returned": 0,
         "latency_s": 0.0,
         "query_params": {},
         "auth_required": False,
@@ -91,7 +92,10 @@ _SLOW_WARN = {
         "variables": [],
         "variable_info": {},
         "unavailable_variables": [],
-        "error": None,
+        "error": (
+            "Estimated runtime 100.0s exceeds the 72.0s threshold."
+            " Pass max_runtime_s=126 to allow this query to proceed."
+        ),
     },
 }
 
@@ -158,8 +162,8 @@ class TestAvailableVariables:
         assert "_meta" in results
         assert "success" in results["_meta"]
         assert results["_meta"]["success"] is True
-        assert "rows_returned" in results["_meta"]
-        assert results["_meta"]["rows_returned"] == 3
+        assert results["_meta"]["geometries_returned"] == 0
+        assert results["_meta"]["total_records_returned"] == 3
 
     def test_returns_error(self):
         """Tests that HTTP status errors are handled."""
@@ -218,7 +222,8 @@ class TestTropomiQuery:
         assert meta["source"] == "tropomi"
         assert meta["success"] is True
         assert meta["error"] is None
-        assert meta["rows_returned"] == 1
+        assert meta["geometries_returned"] == 1
+        assert meta["total_records_returned"] == 1
         assert meta["auth_required"] is False
 
     def test_echoes_query_params(self):
@@ -282,7 +287,8 @@ class TestTropomiQuery:
             )
         meta = result["_meta"]
         assert meta["success"] is False
-        assert meta["rows_returned"] == 0
+        assert meta["geometries_returned"] == 0
+        assert meta["total_records_returned"] == 0
         assert result["data"] == []
         assert "exceeds" in meta["message"]
 
@@ -377,7 +383,8 @@ class TestTropomiBboxQuery:
         assert meta["source"] == "tropomi"
         assert meta["success"] is True
         assert meta["error"] is None
-        assert meta["rows_returned"] == 2
+        assert meta["geometries_returned"] == 2
+        assert meta["total_records_returned"] == 2
         assert meta["auth_required"] is False
 
     def test_echoes_query_params(self):
@@ -451,7 +458,8 @@ class TestTropomiBboxQuery:
             )
         meta = result["_meta"]
         assert meta["success"] is False
-        assert meta["rows_returned"] == 0
+        assert meta["geometries_returned"] == 0
+        assert meta["total_records_returned"] == 0
         assert result["data"] == []
         assert "exceeds" in meta["message"]
 

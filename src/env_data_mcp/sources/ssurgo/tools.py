@@ -21,7 +21,6 @@ from env_data_mcp.server import mcp
 
 from ._client import _fetch_mukey_geometries, _fetch_sda, _get_variable_info, _parse_xml
 from .constants import (
-    _NO_COVERAGE_MSG,
     _SDA_URL,
     _SOIL_SUITABILITY_RULES_SQL,
     DEFAULT_AREA_SUMMARY_VARIABLES,
@@ -112,7 +111,8 @@ def _available_vars_response(query_type: _QueryType) -> dict[str, Any]:
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params={"query_type": query_type},
-                    rows_returned=len(info),
+                    geometries_returned=0,
+                    total_records_returned=len(info),
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                 ),
@@ -126,7 +126,8 @@ def _available_vars_response(query_type: _QueryType) -> dict[str, Any]:
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params={"query_type": query_type},
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -158,7 +159,8 @@ def _point_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params={"latitude": latitude, "longitude": longitude},
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -175,7 +177,8 @@ def _point_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params={"latitude": latitude, "longitude": longitude},
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -184,7 +187,6 @@ def _point_query(
             }
         )
     user_vars = vars_
-    sql_vars = ["mukey", "muname"] + [v for v in vars_ if v not in ("mukey", "muname")]
     wkt = f"POINT({point.longitude} {point.latitude})"
     query_params: dict[str, Any] = {
         "latitude": point.latitude,
@@ -196,7 +198,30 @@ def _point_query(
     t0 = time.perf_counter()
     try:
         full_info = _get_variable_info(query_type)
-        sql = sql_builder(wkt, sql_vars)
+        valid_vars = [v for v in user_vars if v in full_info]
+        unavail_vars = [v for v in user_vars if v not in full_info]
+        if not valid_vars:
+            latency = time.perf_counter() - t0
+            return _validate_grouped_geometry_response(
+                {
+                    "data": [],
+                    "_meta": build_meta(
+                        source="ssurgo",
+                        variables=[],
+                        query_params=query_params,
+                        geometries_returned=0,
+                        total_records_returned=0,
+                        latency_s=latency,
+                        license_info=LICENSE_INFO,
+                        variable_info={},
+                        unavailable_variables=unavail_vars,
+                    ),
+                }
+            )
+        sql_vars_filtered = ["mukey", "muname"] + [
+            v for v in valid_vars if v not in ("mukey", "muname")
+        ]
+        sql = sql_builder(wkt, sql_vars_filtered)
         records, latency = _fetch_sda(sql)
         grouped = _group_by_mukey(records)
         _buf = _GEOM_BBOX_BUFFER_DEG
@@ -221,7 +246,7 @@ def _point_query(
         # columns (compname, hzname, depth bounds, etc.) appear in the metadata.
         result_cols = next(
             (list(rows["rows"][0].keys()) for rows in grouped.values() if rows["rows"]),
-            user_vars,
+            valid_vars,
         )
         vinfo = {
             v: {
@@ -236,13 +261,14 @@ def _point_query(
                 "data": data,
                 "_meta": build_meta(
                     source="ssurgo",
-                    variables=user_vars,
+                    variables=valid_vars,
                     query_params=query_params,
-                    rows_returned=total_records,
+                    geometries_returned=len(data),
+                    total_records_returned=total_records,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     variable_info=vinfo,
-                    error=_NO_COVERAGE_MSG if not data else None,
+                    unavailable_variables=unavail_vars,
                 ),
             }
         )
@@ -254,7 +280,8 @@ def _point_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -289,7 +316,8 @@ def _bbox_query(
                         "min_lon": min_lon,
                         "max_lon": max_lon,
                     },
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -315,7 +343,8 @@ def _bbox_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=base_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -324,7 +353,6 @@ def _bbox_query(
             }
         )
     user_vars = vars_
-    sql_vars = ["mukey", "muname"] + [v for v in vars_ if v not in ("mukey", "muname")]
     wkt = bbox_to_wkt_polygon(bbox.model_dump())
     query_params: dict[str, Any] = {
         **base_params,
@@ -335,7 +363,30 @@ def _bbox_query(
     t0 = time.perf_counter()
     try:
         full_info = _get_variable_info(query_type)
-        sql = sql_builder(wkt, sql_vars)
+        valid_vars = [v for v in user_vars if v in full_info]
+        unavail_vars = [v for v in user_vars if v not in full_info]
+        if not valid_vars:
+            latency = time.perf_counter() - t0
+            return _validate_grouped_geometry_response(
+                {
+                    "data": [],
+                    "_meta": build_meta(
+                        source="ssurgo",
+                        variables=[],
+                        query_params=query_params,
+                        geometries_returned=0,
+                        total_records_returned=0,
+                        latency_s=latency,
+                        license_info=LICENSE_INFO,
+                        variable_info={},
+                        unavailable_variables=unavail_vars,
+                    ),
+                }
+            )
+        sql_vars_filtered = ["mukey", "muname"] + [
+            v for v in valid_vars if v not in ("mukey", "muname")
+        ]
+        sql = sql_builder(wkt, sql_vars_filtered)
         records, latency = _fetch_sda(sql)
         grouped = _group_by_mukey(records)
         geo_bbox = (bbox.min_lon, bbox.min_lat, bbox.max_lon, bbox.max_lat)
@@ -354,7 +405,7 @@ def _bbox_query(
         # columns (compname, hzname, depth bounds, etc.) appear in the metadata.
         result_cols = next(
             (list(rows["rows"][0].keys()) for rows in grouped.values() if rows["rows"]),
-            user_vars,
+            valid_vars,
         )
         vinfo = {
             v: {
@@ -369,13 +420,14 @@ def _bbox_query(
                 "data": data,
                 "_meta": build_meta(
                     source="ssurgo",
-                    variables=user_vars,
+                    variables=valid_vars,
                     query_params=query_params,
-                    rows_returned=total_records,
+                    geometries_returned=len(data),
+                    total_records_returned=total_records,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     variable_info=vinfo,
-                    error=_NO_COVERAGE_MSG if not data else None,
+                    unavailable_variables=unavail_vars,
                 ),
             }
         )
@@ -387,7 +439,8 @@ def _bbox_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -744,7 +797,8 @@ def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params={"query_type": "soil_suitability"},
-                    rows_returned=len(rule_names),
+                    geometries_returned=0,
+                    total_records_returned=len(rule_names),
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                 ),
@@ -758,7 +812,8 @@ def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params={"query_type": "soil_suitability"},
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -803,7 +858,8 @@ def ssurgo_soil_suitability_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params={"latitude": latitude, "longitude": longitude},
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -820,7 +876,8 @@ def ssurgo_soil_suitability_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params={"latitude": latitude, "longitude": longitude},
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -865,10 +922,10 @@ def ssurgo_soil_suitability_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=query_params,
-                    rows_returned=total_records,
+                    geometries_returned=len(data),
+                    total_records_returned=total_records,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
-                    error=_NO_COVERAGE_MSG if not data else None,
                 ),
             }
         )
@@ -880,7 +937,8 @@ def ssurgo_soil_suitability_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -924,7 +982,8 @@ def ssurgo_soil_suitability_bbox_query(
                         "min_lon": min_lon,
                         "max_lon": max_lon,
                     },
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -951,7 +1010,8 @@ def ssurgo_soil_suitability_bbox_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=base_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=0.0,
                     license_info=LICENSE_INFO,
                     success=False,
@@ -989,10 +1049,10 @@ def ssurgo_soil_suitability_bbox_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=query_params,
-                    rows_returned=total_records,
+                    geometries_returned=len(data),
+                    total_records_returned=total_records,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
-                    error=_NO_COVERAGE_MSG if not data else None,
                 ),
             }
         )
@@ -1004,7 +1064,8 @@ def ssurgo_soil_suitability_bbox_query(
                 "_meta": build_meta(
                     source="ssurgo",
                     query_params=query_params,
-                    rows_returned=0,
+                    geometries_returned=0,
+                    total_records_returned=0,
                     latency_s=latency,
                     license_info=LICENSE_INFO,
                     success=False,

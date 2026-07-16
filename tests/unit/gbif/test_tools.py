@@ -178,8 +178,8 @@ class TestAvailableVariables:
         assert "_meta" in results
         assert "success" in results["_meta"]
         assert results["_meta"]["success"]
-        assert "rows_returned" in results["_meta"]
-        assert results["_meta"]["rows_returned"] == 7
+        assert results["_meta"]["geometries_returned"] == 0
+        assert results["_meta"]["total_records_returned"] == 7
 
     def test_returns_error(self):
         with patch(
@@ -226,8 +226,8 @@ class TestQuery:
         assert results["data"] == _EXPECTED_QUERY_OUTPUT
         assert "_meta" in results
         assert "success" in results["_meta"]
-        assert "rows_returned" in results["_meta"]
-        assert results["_meta"]["rows_returned"] == 2
+        assert results["_meta"]["geometries_returned"] == 2
+        assert results["_meta"]["total_records_returned"] == 2
         assert "license" in results["_meta"]
         assert _EXPECTED_UNIQUE_LICENSES[0] in results["_meta"]["license"]
         assert _EXPECTED_UNIQUE_LICENSES[1] in results["_meta"]["license"]
@@ -341,8 +341,8 @@ class TestQuery:
         assert results["data"] == _EXPECTED_QUERY_OUTPUT[:1]
         assert "_meta" in results
         assert "success" in results["_meta"]
-        assert "rows_returned" in results["_meta"]
-        assert results["_meta"]["rows_returned"] == 1
+        assert results["_meta"]["geometries_returned"] == 1
+        assert results["_meta"]["total_records_returned"] == 1
         assert "license" in results["_meta"]
         assert _EXPECTED_UNIQUE_LICENSES[0] in results["_meta"]["license"]
         assert "unavailable_variables" in results["_meta"]
@@ -350,6 +350,28 @@ class TestQuery:
         # the missing ones should show up in "unavailable_variables"
         assert "taxonRank" in results["_meta"]["unavailable_variables"]
         assert "issues" in results["_meta"]["unavailable_variables"]
+
+    def test_returns_empty_for_all_unknown_variables(self):
+        with patch(
+            "env_data_mcp.sources.gbif.tools._get_variable_info",
+            return_value=_EXPECTED_VARIABLES,
+        ):
+            results = gbif_occurrence_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                start_date=_START_DATE,
+                end_date=_END_DATE,
+                variables=["not_a_real_variable", "also_fake"],
+            )
+
+        assert results["data"] == []
+        assert "_meta" in results
+        assert results["_meta"]["success"] is True
+        assert results["_meta"]["geometries_returned"] == 0
+        assert results["_meta"]["total_records_returned"] == 0
+        assert "unavailable_variables" in results["_meta"]
+        assert "not_a_real_variable" in results["_meta"]["unavailable_variables"]
+        assert "also_fake" in results["_meta"]["unavailable_variables"]
 
 
 # ---------------------------------------------------------------------------
@@ -384,8 +406,8 @@ class TestBboxQuery:
         assert results["data"] == _EXPECTED_QUERY_OUTPUT
         assert "_meta" in results
         assert "success" in results["_meta"]
-        assert "rows_returned" in results["_meta"]
-        assert results["_meta"]["rows_returned"] == 2
+        assert results["_meta"]["geometries_returned"] == 2
+        assert results["_meta"]["total_records_returned"] == 2
         assert "license" in results["_meta"]
         assert _EXPECTED_UNIQUE_LICENSES[0] in results["_meta"]["license"]
         assert _EXPECTED_UNIQUE_LICENSES[1] in results["_meta"]["license"]
@@ -503,8 +525,8 @@ class TestBboxQuery:
         assert results["data"] == _EXPECTED_QUERY_OUTPUT[:1]
         assert "_meta" in results
         assert "success" in results["_meta"]
-        assert "rows_returned" in results["_meta"]
-        assert results["_meta"]["rows_returned"] == 1
+        assert results["_meta"]["geometries_returned"] == 1
+        assert results["_meta"]["total_records_returned"] == 1
         assert "license" in results["_meta"]
         assert _EXPECTED_UNIQUE_LICENSES[0] in results["_meta"]["license"]
         assert "unavailable_variables" in results["_meta"]
@@ -512,3 +534,27 @@ class TestBboxQuery:
         # the missing ones should show up in "unavailable_variables"
         assert "taxonRank" in results["_meta"]["unavailable_variables"]
         assert "issues" in results["_meta"]["unavailable_variables"]
+
+    def test_returns_empty_for_all_unknown_variables(self):
+        with patch(
+            "env_data_mcp.sources.gbif.tools._get_variable_info",
+            return_value=_EXPECTED_VARIABLES,
+        ):
+            results = gbif_occurrence_bbox_query(
+                min_lat=_MIN_LAT,
+                max_lat=_MAX_LAT,
+                min_lon=_MIN_LON,
+                max_lon=_MAX_LON,
+                start_date=_START_DATE,
+                end_date=_END_DATE,
+                variables=["not_a_real_variable", "also_fake"],
+            )
+
+        assert results["data"] == []
+        assert "_meta" in results
+        assert results["_meta"]["success"] is True
+        assert results["_meta"]["geometries_returned"] == 0
+        assert results["_meta"]["total_records_returned"] == 0
+        assert "unavailable_variables" in results["_meta"]
+        assert "not_a_real_variable" in results["_meta"]["unavailable_variables"]
+        assert "also_fake" in results["_meta"]["unavailable_variables"]

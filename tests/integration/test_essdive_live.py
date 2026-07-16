@@ -119,7 +119,8 @@ def test_essdive_query_meta_fields():
     assert meta["auth_required"] is True
     assert meta["auth_present"] is True
     assert "ess-dive.lbl.gov" in meta["license_url"]
-    assert meta["rows_returned"] == len(result["data"])
+    assert meta["geometries_returned"] == len(result["data"])
+    assert meta["total_records_returned"] == len(result["data"])
     assert meta["latency_s"] > 0
     assert "latitude" in meta["query_params"]
     assert meta["license"] != ""

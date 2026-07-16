@@ -23,6 +23,7 @@ LICENSE_INFO: dict[str, str] = {
     ),
     "description_url": "https://registry.opendata.aws/sentinel5p/",
     "citation": "Sentinel-5P Level 2 was accessed on DATE from https://registry.opendata.aws/sentinel5p.",
+    "license": "see https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
     "license_url": "https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice",
 }
 
@@ -58,8 +59,8 @@ class ProductType(StrEnum):
 
 
 _PRODUCT_TYPES: dict[ProductType, str] = {
-    ProductType.NRTI: "Near real-time",
     ProductType.OFFL: "Offline processed",
+    ProductType.NRTI: "Near real-time",
     ProductType.RPRO: "Reprocessed",
 }
 

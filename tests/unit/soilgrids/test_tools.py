@@ -43,7 +43,8 @@ _MOCK_AVAILABLE_RESPONSE = {
     "data": _MOCK_VAR_INFO_RAW,
     "_meta": {
         "source": "soilgrids",
-        "rows_returned": len(_MOCK_VAR_INFO_RAW),
+        "geometries_returned": 0,
+        "total_records_returned": len(_MOCK_VAR_INFO_RAW),
         "latency_s": 0.0,
     },
 }

@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field, ValidationError
 
 from env_data_mcp.models import GroupedGeometryResponse
 from env_data_mcp.sources.ssurgo import (
-    _NO_COVERAGE_MSG,
     LICENSE_INFO,
     ssurgo_soil_profile_available_variables,
     ssurgo_soil_profile_bbox_query,
@@ -49,7 +48,8 @@ def test_soil_profile_available_variables_meta_success(httpx_mock):
     add_schema_responses(httpx_mock, _QueryType.SOIL_PROFILE)
     result = ssurgo_soil_profile_available_variables()
     assert result["_meta"]["success"] is True
-    assert result["_meta"]["rows_returned"] > 0
+    assert result["_meta"]["geometries_returned"] == 0
+    assert result["_meta"]["total_records_returned"] > 0
 
 
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
@@ -80,7 +80,8 @@ def test_soil_profile_query_meta_success(httpx_mock):
     assert meta["source"] == "ssurgo"
     assert meta["success"] is True
     assert meta["error"] is None
-    assert meta["rows_returned"] == 2
+    assert meta["geometries_returned"] == 1
+    assert meta["total_records_returned"] == 2
     assert meta["auth_required"] is False
 
 
@@ -105,7 +106,7 @@ def test_soil_profile_query_non_us_returns_no_coverage(httpx_mock):
     result = ssurgo_soil_profile_query(latitude=48.8566, longitude=2.3522)
     assert result["_meta"]["success"] is True
     assert result["data"] == []
-    assert result["_meta"]["error"] == _NO_COVERAGE_MSG
+    assert result["_meta"]["error"] is None
 
 
 def test_soil_profile_query_http_error_returns_failure(httpx_mock):
@@ -302,3 +303,31 @@ def test_bbox_query_bboxinput_validationerror_branch_is_covered(monkeypatch):
     )
     assert result["_meta"]["success"] is False
     assert result["data"] == []
+
+
+def test_soil_profile_query_all_unknown_variables_returns_empty():
+    _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
+        "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
+    }
+    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON, variables=["not_a_real_col"])
+    assert result["_meta"]["success"] is True
+    assert result["data"] == []
+    assert "not_a_real_col" in result["_meta"]["unavailable_variables"]
+    assert result["_meta"]["variable_info"] == {}
+
+
+def test_soil_profile_bbox_query_all_unknown_variables_returns_empty():
+    _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
+        "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
+    }
+    result = ssurgo_soil_profile_bbox_query(
+        min_lat=_MIN_LAT,
+        max_lat=_MAX_LAT,
+        min_lon=_MIN_LON,
+        max_lon=_MAX_LON,
+        variables=["not_a_real_col"],
+    )
+    assert result["_meta"]["success"] is True
+    assert result["data"] == []
+    assert "not_a_real_col" in result["_meta"]["unavailable_variables"]
+    assert result["_meta"]["variable_info"] == {}

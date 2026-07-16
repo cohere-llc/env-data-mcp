@@ -1,12 +1,17 @@
 """Integration tests for SoilGrids — requires live ISRIC WebCoverageService access.
 
-Marked ``@pytest.mark.integration`` - not run in CI unit-test jobs.
-These tests call the real SoilGrids web services and require network access.
+All tests require live network access to the ISRIC WCS and HTML endpoints.  Run with:
+    uv run --extra dev pytest tests/integration/test_soilgrids_live.py -m integration -v --no-cov
+
+Common adapter tests (metadata, schema, variable catalog, bbox consistency) are run
+automatically via test_common_live.py because SOILGRIDS_SPEC is registered in
+adapter_specs.py.  The tests below focus on SoilGrids-specific behaviour: depth/quantile
+variable naming, soil-property value plausibility, the single-record-per-geometry
+guarantee, and fine-grained variable-selection edge cases.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any
@@ -25,7 +30,15 @@ from env_data_mcp.sources.soilgrids.constants import (
     DEFAULT_VARIABLES,
 )
 
+from .common import (
+    AdapterSpec,
+    DataExpectation,
+    assert_grouped_geometry_response_valid,
+    assert_meta_success,
+)
+
 pytestmark = pytest.mark.integration
+
 
 # ---------------------------------------------------------------------------
 # Availability guard
@@ -33,405 +46,347 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _require_soilgrids_available():
-    """Skip tests if the SoilGrids services are unreachable."""
+def _require_soilgrids_available() -> None:
+    """Skip the module if the ISRIC services are unreachable."""
     try:
         r = httpx.get(_LAYERS_INFO_URL, timeout=30)
         if r.status_code != HTTPStatus.OK:
-            pytest.skip(f"SoilGrids layer description URL returned HTTP {r.status_code}")
+            pytest.skip(f"SoilGrids layer info URL returned HTTP {r.status_code}")
         r = httpx.get(_WEB_MAP_SERVICE_URL, timeout=30)
         if r.status_code != HTTPStatus.OK:
-            pytest.skip(f"SoilGrids map service URL returned HTTP {r.status_code}")
+            pytest.skip(f"SoilGrids WCS URL returned HTTP {r.status_code}")
     except Exception as e:
-        pytest.skip(f"SoilGrids URLs not reachable: {e}")
+        pytest.skip(f"SoilGrids endpoints not reachable: {e}")
 
 
 # ---------------------------------------------------------------------------
-# Available variables tool tests
+# Adapter-specific validate hooks - called by test_common_live.py after
+# common assertions, and directly by adapter-specific tests below.
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="module")
-def var_info() -> dict[str, Any]:
-    return soilgrids_available_variables()
+def _validate_soilgrids_point_result(result: dict) -> None:
+    """SoilGrids-specific assertions for a point query result."""
+    assert_grouped_geometry_response_valid(result)
+    assert result["_meta"]["source"] == "soilgrids"
+    assert result["_meta"]["auth_required"] is False
+    for group in result["data"]:
+        assert len(group["records"]) == 1, (
+            "SoilGrids has no temporal dimension; every geometry group must carry exactly 1 record"
+        )
 
 
-class TestSoilgridsAvailableVariables:
-    """Tests for the soilgrids_available_variables() tool."""
-
-    def test_returns_dict_with_data(self, var_info: dict[str, Any]):
-        """Test returns expected results."""
-        assert isinstance(var_info, dict)
-        assert "data" in var_info
-        assert len(var_info["data"]) > 0
-
-    def test_contains_known_nitrogen_variable(self, var_info: dict[str, Any]):
-        """Test results include known variable data."""
-        data = var_info["data"]
-        assert "nitrogen_15-30cm_mean" in data
-        nitro_info = data["nitrogen_15-30cm_mean"]
-        assert "description" in nitro_info
-        assert "Nitrogen" in nitro_info["description"]
-        assert "units" in nitro_info
-        assert len(nitro_info["units"]) > 0
-
-    @pytest.mark.parametrize("var", DEFAULT_VARIABLES)
-    def test_contains_default_variables(self, var_info: dict[str, Any], var: str):
-        """Test results include all default variables."""
-        data = var_info["data"]
-        assert var in data
-        assert "description" in data[var]
-        assert len(data[var]["description"])
-        assert "units" in data[var]
-
-    def test_includes_non_default_variables(self, var_info: dict[str, Any]):
-        """Ensure there are more than just the default variables"""
-        assert len(var_info["data"]) > len(DEFAULT_VARIABLES)
-
-    def test_contains_expected_metadata(self, var_info: dict[str, Any]):
-        """Test metadata is complete and correct."""
-        assert "_meta" in var_info
-        meta = var_info["_meta"]
-        assert "source" in meta
-        assert meta["source"] == "soilgrids"
-        assert "success" in meta
-        assert meta["success"] is True
-        assert "rows_returned" in meta
-        assert meta["rows_returned"] == len(var_info["data"])
-        assert "license" in meta or "license_url" in meta
-        if "license" in meta:
-            assert len(meta["license"]) > 0
-        if "license_url" in meta:
-            assert len(meta["license_url"]) > 0
-
-    def test_contains_depth_and_quantile(self, var_info: dict[str, Any]):
-        """Test variable descriptions include depth and quantile."""
-        for _, info in var_info["data"].items():
-            assert "depth" in info["description"]
-            assert "quantile" in info["description"]
+def _validate_soilgrids_bbox_result(result: dict) -> None:
+    """SoilGrids-specific assertions for a bbox query result."""
+    assert_grouped_geometry_response_valid(result)
+    assert result["_meta"]["source"] == "soilgrids"
+    assert result["_meta"]["auth_required"] is False
+    for group in result["data"]:
+        assert len(group["records"]) == 1, (
+            "SoilGrids has no temporal dimension; every geometry group must carry exactly 1 record"
+        )
 
 
 # ---------------------------------------------------------------------------
-# Point query tool tests
+# SoilGrids AdapterSpec — exported for test_common_live.py
+# ---------------------------------------------------------------------------
+
+SOILGRIDS_SPEC = AdapterSpec(
+    name="soilgrids",
+    available_variables=soilgrids_available_variables,
+    point_query=soilgrids_query,
+    bbox_query=soilgrids_bbox_query,
+    supports_date_range=False,
+    primary_variable="soc_0-5cm_mean",
+    default_variables=list(DEFAULT_VARIABLES),
+    max_runtime_s=60.0,
+    data_expectations={
+        "sh_polar": DataExpectation(has_data=False, notes="Antarctic ice sheet: no soil data"),
+        "ocean": DataExpectation(has_data=False, notes="Open Atlantic: no soil data"),
+        "equatorial": DataExpectation(has_data=False, notes="Open Atlantic ocean: no soil data"),
+    },
+    extra_point_kwargs={"radius_km": 5.0},
+    extra_bbox_kwargs={},
+    use_small_bboxes=True,
+    supports_bbox_bounds_test=False,
+    supports_bbox_union_test=False,
+    validate_point_result=_validate_soilgrids_point_result,
+    validate_bbox_result=_validate_soilgrids_bbox_result,
+)
+
+
+# ---------------------------------------------------------------------------
+# Adapter-specific dataset parameter table
 # ---------------------------------------------------------------------------
 
 
-# Test coordinates - Yakima Valley, WA
-_LAT = 46.2531882
-_LON = -119.4768203
+@dataclass
+class _DatasetCase:
+    spec: AdapterSpec
+    # Plausible ranges for key variables at the Yakima WA test location
+    bdod_range: tuple[float, float]
+    phh2o_range: tuple[float, float]
 
 
-@dataclass(frozen=True)
-class _PointCase:
-    name: str
-    requested_vars: Sequence[str] | None
-    expected_vars: Sequence[str]
-    unavailable_vars: Sequence[str]
-    lat_lon: tuple[float, float] = (_LAT, _LON)
-    radius_km: float = 0.5
-    expect_slow_warn: bool = False
-
-
-_POINT_CASES: list[_PointCase] = [
-    _PointCase("default", None, DEFAULT_VARIABLES, []),
-    _PointCase("too small bbox", None, [], DEFAULT_VARIABLES, radius_km=0.00001),
-    _PointCase("Nairobi, Kenya", None, DEFAULT_VARIABLES, [], lat_lon=(-1.27, 36.65)),
-    _PointCase("Idalia, Australia", None, DEFAULT_VARIABLES, [], lat_lon=(-24.977, 144.673)),
-    _PointCase("slow query warning", None, [], [], radius_km=10000.0, expect_slow_warn=True),
-    _PointCase("single variable", ["soc_0-5cm_mean"], ["soc_0-5cm_mean"], []),
-    _PointCase(
-        "some non-standard",
-        ["soc_0-5cm_Q0.95", "silt_0-5cm_uncertainty"],
-        ["soc_0-5cm_Q0.95", "silt_0-5cm_uncertainty"],
-        [],
+_DATASET_CASES = [
+    pytest.param(
+        _DatasetCase(
+            spec=SOILGRIDS_SPEC,
+            bdod_range=(0.2, 2.5),  # bulk density g/cm3; Yakima semi-arid ag land
+            phh2o_range=(3.0, 10.0),  # pH (valid global range)
+        ),
+        id="soilgrids",
     ),
-    _PointCase("some unavailable", ["foo", "soc_15-30cm_Q0.5"], ["soc_15-30cm_Q0.5"], ["foo"]),
-    _PointCase("all unavailable", ["bar", "baz", "qux"], [], ["bar", "baz", "qux"]),
 ]
 
+# Yakima Valley, WA - primary validation location (also used in original tests)
+_YAKIMA_LAT = 46.2531882
+_YAKIMA_LON = -119.4768203
+_YAKIMA_BBOX_KWARGS: dict[str, float] = {
+    "min_lat": 46.244,
+    "max_lat": 46.262,
+    "min_lon": -119.490,
+    "max_lon": -119.463,
+}
 
-@pytest.fixture(scope="module", params=_POINT_CASES, ids=lambda c: c.name)
-def point_case(request) -> _PointCase:
+
+# ---------------------------------------------------------------------------
+# Shared fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module", params=_DATASET_CASES)
+def dc(request) -> _DatasetCase:
     return request.param
 
 
 @pytest.fixture(scope="module")
-def point_result(point_case: _PointCase) -> dict[str, Any]:
-    lat, lon = point_case.lat_lon
-    kwargs: dict[str, float | Sequence[str]] = {
-        "latitude": lat,
-        "longitude": lon,
-        "radius_km": point_case.radius_km,
-    }
-    if point_case.requested_vars is not None:
-        kwargs["variables"] = point_case.requested_vars
-    return soilgrids_query(**kwargs)
+def avail_vars(dc: _DatasetCase) -> dict[str, Any]:
+    """Available-variables result; loaded once per module run."""
+    return dc.spec.available_variables()
 
 
 @pytest.fixture(scope="module")
-def requested_vars_effective(point_case: _PointCase) -> list[str]:
-    return list(
-        DEFAULT_VARIABLES if point_case.requested_vars is None else point_case.requested_vars
+def yakima_point_result(dc: _DatasetCase) -> dict[str, Any]:
+    """Default-variable point query at Yakima WA; loaded once per module run."""
+    return dc.spec.point_query(
+        latitude=_YAKIMA_LAT,
+        longitude=_YAKIMA_LON,
+        max_runtime_s=dc.spec.max_runtime_s,
+        **dc.spec.extra_point_kwargs,
     )
 
 
-class TestSoilgridsQuery:
-    """Tests of the soilgrids_query() tool."""
-
-    def test_metadata_success(self, point_case: _PointCase, point_result: dict[str, Any]):
-        """Tests metadata indicates success."""
-        assert "_meta" in point_result
-        meta = point_result["_meta"]
-        if point_case.expect_slow_warn:
-            assert "exceeds" in meta["message"] and "threshold" in meta["message"]
-        assert meta["success"] == (not point_case.expect_slow_warn)
-        assert meta["error"] is None
-        assert meta["source"] == "soilgrids"
-
-    def test_metadata_stats(self, point_case: _PointCase, point_result: dict[str, Any]):
-        """Tests counts and timers in metadata."""
-        meta = point_result["_meta"]
-        if len(point_case.expected_vars) > 0:
-            assert meta["latency_s"] > 0.25  # should take at least a quarter second
-            assert meta["rows_returned"] > 0
-        else:
-            assert meta["rows_returned"] == 0
-
-    def test_metadata_variables_echoed(
-        self, requested_vars_effective: list[str], point_result: dict[str, Any]
-    ):
-        """Tests that the variables list in metadata mirrors what was requested."""
-        got = point_result["_meta"]["variables"]
-        assert len(got) == len(requested_vars_effective)
-        for var in requested_vars_effective:
-            assert var in got
-
-    def test_metadata_unavailable_variables(
-        self, point_case: _PointCase, point_result: dict[str, Any]
-    ):
-        """Tests that the expected unavailable variables are returned."""
-        got = point_result["_meta"]["unavailable_variables"]
-        assert len(got) == len(point_case.unavailable_vars)
-        for var in point_case.unavailable_vars:
-            assert var in got
-
-    def test_metadata_variable_info(self, point_case: _PointCase, point_result: dict[str, Any]):
-        """Tests that variable info in metadata is as expected."""
-        if point_case.expect_slow_warn or len(point_case.expected_vars) == 0:
-            # expensive queries that return a warning don't collect variable info
-            # queries that return no results still include variable info
-            return
-        got = point_result["_meta"]["variable_info"]
-        assert len(got) == len(point_case.expected_vars)
-        for var in point_case.expected_vars:
-            assert var in got
-            assert "description" in got[var]
-            assert "units" in got[var]
-
-    def test_geojson_geometry_in_expected_range(
-        self, point_case: _PointCase, point_result: dict[str, Any]
-    ):
-        """Test that points returned are in or near the bounding box."""
-        for point in point_result["data"]:
-            assert point["longitude"] == point["geometry"]["coordinates"][0]
-            assert point["latitude"] == point["geometry"]["coordinates"][1]
-            assert -90.0 <= point["latitude"] <= 90.0
-            assert -180.0 <= point["longitude"] <= 180.0
-
-    def test_data_includes_variables(self, point_case: _PointCase, point_result: dict[str, Any]):
-        """Test that data point returned have the expected records."""
-        for point in point_result["data"]:
-            assert len(point["records"]) == 1, (
-                "only one record set per point for SoilGrids (no temporal changes)."
-            )
-            assert len(point["records"][0]) == len(point_case.expected_vars)
-            for var in point_case.expected_vars:
-                assert var in point["records"][0]
-
-    def test_data_has_expected_property_values(
-        self, point_case: _PointCase, point_result: dict[str, Any]
-    ):
-        """Test that point values in the PNW location have reasonable values for density and pH."""
-        if point_case.lat_lon == (_LAT, _LON) and point_case.expected_vars == DEFAULT_VARIABLES:
-            for point in point_result["data"]:
-                assert 0.2 <= point["records"][0]["bdod_0-5cm_mean"] <= 2.5
-                assert 3 <= point["records"][0]["phh2o_0-5cm_mean"] <= 10
-
-    def test_has_in_bbox_point_when_variables_available(
-        self, point_case: _PointCase, point_result: dict[str, Any]
-    ):
-        """Test that data inside the bounding box is returned when variables are available."""
-        any_in_bbox = any(p["in_bbox"] for p in point_result["data"])
-        assert any_in_bbox == (len(point_case.expected_vars) > 0)
+@pytest.fixture(scope="module")
+def yakima_bbox_result(dc: _DatasetCase) -> dict[str, Any]:
+    """Default-variable bbox query over the small Yakima study area; loaded once."""
+    return soilgrids_bbox_query(
+        **_YAKIMA_BBOX_KWARGS,
+        max_runtime_s=dc.spec.max_runtime_s,
+    )
 
 
 # ---------------------------------------------------------------------------
-# BBox query tool tests
+# TestAvailableVariables
 # ---------------------------------------------------------------------------
 
 
-# Test coordinates - Yakima Valley, WA
-_MIN_LAT = 46.244
-_MAX_LAT = 46.262
-_MIN_LON = -119.490
-_MAX_LON = -119.463
+class TestAvailableVariables:
+    """SoilGrids-specific available-variables content."""
 
+    def test_nitrogen_variable_content(self, avail_vars: dict[str, Any]) -> None:
+        """A specific non-default variable has the expected description and units."""
+        assert "nitrogen_15-30cm_mean" in avail_vars["data"]
+        info = avail_vars["data"]["nitrogen_15-30cm_mean"]
+        assert "Nitrogen" in info["description"]
+        assert len(info["units"]) > 0
 
-@dataclass(frozen=True)
-class _BBoxCase:
-    name: str
-    requested_vars: Sequence[str] | None
-    expected_vars: Sequence[str]
-    unavailable_vars: Sequence[str]
-    bbox: tuple[float, float, float, float] = (_MIN_LAT, _MAX_LAT, _MIN_LON, _MAX_LON)
-    expect_slow_warn: bool = False
-
-
-_BBOX_CASES: list[_BBoxCase] = [
-    _BBoxCase("default", None, DEFAULT_VARIABLES, []),
-    _BBoxCase(
-        "too small bbox",
-        None,
-        [],
-        DEFAULT_VARIABLES,
-        bbox=(_MIN_LAT, _MIN_LAT + 0.000001, _MIN_LON, _MIN_LON + 0.000001),
-    ),
-    _BBoxCase("Nairobi, Kenya", None, DEFAULT_VARIABLES, [], bbox=(-1.275, -1.265, 36.65, 36.66)),
-    _BBoxCase(
-        "Idalia, Australia", None, DEFAULT_VARIABLES, [], bbox=(-24.98, -24.97, 144.67, 144.68)
-    ),
-    _BBoxCase(
-        "slow query warning", None, [], [], bbox=(50.0, 62.0, -30.0, 10.0), expect_slow_warn=True
-    ),
-    _BBoxCase("single variable", ["soc_0-5cm_mean"], ["soc_0-5cm_mean"], []),
-    _BBoxCase(
-        "some non-standard",
-        ["soc_0-5cm_Q0.95", "silt_0-5cm_uncertainty"],
-        ["soc_0-5cm_Q0.95", "silt_0-5cm_uncertainty"],
-        [],
-    ),
-    _BBoxCase("some unavailable", ["foo", "soc_15-30cm_Q0.5"], ["soc_15-30cm_Q0.5"], ["foo"]),
-    _BBoxCase("all unavailable", ["bar", "baz", "qux"], [], ["bar", "baz", "qux"]),
-]
-
-
-@pytest.fixture(scope="module", params=_BBOX_CASES, ids=lambda c: c.name)
-def bbox_case(request) -> _BBoxCase:
-    return request.param
-
-
-@pytest.fixture(scope="module")
-def bbox_result(bbox_case: _BBoxCase) -> dict[str, Any]:
-    min_lat, max_lat, min_lon, max_lon = bbox_case.bbox
-    kwargs: dict[str, float | Sequence[str]] = {
-        "min_lat": min_lat,
-        "max_lat": max_lat,
-        "min_lon": min_lon,
-        "max_lon": max_lon,
-    }
-    if bbox_case.requested_vars is not None:
-        kwargs["variables"] = bbox_case.requested_vars
-    return soilgrids_bbox_query(**kwargs)
-
-
-@pytest.fixture(scope="module")
-def requested_vars_effective_bbox(bbox_case: _BBoxCase) -> list[str]:
-    return list(DEFAULT_VARIABLES if bbox_case.requested_vars is None else bbox_case.requested_vars)
-
-
-class TestSoilgridsBBoxQuery:
-    """Tests of the soilgrids_bbox_query() tool."""
-
-    def test_metadata_success(self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]):
-        """Tests metadata indicates success."""
-        assert "_meta" in bbox_result
-        meta = bbox_result["_meta"]
-        if bbox_case.expect_slow_warn:
-            assert "exceeds" in meta["message"] and "threshold" in meta["message"]
-        assert meta["success"] == (not bbox_case.expect_slow_warn)
-        assert meta["error"] is None
-        assert meta["source"] == "soilgrids"
-
-    def test_metadata_stats(self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]):
-        """Tests counts and timers in metadata."""
-        meta = bbox_result["_meta"]
-        if len(bbox_case.expected_vars) > 0:
-            assert meta["latency_s"] > 0.25  # should take at least a quarter second
-            assert meta["rows_returned"] > 0
-        else:
-            assert meta["rows_returned"] == 0
-
-    def test_metadata_variables_echoed(
-        self, requested_vars_effective_bbox: list[str], bbox_result: dict[str, Any]
-    ):
-        """Tests that the variables list in metadata mirrors what was requested."""
-        got = bbox_result["_meta"]["variables"]
-        assert len(got) == len(requested_vars_effective_bbox)
-        for var in requested_vars_effective_bbox:
-            assert var in got
-
-    def test_metadata_unavailable_variables(
-        self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]
-    ):
-        """Tests that the expected unavailable variables are returned."""
-        got = bbox_result["_meta"]["unavailable_variables"]
-        assert len(got) == len(bbox_case.unavailable_vars)
-        for var in bbox_case.unavailable_vars:
-            assert var in got
-
-    def test_metadata_variable_info(self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]):
-        """Tests that variable info in metadata is as expected."""
-        if bbox_case.expect_slow_warn or len(bbox_case.expected_vars) == 0:
-            # expensive queries that return a warning don't collect variable info
-            # queries that return no results still include variable info
-            return
-        got = bbox_result["_meta"]["variable_info"]
-        assert len(got) == len(bbox_case.expected_vars)
-        for var in bbox_case.expected_vars:
-            assert var in got
-            assert "description" in got[var]
-            assert "units" in got[var]
-
-    def test_geojson_geometry_in_expected_range(
-        self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]
-    ):
-        """Test that bboxs returned are in or near the bounding box."""
-        for bbox in bbox_result["data"]:
-            assert bbox["longitude"] == bbox["geometry"]["coordinates"][0]
-            assert bbox["latitude"] == bbox["geometry"]["coordinates"][1]
-            assert -90.0 <= bbox["latitude"] <= 90.0
-            assert -180.0 <= bbox["longitude"] <= 180.0
-            is_in_bbox = bool(
-                (bbox_case.bbox[0] <= bbox["latitude"] <= bbox_case.bbox[1])
-                and (bbox_case.bbox[2] <= bbox["longitude"] <= bbox_case.bbox[3])
+    def test_depth_and_quantile_in_descriptions(self, avail_vars: dict[str, Any]) -> None:
+        """Every variable description references its depth interval and statistical quantile."""
+        for var_name, info in avail_vars["data"].items():
+            assert "depth" in info["description"], f"{var_name}: 'depth' missing from description"
+            assert "quantile" in info["description"], (
+                f"{var_name}: 'quantile' missing from description"
             )
-            assert bbox["in_bbox"] == is_in_bbox
 
-    def test_data_includes_variables(self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]):
-        """Test that data bbox returned have the expected records."""
-        for bbox in bbox_result["data"]:
-            assert len(bbox["records"]) == 1, (
-                "only one record set per bbox for SoilGrids (no temporal changes)."
-            )
-            assert len(bbox["records"][0]) == len(bbox_case.expected_vars)
-            for var in bbox_case.expected_vars:
-                assert var in bbox["records"][0]
 
-    def test_data_has_expected_property_values(
-        self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]
-    ):
-        """Test that bbox values in the PNW location have reasonable values for density and pH."""
-        if (
-            bbox_case.bbox == (_MIN_LAT, _MAX_LAT, _MIN_LON, _MAX_LON)
-            and bbox_case.expected_vars == DEFAULT_VARIABLES
-        ):
-            for bbox in bbox_result["data"]:
-                assert 0.2 <= bbox["records"][0]["bdod_0-5cm_mean"] <= 2.5
-                assert 3 <= bbox["records"][0]["phh2o_0-5cm_mean"] <= 10
+# ---------------------------------------------------------------------------
+# TestPointQuery
+# ---------------------------------------------------------------------------
 
-    def test_has_in_bbox_bbox_when_variables_available(
-        self, bbox_case: _BBoxCase, bbox_result: dict[str, Any]
-    ):
-        """Test that data inside the bounding box is returned when variables are available."""
-        any_in_bbox = any(p["in_bbox"] for p in bbox_result["data"])
-        assert any_in_bbox == (len(bbox_case.expected_vars) > 0)
+
+class TestPointQuery:
+    """soilgrids_query() at Yakima WA: SoilGrids-specific checks."""
+
+    def test_query_params_echoed(self, yakima_point_result: dict[str, Any]) -> None:
+        qp = yakima_point_result["_meta"]["query_params"]
+        assert qp["latitude"] == pytest.approx(_YAKIMA_LAT)
+        assert qp["longitude"] == pytest.approx(_YAKIMA_LON)
+        assert qp["radius_km"] == pytest.approx(5.0)
+
+    def test_default_variables_in_records(
+        self, dc: _DatasetCase, yakima_point_result: dict[str, Any]
+    ) -> None:
+        for group in yakima_point_result["data"]:
+            rec = group["records"][0]
+            for var in dc.spec.default_variables:
+                assert var in rec, (
+                    f"{var!r} absent from record at "
+                    f"({group.get('latitude')}, {group.get('longitude')})"
+                )
+
+    def test_plausible_property_values_at_yakima(
+        self, dc: _DatasetCase, yakima_point_result: dict[str, Any]
+    ) -> None:
+        """Bulk density and pH at Yakima WA are within plausible agronomic ranges."""
+        for group in yakima_point_result["data"]:
+            rec = group["records"][0]
+            bdod = rec.get("bdod_0-5cm_mean")
+            phh2o = rec.get("phh2o_0-5cm_mean")
+            if bdod is not None:
+                lo, hi = dc.bdod_range
+                assert lo <= bdod <= hi, f"bdod={bdod} outside [{lo}, {hi}]"
+            if phh2o is not None:
+                lo, hi = dc.phh2o_range
+                assert lo <= phh2o <= hi, f"phh2o={phh2o} outside [{lo}, {hi}]"
+
+    def test_at_least_one_in_bbox_point(self, yakima_point_result: dict[str, Any]) -> None:
+        """At least one returned pixel falls inside the query radius bbox."""
+        assert any(p["in_bbox"] for p in yakima_point_result["data"]), (
+            "No returned pixel has in_bbox=True"
+        )
+
+    def test_too_small_radius_returns_no_data(self, dc: _DatasetCase) -> None:
+        """A sub-pixel radius (< 250 m) returns no data records."""
+        result = soilgrids_query(
+            latitude=_YAKIMA_LAT,
+            longitude=_YAKIMA_LON,
+            radius_km=0.00001,
+            max_runtime_s=dc.spec.max_runtime_s,
+        )
+        assert_meta_success(result)
+        assert len(result["data"]) == 0, (
+            f"Expected no data for sub-pixel radius; got {len(result['data'])} records"
+        )
+
+    def test_single_variable_query(self, dc: _DatasetCase) -> None:
+        """Querying a single variable returns only that variable in each record."""
+        result = soilgrids_query(
+            latitude=_YAKIMA_LAT,
+            longitude=_YAKIMA_LON,
+            radius_km=0.5,
+            variables=["soc_0-5cm_mean"],
+            max_runtime_s=dc.spec.max_runtime_s,
+        )
+        assert_meta_success(result)
+        assert len(result["data"]) > 0
+        for group in result["data"]:
+            rec = group["records"][0]
+            assert "soc_0-5cm_mean" in rec
+            assert len(rec) == 1, f"Expected 1 key in record; got {list(rec.keys())}"
+
+    def test_non_standard_quantile_and_depth_variables(self, dc: _DatasetCase) -> None:
+        """Non-default quantile (Q0.95) and uncertainty variables are queryable."""
+        vars_ = ["soc_0-5cm_Q0.95", "silt_0-5cm_uncertainty"]
+        result = soilgrids_query(
+            latitude=_YAKIMA_LAT,
+            longitude=_YAKIMA_LON,
+            radius_km=0.5,
+            variables=vars_,
+            max_runtime_s=dc.spec.max_runtime_s,
+        )
+        assert_meta_success(result)
+        assert len(result["data"]) > 0
+        for group in result["data"]:
+            for v in vars_:
+                assert v in group["records"][0], f"{v!r} absent from record"
+
+    def test_partial_unavailable_variables_returns_available_subset(self, dc: _DatasetCase) -> None:
+        """When only some requested variables exist, available ones are returned."""
+        result = soilgrids_query(
+            latitude=_YAKIMA_LAT,
+            longitude=_YAKIMA_LON,
+            radius_km=0.5,
+            variables=["soc_15-30cm_Q0.5", "foo_does_not_exist"],
+            max_runtime_s=dc.spec.max_runtime_s,
+        )
+        assert_meta_success(result)
+        assert len(result["data"]) > 0
+        assert "foo_does_not_exist" in result["_meta"]["unavailable_variables"]
+        for group in result["data"]:
+            assert "soc_15-30cm_Q0.5" in group["records"][0]
+
+
+# ---------------------------------------------------------------------------
+# TestBboxQuery
+# ---------------------------------------------------------------------------
+
+
+class TestBboxQuery:
+    """soilgrids_bbox_query() over a small Yakima study area: SoilGrids-specific checks."""
+
+    def test_query_params_echoed(self, yakima_bbox_result: dict[str, Any]) -> None:
+        qp = yakima_bbox_result["_meta"]["query_params"]
+        for key, val in _YAKIMA_BBOX_KWARGS.items():
+            assert qp[key] == pytest.approx(val), f"query_params[{key!r}] mismatch"
+
+    def test_default_variables_in_variable_info(
+        self, dc: _DatasetCase, yakima_bbox_result: dict[str, Any]
+    ) -> None:
+        vi = yakima_bbox_result["_meta"]["variable_info"]
+        for var in dc.spec.default_variables:
+            assert var in vi, f"{var!r} absent from variable_info"
+            assert vi[var]["description"]
+            assert "units" in vi[var]
+
+    def test_default_variables_in_records(
+        self, dc: _DatasetCase, yakima_bbox_result: dict[str, Any]
+    ) -> None:
+        for group in yakima_bbox_result["data"]:
+            rec = group["records"][0]
+            for var in dc.spec.default_variables:
+                assert var in rec, f"{var!r} absent from record"
+
+    def test_plausible_property_values_at_yakima(
+        self, dc: _DatasetCase, yakima_bbox_result: dict[str, Any]
+    ) -> None:
+        """Bulk density and pH at Yakima WA are within plausible agronomic ranges."""
+        for group in yakima_bbox_result["data"]:
+            rec = group["records"][0]
+            bdod = rec.get("bdod_0-5cm_mean")
+            phh2o = rec.get("phh2o_0-5cm_mean")
+            if bdod is not None:
+                lo, hi = dc.bdod_range
+                assert lo <= bdod <= hi, f"bdod={bdod} outside [{lo}, {hi}]"
+            if phh2o is not None:
+                lo, hi = dc.phh2o_range
+                assert lo <= phh2o <= hi, f"phh2o={phh2o} outside [{lo}, {hi}]"
+
+    def test_in_bbox_flag_and_coordinates(self, yakima_bbox_result: dict[str, Any]) -> None:
+        """in_bbox=True points lie within the queried bbox; False points are buffer pixels."""
+        assert any(p["in_bbox"] for p in yakima_bbox_result["data"]), (
+            "No returned pixel has in_bbox=True"
+        )
+        for group in yakima_bbox_result["data"]:
+            if group["in_bbox"]:
+                lat, lon = group["latitude"], group["longitude"]
+                assert _YAKIMA_BBOX_KWARGS["min_lat"] <= lat <= _YAKIMA_BBOX_KWARGS["max_lat"], (
+                    f"in_bbox=True but lat={lat} outside query lat range"
+                )
+                assert _YAKIMA_BBOX_KWARGS["min_lon"] <= lon <= _YAKIMA_BBOX_KWARGS["max_lon"], (
+                    f"in_bbox=True but lon={lon} outside query lon range"
+                )
+
+    def test_too_small_bbox_returns_no_data(self, dc: _DatasetCase) -> None:
+        """A sub-pixel bbox (< 250 m side) returns no data records."""
+        result = soilgrids_bbox_query(
+            min_lat=_YAKIMA_BBOX_KWARGS["min_lat"],
+            max_lat=_YAKIMA_BBOX_KWARGS["min_lat"] + 0.000001,
+            min_lon=_YAKIMA_BBOX_KWARGS["min_lon"],
+            max_lon=_YAKIMA_BBOX_KWARGS["min_lon"] + 0.000001,
+            max_runtime_s=dc.spec.max_runtime_s,
+        )
+        assert_meta_success(result)
+        assert len(result["data"]) == 0, (
+            f"Expected no data for sub-pixel bbox; got {len(result['data'])} records"
+        )

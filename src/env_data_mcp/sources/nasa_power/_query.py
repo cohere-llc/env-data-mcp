@@ -133,18 +133,23 @@ def _query_point(
         for var, (values, units) in variable_data.items():
             row[var] = float(values[i])
             row[f"{var}_units"] = units
-        records.append(row)
+        if len(row) > 1:
+            records.append(row)
 
     snap_lat = float(lats[lat_idx])
     snap_lon = float(lons[lon_idx])
-    return [
-        {
-            "geometry": {"type": "Point", "coordinates": [snap_lon, snap_lat]},
-            "latitude": snap_lat,
-            "longitude": snap_lon,
-            "records": records,
-        }
-    ], unavailable
+    return (
+        [
+            {
+                "geometry": {"type": "Point", "coordinates": [snap_lon, snap_lat]},
+                "latitude": snap_lat,
+                "longitude": snap_lon,
+                "records": records,
+            }
+        ]
+        if records
+        else []
+    ), unavailable
 
 
 def _query_bbox(
@@ -239,7 +244,8 @@ def _query_bbox(
                     record[var] = float(values[i_time, i_lat, i_lon])
                     record[f"{var}_units"] = units
                 row["records"].append(record)
-            results.append(row)
+            if row["records"]:
+                results.append(row)
 
     return results, unavailable
 

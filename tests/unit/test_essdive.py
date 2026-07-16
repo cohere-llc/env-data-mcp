@@ -264,7 +264,8 @@ def test_essdive_query_success(monkeypatch):
     assert meta["success"] is True
     assert meta["auth_required"] is True
     assert meta["auth_present"] is True
-    assert meta["rows_returned"] == 1
+    assert meta["geometries_returned"] == 1
+    assert meta["total_records_returned"] == 1
 
 
 def test_essdive_query_expired_token(monkeypatch):
@@ -287,7 +288,8 @@ def test_essdive_query_no_results(monkeypatch):
         result = essdive_query(latitude=_YAKIMA_LAT, longitude=_YAKIMA_LON)
     assert result["data"] == []
     assert result["_meta"]["success"] is True
-    assert result["_meta"]["rows_returned"] == 0
+    assert result["_meta"]["geometries_returned"] == 0
+    assert result["_meta"]["total_records_returned"] == 0
 
 
 def test_essdive_query_meta_fields(monkeypatch):

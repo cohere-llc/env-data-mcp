@@ -479,7 +479,8 @@ def emit_query(
             "_meta": build_meta(
                 source="emit",
                 query_params=query_params,
-                rows_returned=len(records),
+                geometries_returned=len(records),
+                total_records_returned=len(records),
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
@@ -503,7 +504,8 @@ def emit_query(
             "_meta": build_meta(
                 source="emit",
                 query_params=query_params,
-                rows_returned=0,
+                geometries_returned=0,
+                total_records_returned=0,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
@@ -607,7 +609,8 @@ def emit_bbox_query(
         meta = build_meta(
             source="emit",
             query_params=query_params,
-            rows_returned=len(records),
+            geometries_returned=len(records),
+            total_records_returned=len(records),
             latency_s=latency,
             license_info=LICENSE_INFO,
             auth_required=True,
@@ -627,7 +630,8 @@ def emit_bbox_query(
             "_meta": build_meta(
                 source="emit",
                 query_params=query_params,
-                rows_returned=0,
+                geometries_returned=0,
+                total_records_returned=0,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,

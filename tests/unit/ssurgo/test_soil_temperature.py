@@ -6,7 +6,6 @@ import pytest
 
 from env_data_mcp.models import AvailableVariablesResponse, GroupedGeometryResponse
 from env_data_mcp.sources.ssurgo import (
-    _NO_COVERAGE_MSG,
     ssurgo_soil_temperature_available_variables,
     ssurgo_soil_temperature_bbox_query,
     ssurgo_soil_temperature_query,
@@ -100,7 +99,7 @@ def test_soil_temperature_query_non_us_returns_no_coverage(httpx_mock):
     result = ssurgo_soil_temperature_query(latitude=48.8566, longitude=2.3522)
     assert result["_meta"]["success"] is True
     assert result["data"] == []
-    assert result["_meta"]["error"] == _NO_COVERAGE_MSG
+    assert result["_meta"]["error"] is None
 
 
 def test_soil_temperature_query_http_error_returns_failure(httpx_mock):

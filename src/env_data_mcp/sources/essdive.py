@@ -270,7 +270,8 @@ def essdive_query(
         meta = build_meta(
             source=_SOURCE,
             query_params=query_params,
-            rows_returned=len(records),
+            geometries_returned=len(records),
+            total_records_returned=len(records),
             latency_s=latency,
             license_info=lic,
             auth_required=True,
@@ -291,7 +292,8 @@ def essdive_query(
             "_meta": build_meta(
                 source=_SOURCE,
                 query_params=query_params,
-                rows_returned=0,
+                geometries_returned=0,
+                total_records_returned=0,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
@@ -307,7 +309,8 @@ def essdive_query(
             "_meta": build_meta(
                 source=_SOURCE,
                 query_params=query_params,
-                rows_returned=0,
+                geometries_returned=0,
+                total_records_returned=0,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
@@ -415,7 +418,8 @@ def essdive_bbox_query(
         meta = build_meta(
             source=_SOURCE,
             query_params=query_params,
-            rows_returned=len(records),
+            geometries_returned=len(records),
+            total_records_returned=len(records),
             latency_s=latency,
             license_info=lic,
             auth_required=True,
@@ -435,7 +439,8 @@ def essdive_bbox_query(
             "_meta": build_meta(
                 source=_SOURCE,
                 query_params=query_params,
-                rows_returned=0,
+                geometries_returned=0,
+                total_records_returned=0,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
@@ -451,7 +456,8 @@ def essdive_bbox_query(
             "_meta": build_meta(
                 source=_SOURCE,
                 query_params=query_params,
-                rows_returned=0,
+                geometries_returned=0,
+                total_records_returned=0,
                 latency_s=latency,
                 license_info=LICENSE_INFO,
                 auth_required=True,
