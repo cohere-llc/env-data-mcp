@@ -303,3 +303,31 @@ def test_bbox_query_bboxinput_validationerror_branch_is_covered(monkeypatch):
     )
     assert result["_meta"]["success"] is False
     assert result["data"] == []
+
+
+def test_soil_profile_query_all_unknown_variables_returns_empty():
+    _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
+        "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
+    }
+    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON, variables=["not_a_real_col"])
+    assert result["_meta"]["success"] is True
+    assert result["data"] == []
+    assert "not_a_real_col" in result["_meta"]["unavailable_variables"]
+    assert result["_meta"]["variable_info"] == {}
+
+
+def test_soil_profile_bbox_query_all_unknown_variables_returns_empty():
+    _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
+        "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
+    }
+    result = ssurgo_soil_profile_bbox_query(
+        min_lat=_MIN_LAT,
+        max_lat=_MAX_LAT,
+        min_lon=_MIN_LON,
+        max_lon=_MAX_LON,
+        variables=["not_a_real_col"],
+    )
+    assert result["_meta"]["success"] is True
+    assert result["data"] == []
+    assert "not_a_real_col" in result["_meta"]["unavailable_variables"]
+    assert result["_meta"]["variable_info"] == {}

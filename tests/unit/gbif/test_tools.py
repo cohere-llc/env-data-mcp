@@ -351,6 +351,28 @@ class TestQuery:
         assert "taxonRank" in results["_meta"]["unavailable_variables"]
         assert "issues" in results["_meta"]["unavailable_variables"]
 
+    def test_returns_empty_for_all_unknown_variables(self):
+        with patch(
+            "env_data_mcp.sources.gbif.tools._get_variable_info",
+            return_value=_EXPECTED_VARIABLES,
+        ):
+            results = gbif_occurrence_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                start_date=_START_DATE,
+                end_date=_END_DATE,
+                variables=["not_a_real_variable", "also_fake"],
+            )
+
+        assert results["data"] == []
+        assert "_meta" in results
+        assert results["_meta"]["success"] is True
+        assert results["_meta"]["geometries_returned"] == 0
+        assert results["_meta"]["total_records_returned"] == 0
+        assert "unavailable_variables" in results["_meta"]
+        assert "not_a_real_variable" in results["_meta"]["unavailable_variables"]
+        assert "also_fake" in results["_meta"]["unavailable_variables"]
+
 
 # ---------------------------------------------------------------------------
 # Bbox query
@@ -512,3 +534,27 @@ class TestBboxQuery:
         # the missing ones should show up in "unavailable_variables"
         assert "taxonRank" in results["_meta"]["unavailable_variables"]
         assert "issues" in results["_meta"]["unavailable_variables"]
+
+    def test_returns_empty_for_all_unknown_variables(self):
+        with patch(
+            "env_data_mcp.sources.gbif.tools._get_variable_info",
+            return_value=_EXPECTED_VARIABLES,
+        ):
+            results = gbif_occurrence_bbox_query(
+                min_lat=_MIN_LAT,
+                max_lat=_MAX_LAT,
+                min_lon=_MIN_LON,
+                max_lon=_MAX_LON,
+                start_date=_START_DATE,
+                end_date=_END_DATE,
+                variables=["not_a_real_variable", "also_fake"],
+            )
+
+        assert results["data"] == []
+        assert "_meta" in results
+        assert results["_meta"]["success"] is True
+        assert results["_meta"]["geometries_returned"] == 0
+        assert results["_meta"]["total_records_returned"] == 0
+        assert "unavailable_variables" in results["_meta"]
+        assert "not_a_real_variable" in results["_meta"]["unavailable_variables"]
+        assert "also_fake" in results["_meta"]["unavailable_variables"]
