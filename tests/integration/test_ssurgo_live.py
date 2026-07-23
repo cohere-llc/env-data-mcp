@@ -18,28 +18,28 @@ from env_data_mcp.models import (
 from env_data_mcp.sources.ssurgo import (
     ssurgo_area_summary_available_variables,
     ssurgo_area_summary_bbox_query,
-    ssurgo_area_summary_query,
+    ssurgo_area_summary_point_query,
     ssurgo_ecological_site_available_variables,
     ssurgo_ecological_site_bbox_query,
-    ssurgo_ecological_site_query,
+    ssurgo_ecological_site_point_query,
     ssurgo_parent_material_available_variables,
     ssurgo_parent_material_bbox_query,
-    ssurgo_parent_material_query,
+    ssurgo_parent_material_point_query,
     ssurgo_seasonal_hydrology_available_variables,
     ssurgo_seasonal_hydrology_bbox_query,
-    ssurgo_seasonal_hydrology_query,
+    ssurgo_seasonal_hydrology_point_query,
     ssurgo_soil_profile_available_variables,
     ssurgo_soil_profile_bbox_query,
-    ssurgo_soil_profile_query,
+    ssurgo_soil_profile_point_query,
     ssurgo_soil_suitability_available_rule_names,
     ssurgo_soil_suitability_bbox_query,
-    ssurgo_soil_suitability_query,
+    ssurgo_soil_suitability_point_query,
     ssurgo_soil_temperature_available_variables,
     ssurgo_soil_temperature_bbox_query,
-    ssurgo_soil_temperature_query,
+    ssurgo_soil_temperature_point_query,
     ssurgo_subsurface_barriers_available_variables,
     ssurgo_subsurface_barriers_bbox_query,
-    ssurgo_subsurface_barriers_query,
+    ssurgo_subsurface_barriers_point_query,
 )
 from env_data_mcp.sources.ssurgo.constants import (
     DEFAULT_AREA_SUMMARY_VARIABLES,
@@ -123,7 +123,7 @@ _NON_US_EXPECTATIONS: dict[str, DataExpectation] = {
 SOIL_PROFILE_SPEC = AdapterSpec(
     name="ssurgo_soil_profile",
     available_variables=ssurgo_soil_profile_available_variables,
-    point_query=ssurgo_soil_profile_query,
+    point_query=ssurgo_soil_profile_point_query,
     bbox_query=ssurgo_soil_profile_bbox_query,
     supports_date_range=False,
     primary_variable="sandtotal_r",
@@ -137,7 +137,7 @@ SOIL_PROFILE_SPEC = AdapterSpec(
 AREA_SUMMARY_SPEC = AdapterSpec(
     name="ssurgo_area_summary",
     available_variables=ssurgo_area_summary_available_variables,
-    point_query=ssurgo_area_summary_query,
+    point_query=ssurgo_area_summary_point_query,
     bbox_query=ssurgo_area_summary_bbox_query,
     supports_date_range=False,
     primary_variable="drclassdcd",
@@ -151,7 +151,7 @@ AREA_SUMMARY_SPEC = AdapterSpec(
 SUBSURFACE_BARRIERS_SPEC = AdapterSpec(
     name="ssurgo_subsurface_barriers",
     available_variables=ssurgo_subsurface_barriers_available_variables,
-    point_query=ssurgo_subsurface_barriers_query,
+    point_query=ssurgo_subsurface_barriers_point_query,
     bbox_query=ssurgo_subsurface_barriers_bbox_query,
     supports_date_range=False,
     primary_variable="reshard",
@@ -165,7 +165,7 @@ SUBSURFACE_BARRIERS_SPEC = AdapterSpec(
 SEASONAL_HYDROLOGY_SPEC = AdapterSpec(
     name="ssurgo_seasonal_hydrology",
     available_variables=ssurgo_seasonal_hydrology_available_variables,
-    point_query=ssurgo_seasonal_hydrology_query,
+    point_query=ssurgo_seasonal_hydrology_point_query,
     bbox_query=ssurgo_seasonal_hydrology_bbox_query,
     supports_date_range=False,
     primary_variable="month",
@@ -180,7 +180,7 @@ SEASONAL_HYDROLOGY_SPEC = AdapterSpec(
 ECOLOGICAL_SITE_SPEC = AdapterSpec(
     name="ssurgo_ecological_site",
     available_variables=ssurgo_ecological_site_available_variables,
-    point_query=ssurgo_ecological_site_query,
+    point_query=ssurgo_ecological_site_point_query,
     bbox_query=ssurgo_ecological_site_bbox_query,
     supports_date_range=False,
     primary_variable="ecoclasstypename",
@@ -194,7 +194,7 @@ ECOLOGICAL_SITE_SPEC = AdapterSpec(
 PARENT_MATERIAL_SPEC = AdapterSpec(
     name="ssurgo_parent_material",
     available_variables=ssurgo_parent_material_available_variables,
-    point_query=ssurgo_parent_material_query,
+    point_query=ssurgo_parent_material_point_query,
     bbox_query=ssurgo_parent_material_bbox_query,
     supports_date_range=False,
     primary_variable="pmorder",
@@ -208,7 +208,7 @@ PARENT_MATERIAL_SPEC = AdapterSpec(
 SOIL_TEMPERATURE_SPEC = AdapterSpec(
     name="ssurgo_soil_temperature",
     available_variables=ssurgo_soil_temperature_available_variables,
-    point_query=ssurgo_soil_temperature_query,
+    point_query=ssurgo_soil_temperature_point_query,
     bbox_query=ssurgo_soil_temperature_bbox_query,
     supports_date_range=False,
     primary_variable="soitempmm",
@@ -264,7 +264,7 @@ _QUERY_CASES = [
         _QueryCase(
             label="soil_profile",
             spec=SOIL_PROFILE_SPEC,
-            point_fn=ssurgo_soil_profile_query,
+            point_fn=ssurgo_soil_profile_point_query,
             bbox_fn=ssurgo_soil_profile_bbox_query,
             avail_fn=ssurgo_soil_profile_available_variables,
             default_vars=DEFAULT_SOIL_PROFILE_VARIABLES,
@@ -280,7 +280,7 @@ _QUERY_CASES = [
         _QueryCase(
             label="area_summary",
             spec=AREA_SUMMARY_SPEC,
-            point_fn=ssurgo_area_summary_query,
+            point_fn=ssurgo_area_summary_point_query,
             bbox_fn=ssurgo_area_summary_bbox_query,
             avail_fn=ssurgo_area_summary_available_variables,
             default_vars=DEFAULT_AREA_SUMMARY_VARIABLES,
@@ -293,7 +293,7 @@ _QUERY_CASES = [
         _QueryCase(
             label="subsurface_barriers",
             spec=SUBSURFACE_BARRIERS_SPEC,
-            point_fn=ssurgo_subsurface_barriers_query,
+            point_fn=ssurgo_subsurface_barriers_point_query,
             bbox_fn=ssurgo_subsurface_barriers_bbox_query,
             avail_fn=ssurgo_subsurface_barriers_available_variables,
             default_vars=DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
@@ -306,7 +306,7 @@ _QUERY_CASES = [
         _QueryCase(
             label="seasonal_hydrology",
             spec=SEASONAL_HYDROLOGY_SPEC,
-            point_fn=ssurgo_seasonal_hydrology_query,
+            point_fn=ssurgo_seasonal_hydrology_point_query,
             bbox_fn=ssurgo_seasonal_hydrology_bbox_query,
             avail_fn=ssurgo_seasonal_hydrology_available_variables,
             default_vars=DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
@@ -319,7 +319,7 @@ _QUERY_CASES = [
         _QueryCase(
             label="soil_suitability",
             spec=None,  # Not registered in common framework
-            point_fn=ssurgo_soil_suitability_query,
+            point_fn=ssurgo_soil_suitability_point_query,
             bbox_fn=ssurgo_soil_suitability_bbox_query,
             avail_fn=ssurgo_soil_suitability_available_rule_names,
             default_rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
@@ -332,7 +332,7 @@ _QUERY_CASES = [
         _QueryCase(
             label="ecological_site",
             spec=ECOLOGICAL_SITE_SPEC,
-            point_fn=ssurgo_ecological_site_query,
+            point_fn=ssurgo_ecological_site_point_query,
             bbox_fn=ssurgo_ecological_site_bbox_query,
             avail_fn=ssurgo_ecological_site_available_variables,
             default_vars=DEFAULT_ECOLOGICAL_SITE_VARIABLES,
@@ -345,7 +345,7 @@ _QUERY_CASES = [
         _QueryCase(
             label="parent_material",
             spec=PARENT_MATERIAL_SPEC,
-            point_fn=ssurgo_parent_material_query,
+            point_fn=ssurgo_parent_material_point_query,
             bbox_fn=ssurgo_parent_material_bbox_query,
             avail_fn=ssurgo_parent_material_available_variables,
             default_vars=DEFAULT_PARENT_MATERIAL_VARIABLES,
@@ -358,7 +358,7 @@ _QUERY_CASES = [
         _QueryCase(
             label="soil_temperature",
             spec=SOIL_TEMPERATURE_SPEC,
-            point_fn=ssurgo_soil_temperature_query,
+            point_fn=ssurgo_soil_temperature_point_query,
             bbox_fn=ssurgo_soil_temperature_bbox_query,
             avail_fn=ssurgo_soil_temperature_available_variables,
             default_vars=DEFAULT_SOIL_TEMPERATURE_VARIABLES,
@@ -612,7 +612,7 @@ class TestSuitabilityMaxRuntimeGate:
     @pytest.mark.parametrize("query_mode", ["point", "bbox"])
     def test_zero_max_runtime_blocks_query(self, query_mode: str) -> None:
         if query_mode == "point":
-            result = ssurgo_soil_suitability_query(
+            result = ssurgo_soil_suitability_point_query(
                 latitude=_LAT,
                 longitude=_LON,
                 rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
@@ -631,7 +631,7 @@ class TestSuitabilityMaxRuntimeGate:
     @pytest.mark.parametrize("query_mode", ["point", "bbox"])
     def test_generous_max_runtime_allows_query(self, query_mode: str) -> None:
         if query_mode == "point":
-            result = ssurgo_soil_suitability_query(
+            result = ssurgo_soil_suitability_point_query(
                 latitude=_LAT,
                 longitude=_LON,
                 rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
@@ -660,7 +660,7 @@ class TestSoilSuitability:
 
     @pytest.fixture(scope="class")
     def suitability_point(self) -> dict:
-        return ssurgo_soil_suitability_query(
+        return ssurgo_soil_suitability_point_query(
             latitude=_LAT,
             longitude=_LON,
             rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
@@ -710,7 +710,7 @@ class TestSoilSuitability:
         assert len(suitability_bbox["data"]) > 0
 
     def test_non_us_point_returns_empty(self) -> None:
-        result = ssurgo_soil_suitability_query(
+        result = ssurgo_soil_suitability_point_query(
             latitude=_NON_US_LAT,
             longitude=_NON_US_LON,
             rule_names=DEFAULT_SOIL_SUITABILITY_RULE_NAMES,

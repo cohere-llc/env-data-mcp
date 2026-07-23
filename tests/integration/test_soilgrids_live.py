@@ -22,7 +22,7 @@ import pytest
 from env_data_mcp.sources.soilgrids import (
     soilgrids_available_variables,
     soilgrids_bbox_query,
-    soilgrids_query,
+    soilgrids_point_query,
 )
 from env_data_mcp.sources.soilgrids.constants import (
     _LAYERS_INFO_URL,
@@ -94,7 +94,7 @@ def _validate_soilgrids_bbox_result(result: dict) -> None:
 SOILGRIDS_SPEC = AdapterSpec(
     name="soilgrids",
     available_variables=soilgrids_available_variables,
-    point_query=soilgrids_query,
+    point_query=soilgrids_point_query,
     bbox_query=soilgrids_bbox_query,
     supports_date_range=False,
     primary_variable="soc_0-5cm_mean",
@@ -216,7 +216,7 @@ class TestAvailableVariables:
 
 
 class TestPointQuery:
-    """soilgrids_query() at Yakima WA: SoilGrids-specific checks."""
+    """soilgrids_point_query() at Yakima WA: SoilGrids-specific checks."""
 
     def test_query_params_echoed(self, yakima_point_result: dict[str, Any]) -> None:
         qp = yakima_point_result["_meta"]["query_params"]
@@ -258,7 +258,7 @@ class TestPointQuery:
 
     def test_too_small_radius_returns_no_data(self, dc: _DatasetCase) -> None:
         """A sub-pixel radius (< 250 m) returns no data records."""
-        result = soilgrids_query(
+        result = soilgrids_point_query(
             latitude=_YAKIMA_LAT,
             longitude=_YAKIMA_LON,
             radius_km=0.00001,
@@ -271,7 +271,7 @@ class TestPointQuery:
 
     def test_single_variable_query(self, dc: _DatasetCase) -> None:
         """Querying a single variable returns only that variable in each record."""
-        result = soilgrids_query(
+        result = soilgrids_point_query(
             latitude=_YAKIMA_LAT,
             longitude=_YAKIMA_LON,
             radius_km=0.5,
@@ -288,7 +288,7 @@ class TestPointQuery:
     def test_non_standard_quantile_and_depth_variables(self, dc: _DatasetCase) -> None:
         """Non-default quantile (Q0.95) and uncertainty variables are queryable."""
         vars_ = ["soc_0-5cm_Q0.95", "silt_0-5cm_uncertainty"]
-        result = soilgrids_query(
+        result = soilgrids_point_query(
             latitude=_YAKIMA_LAT,
             longitude=_YAKIMA_LON,
             radius_km=0.5,
@@ -303,7 +303,7 @@ class TestPointQuery:
 
     def test_partial_unavailable_variables_returns_available_subset(self, dc: _DatasetCase) -> None:
         """When only some requested variables exist, available ones are returned."""
-        result = soilgrids_query(
+        result = soilgrids_point_query(
             latitude=_YAKIMA_LAT,
             longitude=_YAKIMA_LON,
             radius_km=0.5,

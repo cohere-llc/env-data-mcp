@@ -69,7 +69,7 @@ def tropomi_available_variables() -> dict[str, Any]:
 
 
 @mcp.tool()
-def tropomi_query(
+def tropomi_point_query(
     latitude: float,
     longitude: float,
     start_date: str,

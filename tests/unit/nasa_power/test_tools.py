@@ -17,10 +17,10 @@ from env_data_mcp.sources.nasa_power.constants import (
 from env_data_mcp.sources.nasa_power.tools import (
     nasa_power_merra2_available_variables,
     nasa_power_merra2_bbox_query,
-    nasa_power_merra2_query,
+    nasa_power_merra2_point_query,
     nasa_power_syn1deg_available_variables,
     nasa_power_syn1deg_bbox_query,
-    nasa_power_syn1deg_query,
+    nasa_power_syn1deg_point_query,
 )
 
 from .conftest import (
@@ -62,13 +62,13 @@ def _use_syn1deg():
 
 
 # ---------------------------------------------------------------------------
-# nasa_power_merra2_query tool tests
+# nasa_power_merra2_point_query tool tests
 # ---------------------------------------------------------------------------
 
 
 def test_merra2_query_success_structure():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -90,7 +90,7 @@ def test_merra2_query_success_structure():
 
 def test_merra2_query_meta_fields():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -110,7 +110,7 @@ def test_merra2_query_meta_fields():
 
 def test_merra2_query_echoes_query_params():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -128,7 +128,7 @@ def test_merra2_query_echoes_query_params():
 
 def test_merra2_query_default_variables():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -140,7 +140,7 @@ def test_merra2_query_default_variables():
 
 def test_merra2_query_invalid_date_returns_error():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="not-a-date",
@@ -153,7 +153,7 @@ def test_merra2_query_invalid_date_returns_error():
 
 def test_merra2_query_empty_date_range():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2000-01-01",
@@ -169,7 +169,7 @@ def test_merra2_query_empty_date_range():
 
 def test_merra2_query_variable_info_in_meta():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -186,7 +186,7 @@ def test_merra2_query_variable_info_in_meta():
 
 def test_merra2_query_variable_info_only_requested_vars():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -201,7 +201,7 @@ def test_merra2_query_variable_info_only_requested_vars():
 
 def test_merra2_query_unavailable_variable_reported():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -214,7 +214,7 @@ def test_merra2_query_unavailable_variable_reported():
 
 def test_merra2_query_t2m_physical_range():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -228,7 +228,7 @@ def test_merra2_query_t2m_physical_range():
 
 def test_merra2_query_precipitation_nonnegative():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-17",
@@ -242,7 +242,7 @@ def test_merra2_query_precipitation_nonnegative():
 
 def test_merra2_query_slow_query_warning():
     with _use_merra2():
-        result = nasa_power_merra2_query(
+        result = nasa_power_merra2_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-17",
@@ -255,13 +255,13 @@ def test_merra2_query_slow_query_warning():
 
 
 # ---------------------------------------------------------------------------
-# nasa_power_syn1deg_query tool tests
+# nasa_power_syn1deg_point_query tool tests
 # ---------------------------------------------------------------------------
 
 
 def test_syn1deg_query_success_structure():
     with _use_syn1deg():
-        result = nasa_power_syn1deg_query(
+        result = nasa_power_syn1deg_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -278,7 +278,7 @@ def test_syn1deg_query_success_structure():
 
 def test_syn1deg_query_meta_license():
     with _use_syn1deg():
-        result = nasa_power_syn1deg_query(
+        result = nasa_power_syn1deg_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -291,7 +291,7 @@ def test_syn1deg_query_meta_license():
 
 def test_syn1deg_query_default_variables():
     with _use_syn1deg():
-        result = nasa_power_syn1deg_query(
+        result = nasa_power_syn1deg_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -303,7 +303,7 @@ def test_syn1deg_query_default_variables():
 
 def test_syn1deg_query_temporal_resolution_serialised():
     with _use_syn1deg():
-        result = nasa_power_syn1deg_query(
+        result = nasa_power_syn1deg_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -316,7 +316,7 @@ def test_syn1deg_query_temporal_resolution_serialised():
 
 def test_syn1deg_query_variable_values():
     with _use_syn1deg():
-        result = nasa_power_syn1deg_query(
+        result = nasa_power_syn1deg_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -329,7 +329,7 @@ def test_syn1deg_query_variable_values():
 
 def test_syn1deg_query_variable_info_in_meta():
     with _use_syn1deg():
-        result = nasa_power_syn1deg_query(
+        result = nasa_power_syn1deg_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-19",
@@ -344,7 +344,7 @@ def test_syn1deg_query_variable_info_in_meta():
 
 def test_syn1deg_query_invalid_date_returns_error():
     with _use_syn1deg():
-        result = nasa_power_syn1deg_query(
+        result = nasa_power_syn1deg_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="not-a-date",
@@ -357,7 +357,7 @@ def test_syn1deg_query_invalid_date_returns_error():
 
 def test_syn1deg_query_slow_query_warning():
     with _use_syn1deg():
-        result = nasa_power_syn1deg_query(
+        result = nasa_power_syn1deg_point_query(
             latitude=_LAT,
             longitude=_LON,
             start_date="2019-08-17",

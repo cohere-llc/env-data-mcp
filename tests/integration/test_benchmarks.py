@@ -31,36 +31,36 @@ import pytest
 from env_data_mcp.helpers import point_to_bbox
 from env_data_mcp.sources.emit import emit_bbox_query, emit_query
 from env_data_mcp.sources.essdive import essdive_bbox_query, essdive_query
-from env_data_mcp.sources.gbif import gbif_occurrence_bbox_query, gbif_occurrence_query
+from env_data_mcp.sources.gbif import gbif_occurrence_bbox_query, gbif_occurrence_point_query
 from env_data_mcp.sources.nasa_power import (
-    TemporalResolution,
-    _clear_store_cache,
     nasa_power_merra2_bbox_query,
-    nasa_power_merra2_query,
+    nasa_power_merra2_point_query,
 )
+from env_data_mcp.sources.nasa_power._client import _clear_store_cache
+from env_data_mcp.sources.nasa_power.constants import TemporalResolution
 from env_data_mcp.sources.oco2 import oco2_bbox_query, oco2_query
 from env_data_mcp.sources.openaq import openaq_bbox_query, openaq_query
-from env_data_mcp.sources.soilgrids import soilgrids_bbox_query, soilgrids_query
+from env_data_mcp.sources.soilgrids import soilgrids_bbox_query, soilgrids_point_query
 from env_data_mcp.sources.ssurgo import (
     ssurgo_area_summary_bbox_query,
-    ssurgo_area_summary_query,
+    ssurgo_area_summary_point_query,
     ssurgo_ecological_site_bbox_query,
-    ssurgo_ecological_site_query,
+    ssurgo_ecological_site_point_query,
     ssurgo_parent_material_bbox_query,
-    ssurgo_parent_material_query,
+    ssurgo_parent_material_point_query,
     ssurgo_seasonal_hydrology_bbox_query,
-    ssurgo_seasonal_hydrology_query,
+    ssurgo_seasonal_hydrology_point_query,
     ssurgo_soil_profile_bbox_query,
-    ssurgo_soil_profile_query,
+    ssurgo_soil_profile_point_query,
     ssurgo_soil_suitability_bbox_query,
-    ssurgo_soil_suitability_query,
+    ssurgo_soil_suitability_point_query,
     ssurgo_soil_temperature_bbox_query,
-    ssurgo_soil_temperature_query,
+    ssurgo_soil_temperature_point_query,
     ssurgo_subsurface_barriers_bbox_query,
-    ssurgo_subsurface_barriers_query,
+    ssurgo_subsurface_barriers_point_query,
 )
 from env_data_mcp.sources.ssurgo.constants import DEFAULT_SOIL_SUITABILITY_RULE_NAMES
-from env_data_mcp.sources.tropomi import tropomi_bbox_query, tropomi_query
+from env_data_mcp.sources.tropomi import tropomi_bbox_query, tropomi_point_query
 
 # ---------------------------------------------------------------------------
 # Reference location & time windows
@@ -409,7 +409,7 @@ def _assert_or_skip(result: dict[str, Any], source: str) -> None:
 @pytest.mark.parametrize("sc", _NASA_POWER_SCENARIOS, ids=lambda s: s["name"])
 def test_nasa_power_timing(sc):
     _clear_store_cache()
-    result = nasa_power_merra2_query(
+    result = nasa_power_merra2_point_query(
         latitude=_LAT,
         longitude=_LON,
         start_date=sc["start"],
@@ -451,7 +451,7 @@ def test_nasa_power_bbox_timing(sc, bz):
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_nasa_power_extra_location_timing(loc):
     _clear_store_cache()
-    result = nasa_power_merra2_query(
+    result = nasa_power_merra2_point_query(
         latitude=loc["lat"],
         longitude=loc["lon"],
         start_date="2019-08-01",
@@ -469,7 +469,7 @@ def test_nasa_power_extra_location_timing(loc):
 def test_nasa_power_point_bbox_consistent():
     """Bbox must include a grid point near the reference point with matching T2M."""
     _clear_store_cache()
-    pt = nasa_power_merra2_query(
+    pt = nasa_power_merra2_point_query(
         latitude=_LAT,
         longitude=_LON,
         start_date="2019-08-19",
@@ -511,7 +511,9 @@ _SOILGRIDS_VAR = ["bdod_0-5cm_mean"]
 @pytest.mark.integration
 @pytest.mark.benchmark
 def test_soilgrids_timing():
-    result = soilgrids_query(latitude=_LAT, longitude=_LON, radius_km=1.0, variables=_SOILGRIDS_VAR)
+    result = soilgrids_point_query(
+        latitude=_LAT, longitude=_LON, radius_km=1.0, variables=_SOILGRIDS_VAR
+    )
     _assert_or_skip(result, "soilgrids")
     _record("soilgrids", "point", 0, result)
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
@@ -532,7 +534,9 @@ def test_soilgrids_bbox_timing(bz):
 def test_soilgrids_point_bbox_consistent():
     """Small bbox must return identical records to point query."""
     bbox = point_to_bbox(latitude=_LAT, longitude=_LON, radius_km=1.0)
-    pt = soilgrids_query(latitude=_LAT, longitude=_LON, radius_km=1.0, variables=_SOILGRIDS_VAR)
+    pt = soilgrids_point_query(
+        latitude=_LAT, longitude=_LON, radius_km=1.0, variables=_SOILGRIDS_VAR
+    )
     bx = soilgrids_bbox_query(**bbox, variables=_SOILGRIDS_VAR)
     _assert_or_skip(pt, "soilgrids/point")
     _assert_or_skip(bx, "soilgrids/bbox")
@@ -557,49 +561,49 @@ class _SsurgoConfig:
 _SSURGO_QUERY_CONFIGS: list[_SsurgoConfig] = [
     _SsurgoConfig(
         label="area_summary",
-        point_fn=ssurgo_area_summary_query,
+        point_fn=ssurgo_area_summary_point_query,
         bbox_fn=ssurgo_area_summary_bbox_query,
         extra_kwargs={},
     ),
     _SsurgoConfig(
         label="ecological_site",
-        point_fn=ssurgo_ecological_site_query,
+        point_fn=ssurgo_ecological_site_point_query,
         bbox_fn=ssurgo_ecological_site_bbox_query,
         extra_kwargs={},
     ),
     _SsurgoConfig(
         label="parent_material",
-        point_fn=ssurgo_parent_material_query,
+        point_fn=ssurgo_parent_material_point_query,
         bbox_fn=ssurgo_parent_material_bbox_query,
         extra_kwargs={},
     ),
     _SsurgoConfig(
         label="seasonal_hydrology",
-        point_fn=ssurgo_seasonal_hydrology_query,
+        point_fn=ssurgo_seasonal_hydrology_point_query,
         bbox_fn=ssurgo_seasonal_hydrology_bbox_query,
         extra_kwargs={},
     ),
     _SsurgoConfig(
         label="soil_profile",
-        point_fn=ssurgo_soil_profile_query,
+        point_fn=ssurgo_soil_profile_point_query,
         bbox_fn=ssurgo_soil_profile_bbox_query,
         extra_kwargs={},
     ),
     _SsurgoConfig(
         label="soil_suitability",
-        point_fn=ssurgo_soil_suitability_query,
+        point_fn=ssurgo_soil_suitability_point_query,
         bbox_fn=ssurgo_soil_suitability_bbox_query,
         extra_kwargs={"rule_names": DEFAULT_SOIL_SUITABILITY_RULE_NAMES},
     ),
     _SsurgoConfig(
         label="soil_temperature",
-        point_fn=ssurgo_soil_temperature_query,
+        point_fn=ssurgo_soil_temperature_point_query,
         bbox_fn=ssurgo_soil_temperature_bbox_query,
         extra_kwargs={},
     ),
     _SsurgoConfig(
         label="subsurface_barriers",
-        point_fn=ssurgo_subsurface_barriers_query,
+        point_fn=ssurgo_subsurface_barriers_point_query,
         bbox_fn=ssurgo_subsurface_barriers_bbox_query,
         extra_kwargs={},
     ),
@@ -672,7 +676,7 @@ _GBIF_SCENARIOS = _SCENARIOS  # fragment cap bounds latency regardless of date r
 @pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _GBIF_SCENARIOS, ids=lambda s: s["name"])
 def test_gbif_timing(sc):
-    result = gbif_occurrence_query(
+    result = gbif_occurrence_point_query(
         latitude=_LAT,
         longitude=_LON,
         radius_km=50.0,
@@ -711,7 +715,7 @@ def test_gbif_bbox_timing(sc, bz):
 @pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_gbif_extra_location_timing(loc):
-    result = gbif_occurrence_query(
+    result = gbif_occurrence_point_query(
         latitude=loc["lat"],
         longitude=loc["lon"],
         radius_km=50.0,
@@ -728,7 +732,7 @@ def test_gbif_extra_location_timing(loc):
 @pytest.mark.benchmark
 def test_gbif_point_bbox_consistent():
     """Small bbox should contain records near the point and counts should agree ±20 %."""
-    pt = gbif_occurrence_query(
+    pt = gbif_occurrence_point_query(
         latitude=_LAT,
         longitude=_LON,
         radius_km=10.0,
@@ -756,7 +760,7 @@ def test_gbif_point_bbox_consistent():
 @pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _SCENARIOS, ids=lambda s: s["name"])
 def test_tropomi_timing(sc):
-    result = tropomi_query(
+    result = tropomi_point_query(
         latitude=_LAT,
         longitude=_LON,
         start_date=sc["start"],
@@ -799,7 +803,7 @@ def test_tropomi_bbox_timing(sc, bz):
 @pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_tropomi_extra_location_timing(loc):
-    result = tropomi_query(
+    result = tropomi_point_query(
         latitude=loc["lat"],
         longitude=loc["lon"],
         start_date="2019-08-01",
@@ -815,7 +819,7 @@ def test_tropomi_extra_location_timing(loc):
 @pytest.mark.integration
 @pytest.mark.benchmark
 def test_tropomi_point_bbox_consistent():
-    pt = tropomi_query(
+    pt = tropomi_point_query(
         latitude=_LAT,
         longitude=_LON,
         start_date="2019-08-19",

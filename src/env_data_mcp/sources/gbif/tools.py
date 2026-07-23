@@ -69,7 +69,7 @@ def gbif_occurrence_available_variables() -> dict[str, Any]:
 
 
 @mcp.tool()
-def gbif_occurrence_query(
+def gbif_occurrence_point_query(
     latitude: float,
     longitude: float,
     start_date: str,

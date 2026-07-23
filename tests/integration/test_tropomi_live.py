@@ -19,7 +19,7 @@ from env_data_mcp.sources.tropomi.constants import _PRODUCT_TYPES, DEFAULT_VARIA
 from env_data_mcp.sources.tropomi.tools import (
     tropomi_available_variables,
     tropomi_bbox_query,
-    tropomi_query,
+    tropomi_point_query,
 )
 
 from .common import (
@@ -90,7 +90,7 @@ def _validate_tropomi_bbox_result(result: dict) -> None:
 TROPOMI_SPEC = AdapterSpec(
     name="tropomi",
     available_variables=tropomi_available_variables,
-    point_query=tropomi_query,
+    point_query=tropomi_point_query,
     bbox_query=tropomi_bbox_query,
     supports_date_range=True,
     primary_variable="OFFL-L2_NO2",
@@ -123,7 +123,7 @@ def avail_result() -> dict[str, Any]:
 @pytest.fixture(scope="module")
 def nh_rural_result() -> dict[str, Any]:
     """Point query at NH_RURAL over the standard date window."""
-    return tropomi_query(
+    return tropomi_point_query(
         latitude=NH_RURAL.coordinates.latitude,
         longitude=NH_RURAL.coordinates.longitude,
         start_date=NH_RURAL.start_date,

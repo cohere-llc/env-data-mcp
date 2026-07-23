@@ -8,7 +8,7 @@ from env_data_mcp.models import AvailableVariablesResponse, GroupedGeometryRespo
 from env_data_mcp.sources.ssurgo import (
     ssurgo_seasonal_hydrology_available_variables,
     ssurgo_seasonal_hydrology_bbox_query,
-    ssurgo_seasonal_hydrology_query,
+    ssurgo_seasonal_hydrology_point_query,
 )
 from env_data_mcp.sources.ssurgo.constants import _QueryType
 
@@ -44,7 +44,7 @@ def test_seasonal_hydrology_available_variables_http_error(httpx_mock):
 
 def test_seasonal_hydrology_query_success_structure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=HYDROLOGY_XML)
-    result = ssurgo_seasonal_hydrology_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_seasonal_hydrology_point_query(latitude=_LAT, longitude=_LON)
     GroupedGeometryResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
@@ -53,7 +53,7 @@ def test_seasonal_hydrology_query_success_structure(httpx_mock):
 
 def test_seasonal_hydrology_query_meta_success(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=HYDROLOGY_XML)
-    result = ssurgo_seasonal_hydrology_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_seasonal_hydrology_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["source"] == "ssurgo"
     assert result["_meta"]["success"] is True
     assert result["_meta"]["auth_required"] is False
@@ -61,7 +61,7 @@ def test_seasonal_hydrology_query_meta_success(httpx_mock):
 
 def test_seasonal_hydrology_query_echoes_query_params(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=HYDROLOGY_XML)
-    result = ssurgo_seasonal_hydrology_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_seasonal_hydrology_point_query(latitude=_LAT, longitude=_LON)
     qp = result["_meta"]["query_params"]
     assert qp["latitude"] == pytest.approx(_LAT)
     assert "variables" in qp
@@ -69,7 +69,7 @@ def test_seasonal_hydrology_query_echoes_query_params(httpx_mock):
 
 def test_seasonal_hydrology_query_non_us_returns_no_coverage(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=EMPTY_XML)
-    result = ssurgo_seasonal_hydrology_query(latitude=48.8566, longitude=2.3522)
+    result = ssurgo_seasonal_hydrology_point_query(latitude=48.8566, longitude=2.3522)
     assert result["_meta"]["success"] is True
     assert result["data"] == []
     assert result["_meta"]["error"] is None
@@ -77,13 +77,13 @@ def test_seasonal_hydrology_query_non_us_returns_no_coverage(httpx_mock):
 
 def test_seasonal_hydrology_query_http_error_returns_failure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_seasonal_hydrology_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_seasonal_hydrology_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["success"] is False
 
 
 def test_seasonal_hydrology_query_variable_info_in_meta(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=HYDROLOGY_XML)
-    result = ssurgo_seasonal_hydrology_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_seasonal_hydrology_point_query(latitude=_LAT, longitude=_LON)
     assert "variable_info" in result["_meta"]
 
 

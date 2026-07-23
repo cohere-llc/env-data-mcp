@@ -14,7 +14,7 @@ from env_data_mcp.sources.gbif.constants import _QueryType
 from env_data_mcp.sources.gbif.tools import (
     gbif_occurrence_available_variables,
     gbif_occurrence_bbox_query,
-    gbif_occurrence_query,
+    gbif_occurrence_point_query,
 )
 
 # ---------------------------------------------------------------------------
@@ -214,7 +214,7 @@ class TestQuery:
                 side_effect=_make_mock_query_point(),
             ),
         ):
-            results = gbif_occurrence_query(
+            results = gbif_occurrence_point_query(
                 latitude=_YAKIMA_LAT,
                 longitude=_YAKIMA_LON,
                 start_date="2019-08-01",
@@ -248,7 +248,7 @@ class TestQuery:
                 side_effect=_make_mock_query_point(),
             ),
         ):
-            results = gbif_occurrence_query(
+            results = gbif_occurrence_point_query(
                 latitude=_YAKIMA_LAT,
                 longitude=_YAKIMA_LON,
                 start_date="2019-08-01",
@@ -274,7 +274,7 @@ class TestQuery:
                 side_effect=get_mock_http_error(),
             ),
         ):
-            results = gbif_occurrence_query(
+            results = gbif_occurrence_point_query(
                 latitude=_YAKIMA_LAT,
                 longitude=_YAKIMA_LON,
                 start_date="2019-08-01",
@@ -300,7 +300,7 @@ class TestQuery:
                 side_effect=_make_mock_query_point(),
             ),
         ):
-            results = gbif_occurrence_query(
+            results = gbif_occurrence_point_query(
                 latitude=_YAKIMA_LAT,
                 longitude=_YAKIMA_LON,
                 start_date="2019-08-01",
@@ -328,7 +328,7 @@ class TestQuery:
                 side_effect=_make_mock_query_point(expected_taxon_key=2881663, number_of_results=1),
             ),
         ):
-            results = gbif_occurrence_query(
+            results = gbif_occurrence_point_query(
                 latitude=_YAKIMA_LAT,
                 longitude=_YAKIMA_LON,
                 start_date="2019-08-01",
@@ -356,7 +356,7 @@ class TestQuery:
             "env_data_mcp.sources.gbif.tools._get_variable_info",
             return_value=_EXPECTED_VARIABLES,
         ):
-            results = gbif_occurrence_query(
+            results = gbif_occurrence_point_query(
                 latitude=_YAKIMA_LAT,
                 longitude=_YAKIMA_LON,
                 start_date=_START_DATE,
