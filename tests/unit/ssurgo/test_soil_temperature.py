@@ -12,7 +12,6 @@ from env_data_mcp.sources.ssurgo import (
 )
 from env_data_mcp.sources.ssurgo.constants import (
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
-    _QueryType,
 )
 
 from .conftest import (
@@ -25,7 +24,6 @@ from .conftest import (
     _SDA_URL,
     EMPTY_XML,
     SOIL_TEMP_XML,
-    add_schema_responses,
 )
 
 # ---------------------------------------------------------------------------
@@ -34,7 +32,6 @@ from .conftest import (
 
 
 def test_soil_temperature_available_variables_structure(httpx_mock):
-    add_schema_responses(httpx_mock, _QueryType.SOIL_TEMPERATURE)
     result = ssurgo_soil_temperature_available_variables()
     AvailableVariablesResponse.model_validate(result)
     assert "data" in result
@@ -42,17 +39,8 @@ def test_soil_temperature_available_variables_structure(httpx_mock):
 
 
 def test_soil_temperature_available_variables_meta_query_type(httpx_mock):
-    add_schema_responses(httpx_mock, _QueryType.SOIL_TEMPERATURE)
     result = ssurgo_soil_temperature_available_variables()
     assert result["_meta"]["query_params"]["query_type"] == "soil_temperature"
-
-
-@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-def test_soil_temperature_available_variables_http_error(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_soil_temperature_available_variables()
-    assert result["_meta"]["success"] is False
-    assert result["data"] == {}
 
 
 # ---------------------------------------------------------------------------

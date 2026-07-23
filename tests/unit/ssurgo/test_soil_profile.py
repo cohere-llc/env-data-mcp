@@ -11,7 +11,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_profile_bbox_query,
     ssurgo_soil_profile_point_query,
 )
-from env_data_mcp.sources.ssurgo._client import _VARIABLE_INFO_CACHE
+from env_data_mcp.sources.ssurgo._var_cache import _VARIABLE_INFO_CACHE
 from env_data_mcp.sources.ssurgo.constants import LICENSE_INFO, _QueryType
 from env_data_mcp.sources.ssurgo.tools import _bbox_query, _point_query
 
@@ -25,38 +25,26 @@ from .conftest import (
     _SDA_URL,
     EMPTY_XML,
     YAKIMA_XML,
-    add_schema_responses,
 )
 
 
 def test_soil_profile_available_variables_returns_variables_key(httpx_mock):
-    add_schema_responses(httpx_mock, _QueryType.SOIL_PROFILE)
     result = ssurgo_soil_profile_available_variables()
     assert "data" in result
     assert "variables" not in result
 
 
 def test_soil_profile_available_variables_entry_structure(httpx_mock):
-    add_schema_responses(httpx_mock, _QueryType.SOIL_PROFILE)
     result = ssurgo_soil_profile_available_variables()
     assert "sandtotal_r" in result["data"]
     assert all("description" in e for e in result["data"].values())
 
 
 def test_soil_profile_available_variables_meta_success(httpx_mock):
-    add_schema_responses(httpx_mock, _QueryType.SOIL_PROFILE)
     result = ssurgo_soil_profile_available_variables()
     assert result["_meta"]["success"] is True
     assert result["_meta"]["geometries_returned"] == 0
     assert result["_meta"]["total_records_returned"] > 0
-
-
-@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-def test_soil_profile_available_variables_http_error(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_soil_profile_available_variables()
-    assert result["_meta"]["success"] is False
-    assert result["data"] == {}
 
 
 def test_soil_profile_query_success_structure(httpx_mock):

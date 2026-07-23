@@ -6,10 +6,8 @@ import textwrap
 
 import pytest
 
-import env_data_mcp.sources.ssurgo._client as _ssurgo_client
-from env_data_mcp.sources.ssurgo._client import (
+from env_data_mcp.sources.ssurgo._var_cache import (
     _COLUMN_TABLE_CACHE,
-    _PDF_COL_METADATA_CACHE,
     _VARIABLE_INFO_CACHE,
 )
 from env_data_mcp.sources.ssurgo.constants import (
@@ -25,9 +23,8 @@ _SDA_URL = "https://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService/post.r
 
 
 # ---------------------------------------------------------------------------
-# Cache management: clear all SSURGO module-level caches before each test.
-# _PDF_COL_METADATA_LOADED is set to True so that _load_column_metadata()
-# returns the (empty) cache immediately without attempting a network call.
+# Cache management: clear the disk-backed cache before every test and seed
+# it with a controlled stub so tests never trigger a real disk read.
 # ---------------------------------------------------------------------------
 
 
@@ -53,16 +50,12 @@ def _mock_mukey_geometries(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture(autouse=True)
 def _clear_ssurgo_caches() -> object:
-    """Reset all SSURGO module-level caches around each unit test."""
+    """Reset the SSURGO variable-cache module-level state around each unit test."""
     _VARIABLE_INFO_CACHE.clear()
     _COLUMN_TABLE_CACHE.clear()
-    _PDF_COL_METADATA_CACHE.clear()
-    _ssurgo_client._PDF_COL_METADATA_LOADED = True  # suppress PDF download
     yield
     _VARIABLE_INFO_CACHE.clear()
     _COLUMN_TABLE_CACHE.clear()
-    _PDF_COL_METADATA_CACHE.clear()
-    _ssurgo_client._PDF_COL_METADATA_LOADED = False
 
 
 # ---------------------------------------------------------------------------
@@ -528,23 +521,26 @@ SOIL_TEMP_XML = textwrap.dedent("""\
 # so that the variable-filtering logic in _point_query / _bbox_query passes
 # all recognised columns through to the SQL layer without HTTP round-trips.
 _STUB_VAR_INFO: dict[str, dict[str, str]] = {
-    col: {"label": "", "units": ""} for col in _COLUMN_TABLE_MAP_TEST_DATA
+    col: {"table": table, "label": "", "units": ""}
+    for col, table in _COLUMN_TABLE_MAP_TEST_DATA.items()
 }
 
 
 @pytest.fixture(autouse=True)
 def _reset_ssurgo_caches(request):
-    """Reset both module-level caches before each test."""
+    """Pre-seed the disk-backed variable cache with hermetic test data.
+
+    Both module-level caches are populated from ``_COLUMN_TABLE_MAP_TEST_DATA``
+    so that :func:`_get_variable_info` and :func:`_get_column_table_map` never
+    trigger a disk read during unit tests.  ``_ssurgo_var_cache`` is also
+    monkey-patched so callers that go through the module-level ``_hydrate``
+    path see the same seeded state.
+    """
     _VARIABLE_INFO_CACHE.clear()
     _COLUMN_TABLE_CACHE.clear()
     _COLUMN_TABLE_CACHE.update(_COLUMN_TABLE_MAP_TEST_DATA)
-    # Pre-seed variable info cache so _get_variable_info() returns immediately
-    # without making HTTP requests during unit tests.  Each query type receives
-    # a copy of the full stub catalog so that the variable-filtering pass in
-    # _point_query / _bbox_query recognises all test columns as valid.
-    # Tests for available_variables functions are excluded: they register HTTP
-    # mocks specifically to exercise the fetch path, so the cache must be cold.
-    if "available_variables" not in request.node.name:
-        for _qt in _QueryType:
-            _VARIABLE_INFO_CACHE[_qt] = dict(_STUB_VAR_INFO)
+    for _qt in _QueryType:
+        _VARIABLE_INFO_CACHE[_qt] = dict(_STUB_VAR_INFO)
     yield
+    _VARIABLE_INFO_CACHE.clear()
+    _COLUMN_TABLE_CACHE.clear()

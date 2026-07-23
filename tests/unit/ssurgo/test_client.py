@@ -5,20 +5,12 @@ from __future__ import annotations
 import re
 import textwrap
 
-import pdfplumber
 import pytest
 
-import env_data_mcp.sources.ssurgo._client as _ssurgo_client
 from env_data_mcp.sources.ssurgo._client import (
-    _COLUMN_TABLE_CACHE,
-    _PDF_URL,
-    _extract_uom,
     _fetch_mukey_geometries,
     _fetch_sda,
-    _get_column_table_map,
-    _get_variable_info,
     _gml2_to_geojson,
-    _load_column_metadata,
     _parse_gml2_coords,
     _parse_xml,
 )
@@ -31,7 +23,6 @@ from env_data_mcp.sources.ssurgo.constants import (
     DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
     DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
-    _QueryType,
 )
 
 from .conftest import _SDA_URL, EMPTY_XML, YAKIMA_XML
@@ -103,185 +94,6 @@ def test_all_default_variable_lists_are_non_empty():
     assert len(DEFAULT_ECOLOGICAL_SITE_VARIABLES) > 0
     assert len(DEFAULT_PARENT_MATERIAL_VARIABLES) > 0
     assert len(DEFAULT_SOIL_TEMPERATURE_VARIABLES) > 0
-
-
-# ---------------------------------------------------------------------------
-# _extract_uom tests (pure function, no network)
-# ---------------------------------------------------------------------------
-
-
-def test_extract_uom_simple_unit():
-    assert _extract_uom("10 100 percent") == "percent"
-
-
-def test_extract_uom_strips_domain_suffix():
-    # Domain names contain underscores and appear last; strip before returning UOM
-    assert _extract_uom("10 100 percent domain_name") == "percent"
-
-
-def test_extract_uom_all_numeric_returns_empty():
-    assert _extract_uom("10 25 100") == ""
-
-
-def test_extract_uom_empty_string():
-    assert _extract_uom("") == ""
-
-
-def test_extract_uom_complex_unit():
-    # Units like "g/cm3" or "cmol(+)/kg" should be returned as-is
-    assert _extract_uom("4 g/cm3") == "g/cm3"
-
-
-def test_extract_uom_only_domain_name_returns_empty():
-    assert _extract_uom("domain_name") == ""
-
-
-# ---------------------------------------------------------------------------
-# _parse_col_metadata_pdf tests (monkeypatched pdfplumber)
-# ---------------------------------------------------------------------------
-
-
-def _make_fake_pdf(pages_text: list[str]):
-    """Return a fake pdfplumber context manager whose pages yield fixed text."""
-
-    class _FakePage:
-        def __init__(self, text: str):
-            self._text = text
-
-        def extract_text(self) -> str:
-            return self._text
-
-    class _FakePDF:
-        def __init__(self, texts: list[str]):
-            self.pages = [_FakePage(t) for t in texts]
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *_):
-            pass
-
-    return _FakePDF(pages_text)
-
-
-def test_parse_col_metadata_pdf_parses_table_and_column(monkeypatch):
-    from env_data_mcp.sources.ssurgo._client import _parse_col_metadata_pdf
-
-    page_text = textwrap.dedent(
-        """\
-        Preamble line before any table header
-        Table Physical Name: mapunit
-        Seq. Col Physical Name Description
-        Non-matching row without digits at start
-        1 Map Unit Symbol musym mapunit_sym String Varchar(6) yes 6 domain_mapunit_sym
-        """
-    )
-    monkeypatch.setattr(pdfplumber, "open", lambda *a, **kw: _make_fake_pdf([page_text]))
-    result = _parse_col_metadata_pdf(b"fake bytes")
-    assert "mapunit" in result
-    assert "musym" in result["mapunit"]
-    assert result["mapunit"]["musym"]["label"] == "Map Unit Symbol"
-
-
-def test_parse_col_metadata_pdf_empty_pages(monkeypatch):
-    from env_data_mcp.sources.ssurgo._client import _parse_col_metadata_pdf
-
-    monkeypatch.setattr(pdfplumber, "open", lambda *a, **kw: _make_fake_pdf([""]))
-    result = _parse_col_metadata_pdf(b"fake bytes")
-    assert result == {}
-
-
-# ---------------------------------------------------------------------------
-# _load_column_metadata download path tests
-# ---------------------------------------------------------------------------
-
-
-def test_load_column_metadata_fetches_and_parses_pdf(httpx_mock, monkeypatch):
-    monkeypatch.setattr(_ssurgo_client, "_PDF_COL_METADATA_LOADED", False)
-    _ssurgo_client._PDF_COL_METADATA_CACHE.clear()
-    monkeypatch.setattr(
-        _ssurgo_client,
-        "_parse_col_metadata_pdf",
-        lambda b: {"mapunit": {"musym": {"label": "Map Unit Symbol", "units": ""}}},
-    )
-    httpx_mock.add_response(method="GET", url=_PDF_URL, content=b"fake pdf bytes")
-    result = _load_column_metadata()
-    assert "mapunit" in result
-
-
-def test_load_column_metadata_http_error_returns_empty(httpx_mock, monkeypatch):
-    monkeypatch.setattr(_ssurgo_client, "_PDF_COL_METADATA_LOADED", False)
-    _ssurgo_client._PDF_COL_METADATA_CACHE.clear()
-    httpx_mock.add_response(method="GET", url=_PDF_URL, status_code=500)
-    result = _load_column_metadata()
-    assert result == {}
-
-
-# ---------------------------------------------------------------------------
-# _get_column_table_map rebuild tests
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-def test_get_column_table_map_rebuilds_cache_from_sda(httpx_mock):
-    from .conftest import _SDA_URL, TABLE_SCHEMA_XMLS
-
-    # Clear cache that was pre-seeded by the autouse fixture
-    _COLUMN_TABLE_CACHE.clear()
-
-    # Register a response only for mapunit; remaining tables will raise (caught
-    # by except Exception: pass in _get_column_table_map, covering lines 153-154)
-    httpx_mock.add_response(method="POST", url=_SDA_URL, text=TABLE_SCHEMA_XMLS["mapunit"])
-
-    result = _get_column_table_map()
-    # mapunit schema has "mukey" and "muname"
-    assert result.get("mukey") == "mapunit"
-    assert result.get("muname") == "mapunit"
-
-
-# ---------------------------------------------------------------------------
-# _get_variable_info error path tests
-# ---------------------------------------------------------------------------
-
-
-def test_get_variable_info_all_tables_raise_reraises_last(monkeypatch):
-    # The autouse fixture pre-seeds the cache; clear it so the function runs fully
-    _ssurgo_client._VARIABLE_INFO_CACHE.pop(_QueryType.SOIL_PROFILE, None)
-
-    def _always_raise(table):
-        raise ConnectionError(f"no response for {table}")
-
-    monkeypatch.setattr(_ssurgo_client, "_sda_table_columns", _always_raise)
-    with pytest.raises(ConnectionError):
-        _get_variable_info(_QueryType.SOIL_PROFILE)
-
-
-def test_get_variable_info_uses_pdf_metadata_when_available(monkeypatch):
-    """Covers entry.update(pdf_meta) when _PDF_COL_METADATA_CACHE has data."""
-    _ssurgo_client._VARIABLE_INFO_CACHE.pop(_QueryType.SOIL_PROFILE, None)
-    # Pre-populate the PDF metadata cache with a label/units entry for musym
-    _ssurgo_client._PDF_COL_METADATA_CACHE["mapunit"] = {
-        "musym": {"label": "Map Unit Symbol", "units": ""}
-    }
-
-    def _fake_table_columns(table: str) -> list[str]:
-        if table == "mapunit":
-            return ["mukey", "musym"]
-        raise ConnectionError("not mocked")
-
-    monkeypatch.setattr(_ssurgo_client, "_sda_table_columns", _fake_table_columns)
-    result = _get_variable_info(_QueryType.SOIL_PROFILE)
-    assert "musym" in result
-    assert result["musym"].get("label") == "Map Unit Symbol"
-
-
-def test_get_variable_info_no_tables_configured_raises_runtime_error(monkeypatch):
-    # The autouse fixture pre-seeds the cache; clear it so the function runs fully
-    _ssurgo_client._VARIABLE_INFO_CACHE.pop(_QueryType.SOIL_PROFILE, None)
-    orig = _ssurgo_client._AVAIL_SQL_TABLES
-    monkeypatch.setattr(_ssurgo_client, "_AVAIL_SQL_TABLES", {**orig, _QueryType.SOIL_PROFILE: ()})
-    with pytest.raises(RuntimeError, match="No tables configured"):
-        _get_variable_info(_QueryType.SOIL_PROFILE)
 
 
 # ---------------------------------------------------------------------------

@@ -10,7 +10,6 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_parent_material_bbox_query,
     ssurgo_parent_material_point_query,
 )
-from env_data_mcp.sources.ssurgo.constants import _QueryType
 
 from .conftest import (
     _LAT,
@@ -22,7 +21,6 @@ from .conftest import (
     _SDA_URL,
     EMPTY_XML,
     PARENT_MAT_XML,
-    add_schema_responses,
 )
 
 # ---------------------------------------------------------------------------
@@ -31,19 +29,10 @@ from .conftest import (
 
 
 def test_parent_material_available_variables_returns_variables_key(httpx_mock):
-    add_schema_responses(httpx_mock, _QueryType.PARENT_MATERIAL)
     result = ssurgo_parent_material_available_variables()
     AvailableVariablesResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
-
-
-@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-def test_parent_material_available_variables_http_error(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_parent_material_available_variables()
-    assert result["_meta"]["success"] is False
-    assert result["data"] == {}
 
 
 # ---------------------------------------------------------------------------
