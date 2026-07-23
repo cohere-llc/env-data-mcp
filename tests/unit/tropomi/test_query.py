@@ -8,7 +8,6 @@ from __future__ import annotations
 import re
 from pathlib import PurePosixPath
 from unittest.mock import MagicMock, patch
-from urllib.parse import quote
 
 import httpx
 import numpy as np
@@ -19,79 +18,18 @@ from env_data_mcp.sources.tropomi._query import (
     _extract_date_from_netcdf_path,
     _format_results,
     _get_cogt_urls,
-    _get_full_variable_info,
     _get_netcdf_file_paths,
     _query_bbox_from_file,
     _query_point_from_file,
     _VariableInfo,
-    get_variable_info,
     query_bbox,
     query_point,
 )
-from env_data_mcp.sources.tropomi.constants import _AWS_URL, _CDSE_ODATA_URL, ProductType
+from env_data_mcp.sources.tropomi.constants import _CDSE_ODATA_URL, ProductType
 
 # ---------------------------------------------------------------------------
-# mock data — catalog
+# mock data — CDSE
 # ---------------------------------------------------------------------------
-
-_NRTI_URL = f"{_AWS_URL}COGT/NRTI/catalog.json"
-_OFFL_URL = f"{_AWS_URL}COGT/OFFL/catalog.json"
-_RPRO_URL = f"{_AWS_URL}COGT/RPRO/catalog.json"
-
-_NRTI_CATALOG = {
-    "links": [
-        {
-            "href": "https://meeo-s5p.s3.amazonaws.com/COGT/NRTI/L2__NO2___/catalog.json",
-            "title": "Nitrogen Dioxide",
-        },
-    ]
-}
-
-_OFFL_CATALOG = {
-    "links": [
-        {
-            "href": "https://meeo-s5p.s3.amazonaws.com/COGT/OFFL/L2__CO____/catalog.json",
-            "title": "Carbon Monoxide",
-        },
-        {
-            "href": "https://meeo-s5p.s3.amazonaws.com/COGT/OFFL/L2__CH4___/catalog.json",
-            "title": "Methane",
-        },
-        {
-            "href": "https://meeo-s5p.s3.amazonaws.com/COGT/OFFL/L2__O3____/catalog.json",
-            "title": "Ozone",
-        },
-        # link without "title" — should be filtered out by _get_variable_info
-        {
-            "href": "https://meeo-s5p.s3.amazonaws.com/COGT/OFFL/catalog.json",
-        },
-    ]
-}
-
-_RPRO_CATALOG = {
-    "links": [
-        {
-            "href": "https://meeo-s5p.s3.amazonaws.com/COGT/RPRO/L2__O3____/catalog.json",
-            "title": "Ozone",
-        },
-    ]
-}
-
-# ---------------------------------------------------------------------------
-# mock data — S3 listings (COGT variable name discovery)
-# ---------------------------------------------------------------------------
-
-_S3_NS = "http://s3.amazonaws.com/doc/2006-03-01/"
-
-# Maps (product_type, folder) → COGT variable name embedded in the .tif filename.
-# Source: https://github.com/Sentinel-5P/data-on-s3/blob/master/DocsForAws/Sentinel5P_Description.md
-_COGT_VAR_NAMES: dict[tuple[str, str], str] = {
-    ("NRTI", "L2__NO2___"): "nitrogendioxide_tropospheric_column",
-    ("OFFL", "L2__CO____"): "carbonmonoxide_total_column",
-    ("OFFL", "L2__CH4___"): "methane_mixing_ratio",
-    ("OFFL", "L2__O3____"): "ozone_total_vertical_column",
-    ("RPRO", "L2__O3____"): "ozone_total_vertical_column",
-}
 
 _CDSE_URL_RE = re.compile(re.escape(_CDSE_ODATA_URL))
 
@@ -105,168 +43,6 @@ _CDSE_RESPONSE = {
         },
     ]
 }
-
-
-def _s3_listing_url(product_type: str, folder: str) -> str:
-    """Build the exact URL httpx sends for an S3 ListObjectsV2 request."""
-    prefix = quote(f"COGT/{product_type}/{folder}/", safe="")
-    return f"https://meeo-s5p.s3.amazonaws.com/?list-type=2&prefix={prefix}&max-keys=4"
-
-
-def _s3_listing_xml(product_type: str, folder: str, cogt_var: str) -> str:
-    """Build a minimal S3 ListBucketResult XML response."""
-    key = (
-        f"COGT/{product_type}/{folder}/2020/01/01/"
-        f"S5P_{product_type}_{folder}_20200101T000000_20200101T000500_"
-        f"00000_01_010302_20200101T010000_PRODUCT_{cogt_var}_4326.tif"
-    )
-    return (
-        f'<?xml version="1.0" encoding="UTF-8"?>'
-        f'<ListBucketResult xmlns="{_S3_NS}">'
-        f"<KeyCount>1</KeyCount><MaxKeys>2</MaxKeys><IsTruncated>false</IsTruncated>"
-        f"<Contents><Key>{key}</Key></Contents>"
-        f"</ListBucketResult>"
-    )
-
-
-# ---------------------------------------------------------------------------
-# fixtures
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture(autouse=True)
-def _clear_variable_info_cache():
-    """Reset the module-level cache before and after every test."""
-    _query_mod._VARIABLE_INFO_CACHE.clear()
-    yield
-    _query_mod._VARIABLE_INFO_CACHE.clear()
-
-
-def _add_catalog_mocks(httpx_mock) -> None:
-    """Register catalog JSON and S3 listing responses for all mock variables."""
-    httpx_mock.add_response(url=_NRTI_URL, json=_NRTI_CATALOG)
-    httpx_mock.add_response(url=_OFFL_URL, json=_OFFL_CATALOG)
-    httpx_mock.add_response(url=_RPRO_URL, json=_RPRO_CATALOG)
-    for (product_type, folder), cogt_var in _COGT_VAR_NAMES.items():
-        httpx_mock.add_response(
-            url=_s3_listing_url(product_type, folder),
-            text=_s3_listing_xml(product_type, folder, cogt_var),
-        )
-
-
-# ---------------------------------------------------------------------------
-# _get_full_variable_info
-# ---------------------------------------------------------------------------
-
-
-def test_get_full_variable_info(httpx_mock):
-    """Tests expected results are returned with proper structure and values."""
-    _add_catalog_mocks(httpx_mock)
-
-    var_info = _get_full_variable_info()
-
-    # 5 variables: 1 NRTI, 3 OFFL (title-less link excluded), 1 RPRO
-    assert len(var_info) == 5
-
-    assert "NRTI-L2_NO2" in var_info
-    entry = var_info["NRTI-L2_NO2"]
-    assert entry.description == "Near real-time: Nitrogen Dioxide"
-    assert entry.units == "mol m-2"
-    assert entry.product_type == ProductType.NRTI
-    assert entry.underscored_name == "L2__NO2___"
-    assert entry.cogt_name == "nitrogendioxide_tropospheric_column"
-
-    assert "OFFL-L2_CO" in var_info
-    entry = var_info["OFFL-L2_CO"]
-    assert entry.description == "Offline processed: Carbon Monoxide"
-    assert entry.units == "mol m-2"
-    assert entry.product_type == ProductType.OFFL
-    assert entry.underscored_name == "L2__CO____"
-    assert entry.cogt_name == "carbonmonoxide_total_column"
-
-    assert "OFFL-L2_CH4" in var_info
-    entry = var_info["OFFL-L2_CH4"]
-    assert entry.description == "Offline processed: Methane"
-    assert entry.units == "ppb"
-    assert entry.product_type == ProductType.OFFL
-    assert entry.underscored_name == "L2__CH4___"
-    assert entry.cogt_name == "methane_mixing_ratio"
-
-    assert "OFFL-L2_O3" in var_info
-    entry = var_info["OFFL-L2_O3"]
-    assert entry.description == "Offline processed: Ozone"
-    assert entry.units == "DU"
-    assert entry.product_type == ProductType.OFFL
-    assert entry.underscored_name == "L2__O3____"
-    assert entry.cogt_name == "ozone_total_vertical_column"
-
-    assert "RPRO-L2_O3" in var_info
-    entry = var_info["RPRO-L2_O3"]
-    assert entry.description == "Reprocessed: Ozone"
-    assert entry.units == "DU"
-    assert entry.product_type == ProductType.RPRO
-    assert entry.underscored_name == "L2__O3____"
-    assert entry.cogt_name == "ozone_total_vertical_column"
-
-
-def test_get_variable_info_raises_http_status_error(httpx_mock):
-    """Tests that HTTP status errors propagate."""
-    httpx_mock.add_response(url=_OFFL_URL, status_code=503)
-
-    with pytest.raises(httpx.HTTPStatusError):
-        _get_full_variable_info()
-
-
-def test_get_variable_info_uses_cache(httpx_mock):
-    """Tests that repeat calls use cached variable info."""
-    _add_catalog_mocks(httpx_mock)
-
-    first = _get_full_variable_info()
-    second = _get_full_variable_info()
-
-    # The same dict object is returned on both calls — the second call hit the cache,
-    # making no additional HTTP requests (all mocks were consumed by the first call).
-    assert first is second
-
-
-# ---------------------------------------------------------------------------
-# _get_variable_info
-# ---------------------------------------------------------------------------
-
-
-def test_get_variable_info(httpx_mock):
-    """Tests expected results are returned with proper structure and values."""
-    _add_catalog_mocks(httpx_mock)
-
-    var_info = get_variable_info()
-
-    # 5 variables: 1 NRTI, 3 OFFL (title-less link excluded), 1 RPRO
-    assert len(var_info) == 5
-
-    assert "NRTI-L2_NO2" in var_info
-    entry = var_info["NRTI-L2_NO2"]
-    assert entry["description"] == "Near real-time: Nitrogen Dioxide"
-    assert entry["units"] == "mol m-2"
-
-    assert "OFFL-L2_CO" in var_info
-    entry = var_info["OFFL-L2_CO"]
-    assert entry["description"] == "Offline processed: Carbon Monoxide"
-    assert entry["units"] == "mol m-2"
-
-    assert "OFFL-L2_CH4" in var_info
-    entry = var_info["OFFL-L2_CH4"]
-    assert entry["description"] == "Offline processed: Methane"
-    assert entry["units"] == "ppb"
-
-    assert "OFFL-L2_O3" in var_info
-    entry = var_info["OFFL-L2_O3"]
-    assert entry["description"] == "Offline processed: Ozone"
-    assert entry["units"] == "DU"
-
-    assert "RPRO-L2_O3" in var_info
-    entry = var_info["RPRO-L2_O3"]
-    assert entry["description"] == "Reprocessed: Ozone"
-    assert entry["units"] == "DU"
 
 
 # ---------------------------------------------------------------------------
