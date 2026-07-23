@@ -7,154 +7,31 @@ here: https://docs.isric.org/globaldata/soilgrids/WCS_from_Python.html
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from typing import Any, Final
 
-import httpx
 import numpy as np
-from bs4 import BeautifulSoup
 from rasterio.io import MemoryFile
 from rasterio.warp import transform, transform_bounds
 
 from ._client import get_client
 from ._types import Client
+from ._var_cache import BaseVariableInfo, VariableInfo, get_variable_info
 from .constants import (
     _CELL_SIZE_METERS,
-    _LAYERS_INFO_URL,
-    _QUANTILES,
     _REQUEST_CRS,
     _RESPONSE_CRS,
     _TRANSFORM_CRS,
 )
+
+__all__ = ["BaseVariableInfo", "VariableInfo", "query_bbox"]
 
 # Invalid data value used in assembling query results
 _INVALID_DATA_VALUE: Final[float] = float("nan")
 
 
 # ---------------------------------------------------------------------------
-# Session-level caches
+# Helpers
 # ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class BaseVariableInfo:
-    """Variable descriptions and coversions for base variable types."""
-
-    name: str
-    description: str
-    mapped_units: str
-    conversion_factor: float
-    conventional_units: str
-
-
-@dataclass(frozen=True)
-class VariableInfo:
-    """Variable descriptions and conversions for specific variables."""
-
-    description: str
-    units: str
-    base: BaseVariableInfo
-
-
-# available variables -> { base_variable: { variable: VariableInfo } }
-_VARIABLE_INFO_CACHE: dict[str, dict[str, VariableInfo]] = {}
-
-# base variables -> { variable: BaseVariableInfo }
-_BASE_VARIABLE_INFO_CACHE: dict[str, BaseVariableInfo] | None = None
-
-# ---------------------------------------------------------------------------
-# Available variables query functions
-# ---------------------------------------------------------------------------
-
-
-def get_base_variable_list() -> dict[str, BaseVariableInfo]:
-    """Returns a list of base variable names for SoilGrids queries.
-
-    This includes things like `bdod` (soil density), `phh2o` (pH), etc.
-    They only seem to be available by scraping a web page. Once the list
-    is created, the names can be used to create WCS clients for each
-    category. The clients are then used for all other queries.
-    """
-    global _BASE_VARIABLE_INFO_CACHE
-    if _BASE_VARIABLE_INFO_CACHE:
-        return _BASE_VARIABLE_INFO_CACHE
-    with httpx.Client(timeout=30) as client:
-        resp = client.get(_LAYERS_INFO_URL)
-        resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, "html.parser")
-
-    # Properties are in the first multi-column table
-    # It has 5 columns: code, description, mapped units, conversion factor, conventional units
-    _BASE_VARIABLE_INFO_CACHE = {}
-    for table in soup.find_all("table"):
-        rows = table.find_all("tr")
-        for row in rows:
-            cells = [td.get_text(strip=True) for td in row.find_all("td")]
-            # skip the table about depth intervals
-            if len(cells) > 0 and cells[0] and cells[0].startswith("Top"):
-                break
-            if len(cells) == 5 and cells[0]:
-                code, description, mapped_units, conversion_factor, conventional_units = cells
-                try:
-                    float(conversion_factor)
-                except ValueError:
-                    continue
-                _BASE_VARIABLE_INFO_CACHE[code] = BaseVariableInfo(
-                    name=code,
-                    description=description,
-                    mapped_units=mapped_units,
-                    conversion_factor=float(conversion_factor),
-                    conventional_units=conventional_units,
-                )
-        if _BASE_VARIABLE_INFO_CACHE:
-            break  # stop parsing after properties table
-
-    return _BASE_VARIABLE_INFO_CACHE
-
-
-def _get_specific_variable_info(base_variable: str) -> dict[str, tuple[str, str]]:
-    """Get specifc variables for a base variable with depth interval and quantile.
-
-    For a base variable like `bdod` or `silt`, you will get a list of specific
-    variables (or 'coverages' in SoilGrids lingo) for specific quantiles and depths.
-    The dict will end up being something like:
-    ```
-    {
-        "bdod_0-5cm_Q0.05" : ("0-5cm", "Q0.05"),
-        "bdod_5-10cm_Q0.5": ("5-10cm", "median"),
-        ...
-    }
-    ```
-    """
-    client = get_client(base_variable=base_variable)
-    result: dict[str, tuple[str, str]] = {}
-    for var in list(client.contents):
-        parts = var.split("_")
-        if len(parts) != 3:
-            msg = f"Invalid coverage name: {var}"
-            raise ValueError(msg)
-        result[var] = parts[1], _QUANTILES.get(parts[2]) or parts[2]
-    return result
-
-
-def get_variable_info(base_variable: str) -> dict[str, VariableInfo]:
-    """Discover available variables for SoilGrids queries.
-
-    :return: dict keyed on variable with `description`, `units`, etc.
-    """
-    global _VARIABLE_INFO_CACHE
-    if base_variable in _VARIABLE_INFO_CACHE:
-        return _VARIABLE_INFO_CACHE[base_variable]
-    _VARIABLE_INFO_CACHE[base_variable] = {}
-    var_info = _get_specific_variable_info(base_variable)
-    base_info = get_base_variable_list()[base_variable]
-    for key, val in var_info.items():
-        _VARIABLE_INFO_CACHE[base_variable][key] = VariableInfo(
-            description=f"{base_info.description}; depth: {val[0]}; quantile: {val[1]}",
-            units=base_info.conventional_units,
-            base=base_info,
-        )
-    return _VARIABLE_INFO_CACHE[base_variable]
 
 
 def _bbox_to_request_grid(
