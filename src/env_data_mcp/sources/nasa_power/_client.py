@@ -25,8 +25,6 @@ class ZarrStoreCache:
         self._lats: np.ndarray | None = None
         self._lons: np.ndarray | None = None
         self._times: pd.DatetimeIndex | None = None
-        self._cached_variables_for_group: zarr.Group | None = None
-        self._variable_info: dict[str, dict[str, str]] | None = None
 
 
 # Module-level cache keyed by (DatasetType, TemporalResolution).
@@ -103,24 +101,3 @@ def _get_coordinates(store: ZarrStoreCache) -> tuple[np.ndarray, np.ndarray, pd.
 
     store._cached_dims_for_group = store._group
     return store._lats, store._lons, store._times
-
-
-def _get_variable_info(store: ZarrStoreCache) -> dict[str, dict[str, str]]:
-    """Return a dict of variable metadata for data variables in the group."""
-    if store._cached_variables_for_group is store._group:
-        assert store._variable_info is not None
-        return store._variable_info
-
-    coordinate_keys = {"lat", "lon", "time"}
-    info: dict[str, dict[str, str]] = {}
-    for var in store._group.array_keys():
-        if var in coordinate_keys:
-            continue
-        arr = store._group[var]
-        info[var] = {
-            "description": str(arr.attrs.get("long_name", "")),
-            "units": str(arr.attrs.get("units", "")),
-        }
-    store._variable_info = info
-    store._cached_variables_for_group = store._group
-    return store._variable_info

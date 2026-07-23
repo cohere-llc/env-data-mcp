@@ -66,8 +66,8 @@ def get_registry() -> dict[str, VariableCacheEntry]:
     """
     # Adapter registrations land here as each phase is completed:
     from env_data_mcp.sources.gbif import _var_cache  # noqa: F401
+    from env_data_mcp.sources.nasa_power import _var_cache  # noqa: F401, F811
 
-    # from env_data_mcp.sources.nasa_power import _var_cache  # noqa: F401
     # from env_data_mcp.sources.tropomi import _var_cache  # noqa: F401
     # from env_data_mcp.sources.soilgrids import _var_cache  # noqa: F401
     # from env_data_mcp.sources.ssurgo import _var_cache  # noqa: F401

@@ -9,7 +9,9 @@ import zarr
 import zarr.storage
 
 import env_data_mcp.sources.nasa_power._client as _client_mod
+import env_data_mcp.sources.nasa_power._var_cache as _var_cache_mod
 from env_data_mcp.sources.nasa_power._client import ZarrStoreCache
+from env_data_mcp.sources.nasa_power.constants import DatasetType, TemporalResolution
 
 # ---------------------------------------------------------------------------
 # Grid constants shared across test modules
@@ -161,6 +163,20 @@ _ALL_MOCK_STORES = (
 )
 
 
+def _seed_mock_variable_info() -> None:
+    """Populate the disk-backed cache with variables from the mock stores.
+
+    Every (DatasetType, TemporalResolution) pair used by the tools is seeded
+    so calls to ``_var_cache._get_variable_info`` return mock metadata without
+    reading the shipped ``variables.json``.
+    """
+    merra2_info = _var_cache_mod._variable_info_from_group(_MOCK_MERRA2_GROUP)
+    syn1deg_info = _var_cache_mod._variable_info_from_group(_MOCK_SYN1DEG_GROUP)
+    for tr in TemporalResolution:
+        _var_cache_mod._VARIABLE_INFO_CACHE[(DatasetType.MERRA2, tr)] = merra2_info
+        _var_cache_mod._VARIABLE_INFO_CACHE[(DatasetType.SYN1DEG, tr)] = syn1deg_info
+
+
 @pytest.fixture(autouse=True)
 def _reset_caches():
     """Clear module-level and per-store caches so each test starts clean."""
@@ -170,7 +186,8 @@ def _reset_caches():
         store._lats = None
         store._lons = None
         store._times = None
-        store._cached_variables_for_group = None
-        store._variable_info = None
+    _var_cache_mod._VARIABLE_INFO_CACHE.clear()
+    _seed_mock_variable_info()
     yield
     _client_mod._zarr_cache.clear()
+    _var_cache_mod._VARIABLE_INFO_CACHE.clear()
