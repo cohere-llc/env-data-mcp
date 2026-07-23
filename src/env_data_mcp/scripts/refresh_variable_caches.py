@@ -65,7 +65,8 @@ def get_registry() -> dict[str, VariableCacheEntry]:
     disk-backed variable cache.
     """
     # Adapter registrations land here as each phase is completed:
-    # from env_data_mcp.sources.gbif import _var_cache  # noqa: F401
+    from env_data_mcp.sources.gbif import _var_cache  # noqa: F401
+
     # from env_data_mcp.sources.nasa_power import _var_cache  # noqa: F401
     # from env_data_mcp.sources.tropomi import _var_cache  # noqa: F401
     # from env_data_mcp.sources.soilgrids import _var_cache  # noqa: F401
@@ -116,4 +117,12 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # Re-import through the canonical module path so that adapter modules
+    # registering via ``from env_data_mcp.scripts.refresh_variable_caches
+    # import register`` populate the same _REGISTRY that ``main`` inspects.
+    # Running ``python -m env_data_mcp.scripts.refresh_variable_caches``
+    # otherwise loads this file twice (as ``__main__`` and under its real
+    # name), leaving the module-level ``_REGISTRY`` split across two copies.
+    from env_data_mcp.scripts.refresh_variable_caches import main as _main
+
+    raise SystemExit(_main())
