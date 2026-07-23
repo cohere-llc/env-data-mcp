@@ -9,7 +9,7 @@ from env_data_mcp.models import GroupedGeometryResponse, SuitabilityRulesRespons
 from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_suitability_available_rule_names,
     ssurgo_soil_suitability_bbox_query,
-    ssurgo_soil_suitability_query,
+    ssurgo_soil_suitability_point_query,
 )
 
 from .conftest import (
@@ -55,7 +55,7 @@ def test_soil_suitability_available_variables_http_error(httpx_mock):
 
 def test_soil_suitability_query_success_structure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SUITABILITY_XML)
-    result = ssurgo_soil_suitability_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_suitability_point_query(latitude=_LAT, longitude=_LON)
     GroupedGeometryResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
@@ -65,7 +65,7 @@ def test_soil_suitability_query_success_structure(httpx_mock):
 
 def test_soil_suitability_query_meta_success(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SUITABILITY_XML)
-    result = ssurgo_soil_suitability_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_suitability_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["source"] == "ssurgo"
     assert result["_meta"]["success"] is True
     assert result["_meta"]["auth_required"] is False
@@ -75,7 +75,9 @@ def test_soil_suitability_query_uses_rule_names_param(httpx_mock):
     """rule_names must be echoed in query_params (not 'variables')."""
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SUITABILITY_XML)
     custom_rules = ["ENG - Dwellings Without Basements"]
-    result = ssurgo_soil_suitability_query(latitude=_LAT, longitude=_LON, rule_names=custom_rules)
+    result = ssurgo_soil_suitability_point_query(
+        latitude=_LAT, longitude=_LON, rule_names=custom_rules
+    )
     qp = result["_meta"]["query_params"]
     assert "rule_names" in qp
     assert "variables" not in qp
@@ -84,7 +86,7 @@ def test_soil_suitability_query_uses_rule_names_param(httpx_mock):
 
 def test_soil_suitability_query_non_us_returns_no_coverage(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=EMPTY_XML)
-    result = ssurgo_soil_suitability_query(latitude=48.8566, longitude=2.3522)
+    result = ssurgo_soil_suitability_point_query(latitude=48.8566, longitude=2.3522)
     assert result["_meta"]["success"] is True
     assert result["data"] == []
     assert result["_meta"]["error"] is None
@@ -92,13 +94,13 @@ def test_soil_suitability_query_non_us_returns_no_coverage(httpx_mock):
 
 def test_soil_suitability_query_http_error_returns_failure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_soil_suitability_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_suitability_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["success"] is False
 
 
 def test_soil_suitability_query_invalid_rule_name_returns_error():
     """A rule name containing control characters must be rejected."""
-    result = ssurgo_soil_suitability_query(
+    result = ssurgo_soil_suitability_point_query(
         latitude=_LAT,
         longitude=_LON,
         rule_names=["ENG - Dwellings\x00; DROP TABLE component"],
@@ -133,18 +135,18 @@ def test_soil_suitability_bbox_query_returns_data(httpx_mock):
 
 
 def test_soil_suitability_query_runtime_guard_returns_slow_query_warning():
-    result = ssurgo_soil_suitability_query(latitude=_LAT, longitude=_LON, max_runtime_s=0)
+    result = ssurgo_soil_suitability_point_query(latitude=_LAT, longitude=_LON, max_runtime_s=0)
     assert result["_meta"]["success"] is False
     assert result["_meta"].get("slow_query_warning") is True
 
 
 def test_soil_suitability_query_non_finite_lat_raises_value_error():
     with pytest.raises(ValueError, match="finite"):
-        ssurgo_soil_suitability_query(latitude=float("inf"), longitude=_LON)
+        ssurgo_soil_suitability_point_query(latitude=float("inf"), longitude=_LON)
 
 
 def test_soil_suitability_query_out_of_range_lat_returns_error_response():
-    result = ssurgo_soil_suitability_query(latitude=-95.0, longitude=_LON)
+    result = ssurgo_soil_suitability_point_query(latitude=-95.0, longitude=_LON)
     assert result["_meta"]["success"] is False
     assert result["data"] == []
     assert "greater than or equal to -90" in result["_meta"]["error"]
@@ -202,7 +204,7 @@ def test_soil_suitability_query_pointinput_validationerror_branch_is_covered(mon
             raise exc
 
     monkeypatch.setattr("env_data_mcp.sources.ssurgo.tools.PointInput", _raise_validation_error)
-    result = ssurgo_soil_suitability_query(latitude=46.0, longitude=-119.0)
+    result = ssurgo_soil_suitability_point_query(latitude=46.0, longitude=-119.0)
     assert result["_meta"]["success"] is False
     assert result["data"] == []
 

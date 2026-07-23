@@ -68,7 +68,7 @@ def soilgrids_available_variables() -> dict[str, Any]:
 
 
 @mcp.tool()
-def soilgrids_query(
+def soilgrids_point_query(
     latitude: float,
     longitude: float,
     radius_km: float,

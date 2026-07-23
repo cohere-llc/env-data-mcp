@@ -7,13 +7,12 @@ from pydantic import BaseModel, Field, ValidationError
 
 from env_data_mcp.models import GroupedGeometryResponse
 from env_data_mcp.sources.ssurgo import (
-    LICENSE_INFO,
     ssurgo_soil_profile_available_variables,
     ssurgo_soil_profile_bbox_query,
-    ssurgo_soil_profile_query,
+    ssurgo_soil_profile_point_query,
 )
 from env_data_mcp.sources.ssurgo._client import _VARIABLE_INFO_CACHE
-from env_data_mcp.sources.ssurgo.constants import _QueryType
+from env_data_mcp.sources.ssurgo.constants import LICENSE_INFO, _QueryType
 from env_data_mcp.sources.ssurgo.tools import _bbox_query, _point_query
 
 from .conftest import (
@@ -62,7 +61,7 @@ def test_soil_profile_available_variables_http_error(httpx_mock):
 
 def test_soil_profile_query_success_structure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     GroupedGeometryResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
@@ -75,7 +74,7 @@ def test_soil_profile_query_success_structure(httpx_mock):
 
 def test_soil_profile_query_meta_success(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     meta = result["_meta"]
     assert meta["source"] == "ssurgo"
     assert meta["success"] is True
@@ -87,14 +86,14 @@ def test_soil_profile_query_meta_success(httpx_mock):
 
 def test_soil_profile_query_license_fields(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["license"] == LICENSE_INFO["license"]
     assert result["_meta"]["license_url"] == LICENSE_INFO["license_url"]
 
 
 def test_soil_profile_query_echoes_query_params(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     qp = result["_meta"]["query_params"]
     assert qp["latitude"] == pytest.approx(_LAT)
     assert qp["longitude"] == pytest.approx(_LON)
@@ -103,7 +102,7 @@ def test_soil_profile_query_echoes_query_params(httpx_mock):
 
 def test_soil_profile_query_non_us_returns_no_coverage(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=EMPTY_XML)
-    result = ssurgo_soil_profile_query(latitude=48.8566, longitude=2.3522)
+    result = ssurgo_soil_profile_point_query(latitude=48.8566, longitude=2.3522)
     assert result["_meta"]["success"] is True
     assert result["data"] == []
     assert result["_meta"]["error"] is None
@@ -111,7 +110,7 @@ def test_soil_profile_query_non_us_returns_no_coverage(httpx_mock):
 
 def test_soil_profile_query_http_error_returns_failure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["success"] is False
     assert result["_meta"]["error"] is not None
 
@@ -121,7 +120,7 @@ def test_soil_profile_query_variable_info_in_meta(httpx_mock):
         "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
     }
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     info = result["_meta"]["variable_info"]
     assert "sandtotal_r" in info
     assert info["sandtotal_r"]["description"] == "Sand Total"
@@ -131,7 +130,7 @@ def test_soil_profile_query_variable_info_in_meta(httpx_mock):
 
 def test_soil_profile_query_sand_in_valid_range(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     for group in result["data"]:
         for row in group["records"]:
             sand = float(row["sandtotal_r"])
@@ -140,7 +139,7 @@ def test_soil_profile_query_sand_in_valid_range(httpx_mock):
 
 def test_soil_profile_query_ph_in_valid_range(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     for group in result["data"]:
         for row in group["records"]:
             ph = float(row["ph1to1h2o_r"])
@@ -149,7 +148,7 @@ def test_soil_profile_query_ph_in_valid_range(httpx_mock):
 
 def test_soil_profile_query_bulk_density_in_valid_range(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     for group in result["data"]:
         for row in group["records"]:
             bd = float(row["dbthirdbar_r"])
@@ -158,13 +157,15 @@ def test_soil_profile_query_bulk_density_in_valid_range(httpx_mock):
 
 def test_soil_profile_query_custom_variables(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON, variables=["mukey", "awc_r"])
+    result = ssurgo_soil_profile_point_query(
+        latitude=_LAT, longitude=_LON, variables=["mukey", "awc_r"]
+    )
     assert result["_meta"]["success"] is True
     assert result["_meta"]["query_params"]["variables"] == ["mukey", "awc_r"]
 
 
 def test_soil_profile_query_invalid_variable_returns_error():
-    result = ssurgo_soil_profile_query(
+    result = ssurgo_soil_profile_point_query(
         latitude=_LAT, longitude=_LON, variables=["mukey; DROP TABLE mapunit"]
     )
     assert result["_meta"]["success"] is False
@@ -199,18 +200,18 @@ def test_soil_profile_bbox_query_returns_data(httpx_mock):
 
 
 def test_soil_profile_query_runtime_guard_returns_slow_query_warning():
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON, max_runtime_s=0)
+    result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON, max_runtime_s=0)
     assert result["_meta"]["success"] is False
     assert result["_meta"].get("slow_query_warning") is True
 
 
 def test_soil_profile_query_non_finite_lat_raises_value_error():
     with pytest.raises(ValueError, match="finite"):
-        ssurgo_soil_profile_query(latitude=float("nan"), longitude=_LON)
+        ssurgo_soil_profile_point_query(latitude=float("nan"), longitude=_LON)
 
 
 def test_soil_profile_query_out_of_range_lat_returns_error_response():
-    result = ssurgo_soil_profile_query(latitude=95.0, longitude=_LON)
+    result = ssurgo_soil_profile_point_query(latitude=95.0, longitude=_LON)
     assert result["_meta"]["success"] is False
     assert result["data"] == []
     assert "less than or equal to 90" in result["_meta"]["error"]
@@ -309,7 +310,9 @@ def test_soil_profile_query_all_unknown_variables_returns_empty():
     _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
         "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
     }
-    result = ssurgo_soil_profile_query(latitude=_LAT, longitude=_LON, variables=["not_a_real_col"])
+    result = ssurgo_soil_profile_point_query(
+        latitude=_LAT, longitude=_LON, variables=["not_a_real_col"]
+    )
     assert result["_meta"]["success"] is True
     assert result["data"] == []
     assert "not_a_real_col" in result["_meta"]["unavailable_variables"]

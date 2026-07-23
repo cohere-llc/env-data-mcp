@@ -462,13 +462,13 @@ def ssurgo_soil_profile_available_variables() -> dict[str, Any]:
     Queries the SDA column catalogue for the tables joined in soil profile
     queries: ``mapunit``, ``component``, and ``chorizon``.  Use the
     ``variable`` values as the ``variables`` argument to
-    ``ssurgo_soil_profile_query`` or ``ssurgo_soil_profile_bbox_query``.
+    ``ssurgo_soil_profile_point_query`` or ``ssurgo_soil_profile_bbox_query``.
     """
     return _available_vars_response(_QueryType.SOIL_PROFILE)
 
 
 @mcp.tool()
-def ssurgo_soil_profile_query(
+def ssurgo_soil_profile_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SOIL_PROFILE_VARIABLES,
@@ -520,7 +520,7 @@ def ssurgo_soil_profile_bbox_query(
         min_lon: West boundary, decimal degrees.
         max_lon: East boundary, decimal degrees.
         variables: Variable names to return.  Defaults to the same curated
-            set as ``ssurgo_soil_profile_query``.
+            set as ``ssurgo_soil_profile_point_query``.
         max_runtime_s: Optional request timeout in seconds.
     """
     return _bbox_query(
@@ -546,13 +546,13 @@ def ssurgo_area_summary_available_variables() -> dict[str, Any]:
 
     Queries the SDA column catalogue for ``mapunit`` and ``muaggatt``.  Use
     the ``variable`` values as the ``variables`` argument to
-    ``ssurgo_area_summary_query`` or ``ssurgo_area_summary_bbox_query``.
+    ``ssurgo_area_summary_point_query`` or ``ssurgo_area_summary_bbox_query``.
     """
     return _available_vars_response(_QueryType.AREA_SUMMARY)
 
 
 @mcp.tool()
-def ssurgo_area_summary_query(
+def ssurgo_area_summary_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_AREA_SUMMARY_VARIABLES,
@@ -599,7 +599,7 @@ def ssurgo_area_summary_bbox_query(
         min_lon: West boundary, decimal degrees.
         max_lon: East boundary, decimal degrees.
         variables: Variable names to return.  Defaults to the same curated
-            set as ``ssurgo_area_summary_query``.
+            set as ``ssurgo_area_summary_point_query``.
         max_runtime_s: Optional request timeout in seconds.
     """
     return _bbox_query(
@@ -630,7 +630,7 @@ def ssurgo_subsurface_barriers_available_variables() -> dict[str, Any]:
 
 
 @mcp.tool()
-def ssurgo_subsurface_barriers_query(
+def ssurgo_subsurface_barriers_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
@@ -708,7 +708,7 @@ def ssurgo_seasonal_hydrology_available_variables() -> dict[str, Any]:
 
 
 @mcp.tool()
-def ssurgo_seasonal_hydrology_query(
+def ssurgo_seasonal_hydrology_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
@@ -780,7 +780,7 @@ def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
     """Return all available interpretation rule names for SSURGO soil suitability queries.
 
     Queries ``cointerp`` for distinct ``mrulename`` values.  Use these names
-    as the ``rule_names`` argument to ``ssurgo_soil_suitability_query`` or
+    as the ``rule_names`` argument to ``ssurgo_soil_suitability_point_query`` or
     ``ssurgo_soil_suitability_bbox_query``.
     """
     t0 = time.perf_counter()
@@ -824,7 +824,7 @@ def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
 
 
 @mcp.tool()
-def ssurgo_soil_suitability_query(
+def ssurgo_soil_suitability_point_query(
     latitude: float,
     longitude: float,
     rule_names: list[str] = DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
@@ -965,7 +965,7 @@ def ssurgo_soil_suitability_bbox_query(
         min_lon: West boundary, decimal degrees.
         max_lon: East boundary, decimal degrees.
         rule_names: Interpretation rule names to query.  Defaults to the same
-            set as ``ssurgo_soil_suitability_query``.
+            set as ``ssurgo_soil_suitability_point_query``.
         max_runtime_s: Optional request timeout in seconds.
     """
     try:
@@ -1091,7 +1091,7 @@ def ssurgo_ecological_site_available_variables() -> dict[str, Any]:
 
 
 @mcp.tool()
-def ssurgo_ecological_site_query(
+def ssurgo_ecological_site_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_ECOLOGICAL_SITE_VARIABLES,
@@ -1168,7 +1168,7 @@ def ssurgo_parent_material_available_variables() -> dict[str, Any]:
 
 
 @mcp.tool()
-def ssurgo_parent_material_query(
+def ssurgo_parent_material_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_PARENT_MATERIAL_VARIABLES,
@@ -1245,7 +1245,7 @@ def ssurgo_soil_temperature_available_variables() -> dict[str, Any]:
 
 
 @mcp.tool()
-def ssurgo_soil_temperature_query(
+def ssurgo_soil_temperature_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SOIL_TEMPERATURE_VARIABLES,

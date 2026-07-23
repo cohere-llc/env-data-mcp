@@ -8,7 +8,7 @@ from env_data_mcp.models import AvailableVariablesResponse, GroupedGeometryRespo
 from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_temperature_available_variables,
     ssurgo_soil_temperature_bbox_query,
-    ssurgo_soil_temperature_query,
+    ssurgo_soil_temperature_point_query,
 )
 from env_data_mcp.sources.ssurgo.constants import (
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
@@ -62,7 +62,7 @@ def test_soil_temperature_available_variables_http_error(httpx_mock):
 
 def test_soil_temperature_query_default_variables_success(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SOIL_TEMP_XML)
-    result = ssurgo_soil_temperature_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_temperature_point_query(latitude=_LAT, longitude=_LON)
     GroupedGeometryResponse.model_validate(result)
     assert result["_meta"]["success"] is True
     assert len(result["data"]) == 1
@@ -70,7 +70,7 @@ def test_soil_temperature_query_default_variables_success(httpx_mock):
 
 def test_soil_temperature_query_row_fields(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SOIL_TEMP_XML)
-    result = ssurgo_soil_temperature_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_temperature_point_query(latitude=_LAT, longitude=_LON)
     group = result["data"][0]
     assert group["mukey"] == "2764208"
     row = group["records"][0]
@@ -82,13 +82,13 @@ def test_soil_temperature_query_row_fields(httpx_mock):
 
 def test_soil_temperature_query_meta_query_type(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SOIL_TEMP_XML)
-    result = ssurgo_soil_temperature_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_temperature_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["query_params"]["query_type"] == "soil_temperature"
 
 
 def test_soil_temperature_query_echoes_query_params(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SOIL_TEMP_XML)
-    result = ssurgo_soil_temperature_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_temperature_point_query(latitude=_LAT, longitude=_LON)
     qp = result["_meta"]["query_params"]
     assert qp["latitude"] == pytest.approx(_LAT)
     assert "variables" in qp
@@ -96,7 +96,7 @@ def test_soil_temperature_query_echoes_query_params(httpx_mock):
 
 def test_soil_temperature_query_non_us_returns_no_coverage(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=EMPTY_XML)
-    result = ssurgo_soil_temperature_query(latitude=48.8566, longitude=2.3522)
+    result = ssurgo_soil_temperature_point_query(latitude=48.8566, longitude=2.3522)
     assert result["_meta"]["success"] is True
     assert result["data"] == []
     assert result["_meta"]["error"] is None
@@ -104,13 +104,13 @@ def test_soil_temperature_query_non_us_returns_no_coverage(httpx_mock):
 
 def test_soil_temperature_query_http_error_returns_failure(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_soil_temperature_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_temperature_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["success"] is False
 
 
 def test_soil_temperature_query_variable_info_in_meta(httpx_mock):
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=SOIL_TEMP_XML)
-    result = ssurgo_soil_temperature_query(latitude=_LAT, longitude=_LON)
+    result = ssurgo_soil_temperature_point_query(latitude=_LAT, longitude=_LON)
     assert "variable_info" in result["_meta"]
 
 

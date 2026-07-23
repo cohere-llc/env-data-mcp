@@ -14,7 +14,7 @@ import pytest
 from env_data_mcp.sources.tropomi.tools import (
     tropomi_available_variables,
     tropomi_bbox_query,
-    tropomi_query,
+    tropomi_point_query,
 )
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ def get_mock_http_error():
 
 @contextmanager
 def _mock_point_query(data=_MOCK_POINT_RESULT, unavailable=None):
-    """Patch get_variable_info and query_point for tropomi_query tests."""
+    """Patch get_variable_info and query_point for tropomi_point_query tests."""
     with (
         patch(
             "env_data_mcp.sources.tropomi.tools.get_variable_info",
@@ -183,17 +183,17 @@ class TestAvailableVariables:
 
 
 # ---------------------------------------------------------------------------
-# tropomi_query
+# tropomi_point_query
 # ---------------------------------------------------------------------------
 
 
 class TestTropomiQuery:
-    """Tests of the tropomi_query mcp tool."""
+    """Tests of the tropomi_point_query mcp tool."""
 
     def test_returns_results(self):
         """Tests expected data and meta structure are returned on success."""
         with _mock_point_query():
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=33.84,
                 longitude=-116.49,
                 start_date="2024-01-03",
@@ -211,7 +211,7 @@ class TestTropomiQuery:
     def test_meta_fields(self):
         """Tests key fields in the _meta block."""
         with _mock_point_query():
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=33.84,
                 longitude=-116.49,
                 start_date="2024-01-03",
@@ -229,7 +229,7 @@ class TestTropomiQuery:
     def test_echoes_query_params(self):
         """Tests that query_params in meta mirrors the tool arguments."""
         with _mock_point_query():
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=33.84,
                 longitude=-116.49,
                 start_date="2024-01-03",
@@ -246,7 +246,7 @@ class TestTropomiQuery:
     def test_variables_in_meta(self):
         """Tests that variables and variable_info appear in meta."""
         with _mock_point_query():
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=33.84,
                 longitude=-116.49,
                 start_date="2024-01-03",
@@ -261,7 +261,7 @@ class TestTropomiQuery:
     def test_unavailable_variables_in_meta(self):
         """Tests that unavailable variables returned by query_point appear in meta."""
         with _mock_point_query(data=[], unavailable=["OFFL-L2_NO2"]):
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=33.84,
                 longitude=-116.49,
                 start_date="2024-01-03",
@@ -279,7 +279,7 @@ class TestTropomiQuery:
                 return_value=_SLOW_WARN,
             ),
         ):
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=33.84,
                 longitude=-116.49,
                 start_date="2024-01-03",
@@ -295,7 +295,7 @@ class TestTropomiQuery:
     def test_invalid_latitude_returns_error(self):
         """Tests that an out-of-range latitude produces an error response."""
         with _mock_point_query():
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=999.0,
                 longitude=-116.49,
                 start_date="2024-01-03",
@@ -307,7 +307,7 @@ class TestTropomiQuery:
     def test_invalid_date_returns_error(self):
         """Tests that a non-ISO date string produces an error response."""
         with _mock_point_query():
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=33.84,
                 longitude=-116.49,
                 start_date="January 3 2024",
@@ -328,7 +328,7 @@ class TestTropomiQuery:
                 side_effect=get_mock_http_error(),
             ),
         ):
-            result = tropomi_query(
+            result = tropomi_point_query(
                 latitude=33.84,
                 longitude=-116.49,
                 start_date="2024-01-03",

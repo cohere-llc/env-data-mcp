@@ -16,7 +16,7 @@ from env_data_mcp.sources.gbif.constants import _DEFAULT_VARIABLES, _QueryType
 from env_data_mcp.sources.gbif.tools import (
     gbif_occurrence_available_variables,
     gbif_occurrence_bbox_query,
-    gbif_occurrence_query,
+    gbif_occurrence_point_query,
 )
 
 from .common import (
@@ -75,7 +75,7 @@ def _validate_gbif_bbox_result(result: dict) -> None:
 OCCURRENCE_SPEC = AdapterSpec(
     name="gbif_occurrence",
     available_variables=gbif_occurrence_available_variables,
-    point_query=gbif_occurrence_query,
+    point_query=gbif_occurrence_point_query,
     bbox_query=gbif_occurrence_bbox_query,
     supports_date_range=True,
     primary_variable="scientificName",

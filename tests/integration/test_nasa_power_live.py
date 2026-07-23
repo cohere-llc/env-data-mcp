@@ -11,18 +11,22 @@ from dataclasses import dataclass
 import pytest
 
 from env_data_mcp.sources.nasa_power import (
+    nasa_power_merra2_available_variables,
+    nasa_power_merra2_bbox_query,
+    nasa_power_merra2_point_query,
+    nasa_power_syn1deg_available_variables,
+    nasa_power_syn1deg_bbox_query,
+    nasa_power_syn1deg_point_query,
+)
+from env_data_mcp.sources.nasa_power._client import (
+    _get_coordinates,
+    _open_store,
+)
+from env_data_mcp.sources.nasa_power.constants import (
     DEFAULT_MERRA2_VARIABLES,
     DEFAULT_SYN1DEG_VARIABLES,
     DatasetType,
     TemporalResolution,
-    _get_coordinates,
-    _open_store,
-    nasa_power_merra2_available_variables,
-    nasa_power_merra2_bbox_query,
-    nasa_power_merra2_query,
-    nasa_power_syn1deg_available_variables,
-    nasa_power_syn1deg_bbox_query,
-    nasa_power_syn1deg_query,
 )
 
 from .common import (
@@ -66,7 +70,7 @@ def _validate_nasa_power_bbox_result(result: dict) -> None:
 MERRA2_SPEC = AdapterSpec(
     name="nasa_power_merra2",
     available_variables=nasa_power_merra2_available_variables,
-    point_query=nasa_power_merra2_query,
+    point_query=nasa_power_merra2_point_query,
     bbox_query=nasa_power_merra2_bbox_query,
     supports_date_range=True,
     primary_variable="T2M",
@@ -82,7 +86,7 @@ MERRA2_SPEC = AdapterSpec(
 SYN1DEG_SPEC = AdapterSpec(
     name="nasa_power_syn1deg",
     available_variables=nasa_power_syn1deg_available_variables,
-    point_query=nasa_power_syn1deg_query,
+    point_query=nasa_power_syn1deg_point_query,
     bbox_query=nasa_power_syn1deg_bbox_query,
     supports_date_range=True,
     primary_variable="ALLSKY_SFC_SW_DWN",

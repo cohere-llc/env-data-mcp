@@ -48,7 +48,7 @@ async def main():
         async with ClientSession(read, write) as session:
             await session.initialize()
             raw_result = await session.call_tool(
-                "nasa_power_merra2_query",
+                "nasa_power_merra2_point_query",
                 arguments={
                     "latitude": 46.253,
                     "longitude": -119.477,
@@ -133,17 +133,17 @@ See [Credential setup](#environment-variables) for how to obtain each token.
 
 | Tool | Source | Auth | Description |
 |---|---|---|---|
-| `nasa_power_merra2_query` | NASA POWER MERRA-2 | none | Atmospheric data (T, precip, RH, radiation) at a point |
+| `nasa_power_merra2_point_query` | NASA POWER MERRA-2 | none | Atmospheric data (T, precip, RH, radiation) at a point |
 | `nasa_power_merra2_bbox_query` | NASA POWER MERRA-2 | none | Atmospheric data over a bounding box |
-| `nasa_power_syn1deg_query` | NASA POWER CERES SYN1deg | none | Radiation fluxes at a point |
+| `nasa_power_syn1deg_point_query` | NASA POWER CERES SYN1deg | none | Radiation fluxes at a point |
 | `nasa_power_syn1deg_bbox_query` | NASA POWER CERES SYN1deg | none | Radiation fluxes over a bounding box |
 | `ssurgo_*_query` | USDA SSURGO | none | Soil properties for a US point |
 | `ssurgo_*_bbox_query` | USDA SSURGO | none | Soil properties within a bounding box |
-| `gbif_occurrence_query` | GBIF | none | Species occurrence records within a radius |
+| `gbif_occurrence_point_query` | GBIF | none | Species occurrence records within a radius |
 | `gbif_occurrence_bbox_query` | GBIF | none | Species occurrence records within a bounding box |
-| `soilgrids_query` | ISRIC SoilGrids v2 | none | Global soil properties at a point |
+| `soilgrids_point_query` | ISRIC SoilGrids v2 | none | Global soil properties at a point |
 | `soilgrids_bbox_query` | ISRIC SoilGrids v2 | none | Global soil properties over a bounding box |
-| `tropomi_query` | Sentinel-5P TROPOMI | none | Atmospheric composition at a point location |
+| `tropomi_point_query` | Sentinel-5P TROPOMI | none | Atmospheric composition at a point location |
 | `tropomi_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric composition over a bounding box |
 | `oco2_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column at a point |
 | `oco2_bbox_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column over a bounding box |

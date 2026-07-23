@@ -40,7 +40,7 @@ Conservation Service (NRCS) is good practice:
 
 ## SoilGrids v2.0
 
-**Tool**: `soilgrids_query`  
+**Tool**: `soilgrids_point_query`  
 **License**: Creative Commons Attribution 4.0 International (CC BY 4.0)  
 **Terms**: https://creativecommons.org/licenses/by/4.0/  
 **Citation**: https://www.isric.org/explore/soilgrids  
@@ -72,7 +72,7 @@ For any CC BY or CC BY-NC records, cite the GBIF occurrence download DOI
 
 ## Sentinel-5P TROPOMI
 
-**Tool**: `tropomi_query`  
+**Tool**: `tropomi_point_query`  
 **License**: ESA Copernicus Open Access  
 **Terms**: https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice  
 
