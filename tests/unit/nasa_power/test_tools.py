@@ -40,7 +40,7 @@ from .conftest import (
 # ---------------------------------------------------------------------------
 
 _PATCH_QUERY = "env_data_mcp.sources.nasa_power._query._open_store"
-_PATCH_TOOLS = "env_data_mcp.sources.nasa_power.tools._open_store"
+_PATCH_TOOLS = "env_data_mcp.sources.nasa_power._client._open_store"
 
 
 @contextmanager
@@ -598,16 +598,14 @@ def test_syn1deg_bbox_query_slow_query_warning():
 
 
 def test_merra2_available_variables_returns_dict():
-    with patch(_PATCH_TOOLS, return_value=_MOCK_MERRA2_STORE):
-        result = nasa_power_merra2_available_variables()
+    result = nasa_power_merra2_available_variables()
     assert "T2M" in result["data"]
     assert "units" in result["data"]["T2M"]
     assert "description" in result["data"]["T2M"]
 
 
 def test_syn1deg_available_variables_returns_dict():
-    with patch(_PATCH_TOOLS, return_value=_MOCK_SYN1DEG_STORE):
-        result = nasa_power_syn1deg_available_variables()
+    result = nasa_power_syn1deg_available_variables()
     assert "ALLSKY_SFC_SW_DWN" in result["data"]
     assert "units" in result["data"]["ALLSKY_SFC_SW_DWN"]
     assert "description" in result["data"]["ALLSKY_SFC_SW_DWN"]

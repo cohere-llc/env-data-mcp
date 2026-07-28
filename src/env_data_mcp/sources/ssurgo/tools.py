@@ -19,7 +19,8 @@ from env_data_mcp.models import (
 )
 from env_data_mcp.server import mcp
 
-from ._client import _fetch_mukey_geometries, _fetch_sda, _get_variable_info, _parse_xml
+from ._client import _fetch_mukey_geometries, _fetch_sda, _parse_xml
+from ._var_cache import _get_variable_info
 from .constants import (
     _SDA_URL,
     _SOIL_SUITABILITY_RULES_SQL,

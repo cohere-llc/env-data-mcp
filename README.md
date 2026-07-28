@@ -202,6 +202,17 @@ uv run pytest tests/ -m integration -v
 
 OpenAQ integration tests also require `OPENAQ_API_KEY` to be set.
 
+### Update cached variables
+
+Available variables are cached in the repo in json files. When the test suite is run
+(locally or in GitHub Actions), tests verify that the cached variable information is
+up-to-date with the live services. If they are out-of-date, the tests fail. The cache
+files can be re-synced by running `pytest` with a `--update-caches` flag:
+
+```bash
+uv run pytest tests/integration/test_variable_caches_live.py --update-caches
+```
+
 ### Run example notebooks
 
 Two demonstration notebooks are included:

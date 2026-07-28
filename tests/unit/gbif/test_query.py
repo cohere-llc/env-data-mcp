@@ -1,6 +1,6 @@
 """Unit tests for the GBIF _query module.
 
-All HTTP calls are mocked via a ``unittest.mock.patch``; no network access required.
+All HTTP calls are mocked via ``pytest-httpx``; no network access required.
 """
 
 from __future__ import annotations
@@ -15,7 +15,6 @@ import pytest
 
 from env_data_mcp.sources.gbif._query import (
     _estimate_query_runtime_s,
-    _get_variable_info,
     _query_bbox,
     _query_point,
 )
@@ -72,22 +71,7 @@ _EXPECTED_QUERY_OUTPUT: list[dict[str, Any]] = [
     },
 ]
 
-_SCHEMA_ENDPOINT = "https://techdocs.gbif.org/openapi/occurrence.json"
-
 _OCCURRENCE_URL = re.compile(re.escape(_QUERY_ENDPOINTS[_QueryType.OCCURRENCE]) + ".*")
-
-_OCCURRENCE_RESPONSE = {
-    "components": {
-        "schemas": {
-            "Occurrence": {
-                "properties": {
-                    "foo": {"description": "fooness"},
-                    "bar": {"description": "baricity"},
-                }
-            }
-        }
-    }
-}
 
 
 def _make_mock_response(
@@ -132,36 +116,6 @@ def _make_mock_get(
         )
 
     return callback
-
-
-# ---------------------------------------------------------------------------
-# _get_variable_info
-# ---------------------------------------------------------------------------
-
-
-@patch("env_data_mcp.sources.gbif._query._VARIABLE_INFO_CACHE", {})
-def test_get_variable_info(httpx_mock):
-    httpx_mock.add_response(url=_SCHEMA_ENDPOINT, json=_OCCURRENCE_RESPONSE)
-
-    var_info = _get_variable_info(_QueryType.OCCURRENCE)
-    var_info_2 = _get_variable_info(_QueryType.OCCURRENCE)
-
-    assert var_info == var_info_2
-    assert len(var_info.items()) == 2
-    assert "foo" in var_info
-    assert "bar" in var_info
-    assert var_info["foo"]["description"] == "fooness"
-    assert var_info["foo"]["units"] == ""
-    assert var_info["bar"]["description"] == "baricity"
-    assert var_info["bar"]["units"] == ""
-
-
-@patch("env_data_mcp.sources.gbif._query._VARIABLE_INFO_CACHE", {})
-def test_get_variable_info_raises_for_status(httpx_mock):
-    httpx_mock.add_response(url=_SCHEMA_ENDPOINT, status_code=404)
-
-    with pytest.raises(httpx.HTTPStatusError):
-        _ = _get_variable_info(_QueryType.OCCURRENCE)
 
 
 # ---------------------------------------------------------------------------

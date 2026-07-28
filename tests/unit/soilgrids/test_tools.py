@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 from env_data_mcp.helpers import check_runtime
-from env_data_mcp.sources.soilgrids._query import VariableInfo
+from env_data_mcp.sources.soilgrids._var_cache import VariableInfo
 from env_data_mcp.sources.soilgrids.tools import (
     soilgrids_available_variables,
     soilgrids_bbox_query,

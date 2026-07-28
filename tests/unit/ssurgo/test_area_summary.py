@@ -10,7 +10,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_area_summary_bbox_query,
     ssurgo_area_summary_point_query,
 )
-from env_data_mcp.sources.ssurgo.constants import LICENSE_INFO, _QueryType
+from env_data_mcp.sources.ssurgo.constants import LICENSE_INFO
 
 from .conftest import (
     _LAT,
@@ -22,24 +22,14 @@ from .conftest import (
     _SDA_URL,
     AREA_SUMMARY_XML,
     EMPTY_XML,
-    add_schema_responses,
 )
 
 
 def test_area_summary_available_variables_returns_variables_key(httpx_mock):
-    add_schema_responses(httpx_mock, _QueryType.AREA_SUMMARY)
     result = ssurgo_area_summary_available_variables()
     AvailableVariablesResponse.model_validate(result)
     assert "data" in result
     assert "_meta" in result
-
-
-@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-def test_area_summary_available_variables_http_error(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
-    result = ssurgo_area_summary_available_variables()
-    assert result["_meta"]["success"] is False
-    assert result["data"] == {}
 
 
 def test_area_summary_query_success_structure(httpx_mock):

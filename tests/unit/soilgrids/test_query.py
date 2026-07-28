@@ -7,131 +7,18 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-from httpx import HTTPStatusError
 from owslib.coverage.wcs100 import WebCoverageService_1_0_0
 from rasterio.io import MemoryFile
 from rasterio.transform import from_origin
 
 from env_data_mcp.sources.soilgrids._query import (
-    BaseVariableInfo,
-    VariableInfo,
     _get_client_for_coverage,
     _get_coverage_format,
-    _get_specific_variable_info,
     _query_one_coverage,
-    get_base_variable_list,
-    get_variable_info,
     query_bbox,
 )
 from env_data_mcp.sources.soilgrids._types import Client
-from env_data_mcp.sources.soilgrids.constants import _LAYERS_INFO_URL
-
-_VARIABLE_INFO_HTML: str = """\
-<!DOCTYPE html>
-<html>
-<body>
-  <!-- Properties table: header row + data rows -->
-  <table>
-    <tr>
-      <td>Name</td><td>Description</td><td>Mapped unit</td><td>Conversion factor</td><td>
-      Conventional unit</td>
-    </tr>
-    <tr>
-      <td>bdod</td><td>Bulk density</td><td>cg/cm3</td><td>100</td><td>kg/dm3</td>
-    </tr>
-    <tr>
-      <td>cec</td><td>CEC buffered at pH7</td><td>mmol(c)/kg</td><td>10</td><td>cmol(c)/kg</td>
-    </tr>
-    <tr>
-      <td>phh2o</td><td>pH water</td><td>pH x 10</td><td>10</td><td>-</td>
-    </tr>
-    <tr>
-      <td>soc</td><td>Soil organic carbon</td><td>dg/kg</td><td>10</td><td>g/kg</td>
-    </tr>
-  </table>
-  <!-- Depth intervals table: should NOT be parsed (first cell starts with "Top") -->
-  <table>
-    <tr>
-      <td>Top depth (cm)</td><td>0</td><td>5</td><td>15</td><td>30</td>
-    </tr>
-    <tr>
-      <td>Bottom depth (cm)</td><td>5</td><td>15</td><td>30</td><td>60</td>
-    </tr>
-  </table>
-</body>
-</html>
-"""
-
-_VARIABLE_INFO_HTML_BAD_TABLE: str = """\
-<!DOCTYPE html>
-<html>
-<body>
-  <!-- Properties table: header row + data rows -->
-  <table>
-    <tr>
-      <td>Name</td><td>Description</td><td>Mapped unit</td><td>Conversion factor</td>
-    </tr>
-    <tr>
-      <td>bdod</td><td>Bulk density</td><td>cg/cm3</td><td>100</td>
-    </tr>
-    <tr>
-      <td>cec</td><td>CEC buffered at pH7</td><td>mmol(c)/kg</td><td>10</td>
-    </tr>
-    <tr>
-      <td>phh2o</td><td>pH water</td><td>pH x 10</td><td>10</td>
-    </tr>
-    <tr>
-      <td>soc</td><td>Soil organic carbon</td><td>dg/kg</td><td>10</td>
-    </tr>
-  </table>
-  <!-- Depth intervals table: should NOT be parsed (first cell starts with "Top") -->
-  <table>
-    <tr>
-      <td>Top depth (cm)</td><td>0</td><td>5</td><td>15</td><td>30</td>
-    </tr>
-    <tr>
-      <td>Bottom depth (cm)</td><td>5</td><td>15</td><td>30</td><td>60</td>
-    </tr>
-  </table>
-</body>
-</html>
-"""
-
-_VARIABLE_INFO_HTML_MISSING_CONVERSION: str = """\
-<!DOCTYPE html>
-<html>
-<body>
-  <!-- Properties table: header row + data rows -->
-  <table>
-    <tr>
-      <td>Name</td><td>Description</td><td>Mapped unit</td><td>Conversion factor</td><td>
-      Conventional unit</td>
-    </tr>
-    <tr>
-      <td>bdod</td><td>Bulk density</td><td>cg/cm3</td><td>100</td><td>kg/dm3</td>
-    </tr>
-    <tr>
-      <td>cec</td><td>CEC buffered at pH7</td><td>mmol(c)/kg</td><td>10</td><td>cmol(c)/kg</td>
-    </tr>
-    <tr>
-      <td>phh2o</td><td>pH water</td><td>pH x 10</td><td>ten</td><td>-</td>
-    </tr>
-    <tr>
-      <td>soc</td><td>Soil organic carbon</td><td>dg/kg</td><td>10</td><td>g/kg</td>
-    </tr>
-  </table>
-  <!-- Depth intervals table: should NOT be parsed (first cell starts with "Top") -->
-  <table>
-    <tr>
-      <td>Top depth (cm)</td><td>0</td><td>5</td><td>15</td><td>30</td>
-    </tr>
-    <tr>
-      <td>Bottom depth (cm)</td><td>5</td><td>15</td><td>30</td><td>60</td>
-    </tr>
-  </table>
-</body>
-</html>
-"""
+from env_data_mcp.sources.soilgrids._var_cache import BaseVariableInfo, VariableInfo
 
 
 def _get_mock_contents(contents: dict[str, Any] | None = None) -> WebCoverageService_1_0_0:
@@ -144,159 +31,10 @@ def _get_mock_contents(contents: dict[str, Any] | None = None) -> WebCoverageSer
     return mock
 
 
-def _mock_get_specific_variable_info(base: str) -> dict[str, tuple[str, str]]:
-    if base == "bdod":
-        return {
-            "bdod_15-30cm_mean": ("15-30cm", "mean"),
-            "bdod_30-60cm_Q0.5": ("15-30cm", "median"),
-        }
-    return {}
-
-
 def _get_mock_client_with_contents(contents: dict[str, Any]) -> Client:
     mock = MagicMock(spec=Client)
     mock.contents = contents
     return mock
-
-
-# ---------------------------------------------------------------------------
-# get_base_variable_list
-# ---------------------------------------------------------------------------
-
-
-def test_get_base_variable_list(httpx_mock):
-    """Tests that get_base_variable_list returns variables."""
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
-    with patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None):
-        variables = get_base_variable_list()
-
-    assert len(variables) > 0
-    found = False
-    for key, var in variables.items():
-        assert key == var.name
-        if var.name == "bdod":
-            found = True
-            assert var.mapped_units == "cg/cm3"
-    assert found
-
-
-def test_get_base_variable_list_raises_http_status_error(httpx_mock):
-    """Tests that HTTP status errors propogate."""
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, status_code=404)
-    with (
-        patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None),
-        pytest.raises(HTTPStatusError),
-    ):
-        _ = get_base_variable_list()
-
-
-def test_get_base_variable_list_returns_empty_for_bad_html(httpx_mock):
-    """Tests that an empty dict is returned for invalid HTML tables."""
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML_BAD_TABLE)
-    with patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None):
-        variables = get_base_variable_list()
-    assert variables == {}
-
-
-def test_get_base_variable_list_skips_invalid_conversion(httpx_mock):
-    """Tests that invalid values for conversion factor lead to a silent skip of that row."""
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML_MISSING_CONVERSION)
-    with patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None):
-        variables = get_base_variable_list()
-    assert len(variables) == 3
-    assert "phh2o" not in variables
-
-
-def test_get_base_variable_list_uses_cache():
-    """Tests that the first call sets the cache, and subsequent calls use it."""
-    sentinel = {"bdod": MagicMock()}
-
-    with patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", sentinel):
-        result = get_base_variable_list()
-    assert result is sentinel
-
-
-# ---------------------------------------------------------------------------
-# _get_specific_variable_info
-# ---------------------------------------------------------------------------
-
-
-def test_get_specific_variable_info():
-    """Tests that get_specifc_variable_info returns results."""
-    with patch(
-        "env_data_mcp.sources.soilgrids._client.WebCoverageService",
-        return_value=_get_mock_contents(),
-    ):
-        var_info = _get_specific_variable_info("bdod")
-    assert len(var_info) > 0
-    assert "bdod_15-30cm_mean" in var_info
-    assert var_info["bdod_15-30cm_mean"] == ("15-30cm", "mean")
-    assert "bdod_30-60cm_Q0.5" in var_info
-    assert var_info["bdod_30-60cm_Q0.5"] == ("30-60cm", "median")
-
-
-@pytest.mark.parametrize(
-    "contents",
-    [
-        pytest.param({"invalid_coverage": {}}, id="too short"),
-        pytest.param({"in_valid_cover_age": {}}, id="too long"),
-        pytest.param({"": {}}, id="empty"),
-        pytest.param({"foo": {}, "bar": {}}, id="multiple"),
-        pytest.param({"valid_coverage_name": {}, "baz": {}}, id="mix"),
-    ],
-)
-def test_get_specific_variable_info_raises_value_error(contents: dict[str, Any]):
-    """Tests that malformed base variable names throw a ValueError."""
-    with (
-        patch(
-            "env_data_mcp.sources.soilgrids._client.WebCoverageService",
-            return_value=_get_mock_contents(contents),
-        ),
-        pytest.raises(ValueError, match="Invalid coverage name"),
-    ):
-        _ = _get_specific_variable_info("foo")
-
-
-# ---------------------------------------------------------------------------
-# get_variable_info
-# ---------------------------------------------------------------------------
-
-
-def test_get_variable_info_test(httpx_mock):
-    """Test that get_variable_info returns results."""
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
-    with (
-        patch("env_data_mcp.sources.soilgrids._query._VARIABLE_INFO_CACHE", {}),
-        patch("env_data_mcp.sources.soilgrids._query._BASE_VARIABLE_INFO_CACHE", None),
-        patch(
-            "env_data_mcp.sources.soilgrids._query._get_specific_variable_info",
-            side_effect=_mock_get_specific_variable_info,
-        ),
-    ):
-        var_info = get_variable_info("bdod")
-    assert "bdod_15-30cm_mean" in var_info
-    assert var_info["bdod_15-30cm_mean"] == VariableInfo(
-        description="Bulk density; depth: 15-30cm; quantile: mean",
-        units="kg/dm3",
-        base=BaseVariableInfo(
-            name="bdod",
-            description="Bulk density",
-            mapped_units="cg/cm3",
-            conversion_factor=100,
-            conventional_units="kg/dm3",
-        ),
-    )
-    assert "bdod_30-60cm_Q0.5" in var_info
-
-
-def test_get_variable_info_uses_cache():
-    """Tests that get_variable_info uses cached values when present."""
-    mock_var_info = MagicMock()
-    with patch(
-        "env_data_mcp.sources.soilgrids._query._VARIABLE_INFO_CACHE", {"bdod": mock_var_info}
-    ):
-        var_info = get_variable_info("bdod")
-    assert var_info is mock_var_info
 
 
 # ---------------------------------------------------------------------------

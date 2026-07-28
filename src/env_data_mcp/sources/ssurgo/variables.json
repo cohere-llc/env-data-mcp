@@ -1,0 +1,6745 @@
+{
+  "column_table_map": {
+    "aashind_h": "chorizon",
+    "aashind_l": "chorizon",
+    "aashind_r": "chorizon",
+    "airtempa_h": "component",
+    "airtempa_l": "component",
+    "airtempa_r": "component",
+    "albedodry_h": "component",
+    "albedodry_l": "component",
+    "albedodry_r": "component",
+    "aloxalate_h": "chorizon",
+    "aloxalate_l": "chorizon",
+    "aloxalate_r": "chorizon",
+    "aspectccwise": "component",
+    "aspectcwise": "component",
+    "aspectrep": "component",
+    "awc_h": "chorizon",
+    "awc_l": "chorizon",
+    "awc_r": "chorizon",
+    "awmmfpwwta": "muaggatt",
+    "aws0100wta": "muaggatt",
+    "aws0150wta": "muaggatt",
+    "aws025wta": "muaggatt",
+    "aws050wta": "muaggatt",
+    "bdsatiated_h": "chorizon",
+    "bdsatiated_l": "chorizon",
+    "bdsatiated_r": "chorizon",
+    "brockdepmin": "muaggatt",
+    "caco3_h": "chorizon",
+    "caco3_l": "chorizon",
+    "caco3_r": "chorizon",
+    "castorieindex": "component",
+    "cec7_h": "chorizon",
+    "cec7_l": "chorizon",
+    "cec7_r": "chorizon",
+    "chkey": "chorizon",
+    "claysizedcarb_h": "chorizon",
+    "claysizedcarb_l": "chorizon",
+    "claysizedcarb_r": "chorizon",
+    "claytotal_h": "chorizon",
+    "claytotal_l": "chorizon",
+    "claytotal_r": "chorizon",
+    "coecoclasskey": "coecoclass",
+    "cointerpkey": "cointerp",
+    "cokey": "component",
+    "comonthkey": "comonth",
+    "compkind": "component",
+    "compname": "component",
+    "comppct_h": "component",
+    "comppct_l": "component",
+    "comppct_r": "component",
+    "constreeshrubgrp": "component",
+    "copmgrpkey": "copmgrp",
+    "copmkey": "copm",
+    "corcon": "component",
+    "corestrictkey": "corestrictions",
+    "corsteel": "component",
+    "cosoilmoistkey": "cosoilmoist",
+    "cosoiltempkey": "cosoiltemp",
+    "cropprodindex": "component",
+    "ctwetland": "component",
+    "dbfifteenbar_h": "chorizon",
+    "dbfifteenbar_l": "chorizon",
+    "dbfifteenbar_r": "chorizon",
+    "dbovendry_h": "chorizon",
+    "dbovendry_l": "chorizon",
+    "dbovendry_r": "chorizon",
+    "dbtenthbar_h": "chorizon",
+    "dbtenthbar_l": "chorizon",
+    "dbtenthbar_r": "chorizon",
+    "dbthirdbar_h": "chorizon",
+    "dbthirdbar_l": "chorizon",
+    "dbthirdbar_r": "chorizon",
+    "defpropdatabool": "cointerp",
+    "desgndisc": "chorizon",
+    "desgnmaster": "chorizon",
+    "desgnmasterprime": "chorizon",
+    "desgnvert": "chorizon",
+    "dlyavgpotet_h": "comonth",
+    "dlyavgpotet_l": "comonth",
+    "dlyavgpotet_r": "comonth",
+    "dlyavgprecip_h": "comonth",
+    "dlyavgprecip_l": "comonth",
+    "dlyavgprecip_r": "comonth",
+    "drainagecl": "component",
+    "drclassdcd": "muaggatt",
+    "drclasswettest": "muaggatt",
+    "earthcovkind1": "component",
+    "earthcovkind2": "component",
+    "ec15_h": "chorizon",
+    "ec15_l": "chorizon",
+    "ec15_r": "chorizon",
+    "ec_h": "chorizon",
+    "ec_l": "chorizon",
+    "ec_r": "chorizon",
+    "ecec_h": "chorizon",
+    "ecec_l": "chorizon",
+    "ecec_r": "chorizon",
+    "ecoclassid": "coecoclass",
+    "ecoclassname": "coecoclass",
+    "ecoclassref": "coecoclass",
+    "ecoclasstypename": "coecoclass",
+    "ecositestatus": "coecoclass",
+    "elev_h": "component",
+    "elev_l": "component",
+    "elev_r": "component",
+    "engcmssdcd": "muaggatt",
+    "engcmssmp": "muaggatt",
+    "engdwbdcd": "muaggatt",
+    "engdwbll": "muaggatt",
+    "engdwbml": "muaggatt",
+    "engdwobdcd": "muaggatt",
+    "englrsdcd": "muaggatt",
+    "engsldcd": "muaggatt",
+    "engsldcp": "muaggatt",
+    "engstafdcd": "muaggatt",
+    "engstafll": "muaggatt",
+    "engstafml": "muaggatt",
+    "erocl": "component",
+    "esp_h": "chorizon",
+    "esp_l": "chorizon",
+    "esp_r": "chorizon",
+    "excavdifcl": "chorizon",
+    "excavdifms": "chorizon",
+    "extracid_h": "chorizon",
+    "extracid_l": "chorizon",
+    "extracid_r": "chorizon",
+    "extral_h": "chorizon",
+    "extral_l": "chorizon",
+    "extral_r": "chorizon",
+    "farmlndcl": "mapunit",
+    "feoxalate_h": "chorizon",
+    "feoxalate_l": "chorizon",
+    "feoxalate_r": "chorizon",
+    "ffd_h": "component",
+    "ffd_l": "component",
+    "ffd_r": "component",
+    "fiberrubbedpct_h": "chorizon",
+    "fiberrubbedpct_l": "chorizon",
+    "fiberrubbedpct_r": "chorizon",
+    "fiberunrubbedpct_h": "chorizon",
+    "fiberunrubbedpct_l": "chorizon",
+    "fiberunrubbedpct_r": "chorizon",
+    "flecolcomnum": "component",
+    "flhe": "component",
+    "floddurcl": "comonth",
+    "flodfreqcl": "comonth",
+    "flodfreqdcd": "muaggatt",
+    "flodfreqmax": "muaggatt",
+    "floodtype": "component",
+    "flphe": "component",
+    "flsoilleachpot": "component",
+    "flsoirunoffpot": "component",
+    "fltemik2use": "component",
+    "fltriumph2use": "component",
+    "foragesuitgrpid": "component",
+    "forpehrtdcp": "muaggatt",
+    "frag3to10_h": "chorizon",
+    "frag3to10_l": "chorizon",
+    "frag3to10_r": "chorizon",
+    "fraggt10_h": "chorizon",
+    "fraggt10_l": "chorizon",
+    "fraggt10_r": "chorizon",
+    "fragvoltot_h": "chorizon",
+    "fragvoltot_l": "chorizon",
+    "fragvoltot_r": "chorizon",
+    "freeiron_h": "chorizon",
+    "freeiron_l": "chorizon",
+    "freeiron_r": "chorizon",
+    "frostact": "component",
+    "geomdesc": "component",
+    "gypsum_h": "chorizon",
+    "gypsum_l": "chorizon",
+    "gypsum_r": "chorizon",
+    "horztype": "chorizon",
+    "huartvoltot_h": "chorizon",
+    "huartvoltot_l": "chorizon",
+    "huartvoltot_r": "chorizon",
+    "hydclprs": "muaggatt",
+    "hydgrp": "component",
+    "hydgrpdcd": "muaggatt",
+    "hydricon": "component",
+    "hydricrating": "component",
+    "hydrologystatus": "component",
+    "hzdepb_h": "chorizon",
+    "hzdepb_l": "chorizon",
+    "hzdepb_r": "chorizon",
+    "hzdept_h": "chorizon",
+    "hzdept_l": "chorizon",
+    "hzdept_r": "chorizon",
+    "hzname": "chorizon",
+    "hzthk_h": "chorizon",
+    "hzthk_l": "chorizon",
+    "hzthk_r": "chorizon",
+    "iacornsr": "mapunit",
+    "iasubsoilk": "component",
+    "iasubsoilp": "component",
+    "iccdcd": "muaggatt",
+    "iccdcdpct": "muaggatt",
+    "incpropdatabool": "cointerp",
+    "indraingrp": "component",
+    "initsub_h": "component",
+    "initsub_l": "component",
+    "initsub_r": "component",
+    "innitrateleachi": "component",
+    "interpfocus": "mapunit",
+    "interphh": "cointerp",
+    "interphhc": "cointerp",
+    "interphr": "cointerp",
+    "interphrc": "cointerp",
+    "interpll": "cointerp",
+    "interpllc": "cointerp",
+    "interplr": "cointerp",
+    "interplrc": "cointerp",
+    "invesintens": "mapunit",
+    "irrcapcl": "component",
+    "irrcapscl": "component",
+    "irrcapunit": "component",
+    "kffact": "chorizon",
+    "ksat_h": "chorizon",
+    "ksat_l": "chorizon",
+    "ksat_r": "chorizon",
+    "kwfact": "chorizon",
+    "lep_h": "chorizon",
+    "lep_l": "chorizon",
+    "lep_r": "chorizon",
+    "lkey": "mapunit",
+    "ll_h": "chorizon",
+    "ll_l": "chorizon",
+    "ll_r": "chorizon",
+    "localphase": "component",
+    "majcompflag": "component",
+    "map_h": "component",
+    "map_l": "component",
+    "map_r": "component",
+    "mapunitlfw_h": "mapunit",
+    "mapunitlfw_l": "mapunit",
+    "mapunitlfw_r": "mapunit",
+    "mapunitpfa_h": "mapunit",
+    "mapunitpfa_l": "mapunit",
+    "mapunitpfa_r": "mapunit",
+    "micafinepct_h": "chorizon",
+    "micafinepct_l": "chorizon",
+    "micafinepct_r": "chorizon",
+    "micakind": "chorizon",
+    "micaveryfinepct_h": "chorizon",
+    "micaveryfinepct_l": "chorizon",
+    "micaveryfinepct_r": "chorizon",
+    "misoimgmtgrp": "component",
+    "mlraname": "mapunit",
+    "mlrasymbol": "mapunit",
+    "monosulfidepresence": "chorizon",
+    "month": "comonth",
+    "monthseq": "comonth",
+    "mrulekey": "cointerp",
+    "mrulename": "cointerp",
+    "muacres": "mapunit",
+    "mucertstat": "mapunit",
+    "muhelcl": "mapunit",
+    "mukey": "mapunit",
+    "mukind": "mapunit",
+    "muname": "mapunit",
+    "museq": "mapunit",
+    "mustatus": "mapunit",
+    "musym": "mapunit",
+    "muwathelcl": "mapunit",
+    "muwndhelcl": "mapunit",
+    "nasischiid": "chorizon",
+    "nasiscoiid": "component",
+    "nationalmusym": "mapunit",
+    "nhiforsoigrp": "mapunit",
+    "nhspiagr": "mapunit",
+    "niccdcd": "muaggatt",
+    "niccdcdpct": "muaggatt",
+    "nirrcapcl": "component",
+    "nirrcapscl": "component",
+    "nirrcapunit": "component",
+    "nullpropdatabool": "cointerp",
+    "nzpretention_h": "chorizon",
+    "nzpretention_l": "chorizon",
+    "nzpretention_r": "chorizon",
+    "om_h": "chorizon",
+    "om_l": "chorizon",
+    "om_r": "chorizon",
+    "otherph": "component",
+    "partdensity": "chorizon",
+    "pbray1_h": "chorizon",
+    "pbray1_l": "chorizon",
+    "pbray1_r": "chorizon",
+    "ph01mcacl2_h": "chorizon",
+    "ph01mcacl2_l": "chorizon",
+    "ph01mcacl2_r": "chorizon",
+    "ph1to1h2o_h": "chorizon",
+    "ph1to1h2o_l": "chorizon",
+    "ph1to1h2o_r": "chorizon",
+    "ph2osoluble_h": "chorizon",
+    "ph2osoluble_l": "chorizon",
+    "ph2osoluble_r": "chorizon",
+    "phoxidized_h": "chorizon",
+    "phoxidized_l": "chorizon",
+    "phoxidized_r": "chorizon",
+    "pi_h": "chorizon",
+    "pi_l": "chorizon",
+    "pi_r": "chorizon",
+    "pmdepb_h": "copm",
+    "pmdepb_l": "copm",
+    "pmdepb_r": "copm",
+    "pmdept_h": "copm",
+    "pmdept_l": "copm",
+    "pmdept_r": "copm",
+    "pmgenmod": "copm",
+    "pmgroupname": "copmgrp",
+    "pmkind": "copm",
+    "pmmodifier": "copm",
+    "pmorder": "copm",
+    "pmorigin": "copm",
+    "ponddep_h": "comonth",
+    "ponddep_l": "comonth",
+    "ponddep_r": "comonth",
+    "ponddurcl": "comonth",
+    "pondfreqcl": "comonth",
+    "pondfreqprs": "muaggatt",
+    "poxalate_h": "chorizon",
+    "poxalate_l": "chorizon",
+    "poxalate_r": "chorizon",
+    "ptotal_h": "chorizon",
+    "ptotal_l": "chorizon",
+    "ptotal_r": "chorizon",
+    "reannualprecip_h": "component",
+    "reannualprecip_l": "component",
+    "reannualprecip_r": "component",
+    "resdepb_h": "corestrictions",
+    "resdepb_l": "corestrictions",
+    "resdepb_r": "corestrictions",
+    "resdept_h": "corestrictions",
+    "resdept_l": "corestrictions",
+    "resdept_r": "corestrictions",
+    "reshard": "corestrictions",
+    "reskind": "corestrictions",
+    "resthk_h": "corestrictions",
+    "resthk_l": "corestrictions",
+    "resthk_r": "corestrictions",
+    "rsprod_h": "component",
+    "rsprod_l": "component",
+    "rsprod_r": "component",
+    "ruledepth": "cointerp",
+    "ruledepthseq": "cointerp",
+    "ruledesign": "cointerp",
+    "rulekey": "cointerp",
+    "rulename": "cointerp",
+    "runoff": "component",
+    "rvindicator": "copmgrp",
+    "sandco_h": "chorizon",
+    "sandco_l": "chorizon",
+    "sandco_r": "chorizon",
+    "sandfine_h": "chorizon",
+    "sandfine_l": "chorizon",
+    "sandfine_r": "chorizon",
+    "sandmed_h": "chorizon",
+    "sandmed_l": "chorizon",
+    "sandmed_r": "chorizon",
+    "sandtotal_h": "chorizon",
+    "sandtotal_l": "chorizon",
+    "sandtotal_r": "chorizon",
+    "sandvc_h": "chorizon",
+    "sandvc_l": "chorizon",
+    "sandvc_r": "chorizon",
+    "sandvf_h": "chorizon",
+    "sandvf_l": "chorizon",
+    "sandvf_r": "chorizon",
+    "sar_h": "chorizon",
+    "sar_l": "chorizon",
+    "sar_r": "chorizon",
+    "seqnum": "cointerp",
+    "sieveno10_h": "chorizon",
+    "sieveno10_l": "chorizon",
+    "sieveno10_r": "chorizon",
+    "sieveno200_h": "chorizon",
+    "sieveno200_l": "chorizon",
+    "sieveno200_r": "chorizon",
+    "sieveno40_h": "chorizon",
+    "sieveno40_l": "chorizon",
+    "sieveno40_r": "chorizon",
+    "sieveno4_h": "chorizon",
+    "sieveno4_l": "chorizon",
+    "sieveno4_r": "chorizon",
+    "siltco_h": "chorizon",
+    "siltco_l": "chorizon",
+    "siltco_r": "chorizon",
+    "siltfine_h": "chorizon",
+    "siltfine_l": "chorizon",
+    "siltfine_r": "chorizon",
+    "silttotal_h": "chorizon",
+    "silttotal_l": "chorizon",
+    "silttotal_r": "chorizon",
+    "slope_h": "component",
+    "slope_l": "component",
+    "slope_r": "component",
+    "slopegraddcp": "muaggatt",
+    "slopegradwta": "muaggatt",
+    "slopelenusle_h": "component",
+    "slopelenusle_l": "component",
+    "slopelenusle_r": "component",
+    "soilslippot": "component",
+    "soiltaxedition": "component",
+    "soiltempa_h": "component",
+    "soiltempa_l": "component",
+    "soiltempa_r": "component",
+    "soimoistdepb_h": "cosoilmoist",
+    "soimoistdepb_l": "cosoilmoist",
+    "soimoistdepb_r": "cosoilmoist",
+    "soimoistdept_h": "cosoilmoist",
+    "soimoistdept_l": "cosoilmoist",
+    "soimoistdept_r": "cosoilmoist",
+    "soimoiststat": "cosoilmoist",
+    "soitempdepb_h": "cosoiltemp",
+    "soitempdepb_l": "cosoiltemp",
+    "soitempdepb_r": "cosoiltemp",
+    "soitempdept_h": "cosoiltemp",
+    "soitempdept_l": "cosoiltemp",
+    "soitempdept_r": "cosoiltemp",
+    "soitempmm": "cosoiltemp",
+    "sourcesdwprimarykey": "coecoclass",
+    "sourcesdwtablephysicalname": "coecoclass",
+    "sumbases_h": "chorizon",
+    "sumbases_l": "chorizon",
+    "sumbases_r": "chorizon",
+    "taxceactcl": "component",
+    "taxclname": "component",
+    "taxfamhahatmatcl": "component",
+    "taxgrtgroup": "component",
+    "taxmoistscl": "component",
+    "taxorder": "component",
+    "taxpartsize": "component",
+    "taxpartsizemod": "component",
+    "taxreaction": "component",
+    "taxsubgrp": "component",
+    "taxsuborder": "component",
+    "taxtempcl": "component",
+    "taxtempregime": "component",
+    "texturerv": "chorizon",
+    "tfact": "component",
+    "totalsub_h": "component",
+    "totalsub_l": "component",
+    "totalsub_r": "component",
+    "urbrecptdcd": "muaggatt",
+    "urbrecptwta": "muaggatt",
+    "vasoimgtgrp": "component",
+    "vtsepticsyscl": "mapunit",
+    "watertempa_h": "component",
+    "watertempa_l": "component",
+    "watertempa_r": "component",
+    "weg": "component",
+    "wei": "component",
+    "wfifteenbar_h": "chorizon",
+    "wfifteenbar_l": "chorizon",
+    "wfifteenbar_r": "chorizon",
+    "wlconiferous": "component",
+    "wlgrain": "component",
+    "wlgrass": "component",
+    "wlhardwood": "component",
+    "wlherbaceous": "component",
+    "wlopenland": "component",
+    "wlrangeland": "component",
+    "wlshallowwat": "component",
+    "wlshrub": "component",
+    "wlwetland": "component",
+    "wlwetplant": "component",
+    "wlwoodland": "component",
+    "wndbrksuitgrp": "component",
+    "wsatiated_h": "chorizon",
+    "wsatiated_l": "chorizon",
+    "wsatiated_r": "chorizon",
+    "wtdepannmin": "muaggatt",
+    "wtdepaprjunmin": "muaggatt",
+    "wtenthbar_h": "chorizon",
+    "wtenthbar_l": "chorizon",
+    "wtenthbar_r": "chorizon",
+    "wthirdbar_h": "chorizon",
+    "wthirdbar_l": "chorizon",
+    "wthirdbar_r": "chorizon"
+  },
+  "variable_info": {
+    "area_summary": {
+      "awmmfpwwta": {
+        "label": "AWM - Manure and Food Processing Waste - Weighted Average",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "aws0100wta": {
+        "label": "Available Water Storage 0-100 cm - Weighted Average",
+        "table": "muaggatt",
+        "units": "cm"
+      },
+      "aws0150wta": {
+        "label": "Available Water Storage 0-150 cm - Weighted Average",
+        "table": "muaggatt",
+        "units": "cm"
+      },
+      "aws025wta": {
+        "label": "Available Water Storage 0-25 cm - Weighted Average",
+        "table": "muaggatt",
+        "units": "cm"
+      },
+      "aws050wta": {
+        "label": "Available Water Storage 0-50 cm - Weighted Average",
+        "table": "muaggatt",
+        "units": "cm"
+      },
+      "brockdepmin": {
+        "label": "Bedrock Depth - Minimum",
+        "table": "muaggatt",
+        "units": "cm"
+      },
+      "drclassdcd": {
+        "label": "Drainage Class - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "drclasswettest": {
+        "label": "Drainage Class - Wettest",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engcmssdcd": {
+        "label": "ENG - Construction Materials; Sand Source - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engcmssmp": {
+        "label": "ENG - Construction Materials; Sand Source - Most Probable",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engdwbdcd": {
+        "label": "ENG - Dwellings with Basements - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engdwbll": {
+        "label": "ENG - Dwellings with Basements - Least Limiting",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engdwbml": {
+        "label": "ENG - Dwellings with Basements - Most Limiting",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engdwobdcd": {
+        "label": "ENG - Dwellings W/O Basements - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "englrsdcd": {
+        "label": "ENG - Local Roads and Streets - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engsldcd": {
+        "label": "ENG - Sewage Lagoons - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engsldcp": {
+        "label": "ENG - Sewage Lagoons - Dominant Component",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engstafdcd": {
+        "label": "ENG - Septic Tank Absorption Fields - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engstafll": {
+        "label": "ENG - Septic Tank Absorption Fields - Least Limiting",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "engstafml": {
+        "label": "ENG - Septic Tank Absorption Fields - Most Limiting",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "farmlndcl": {
+        "label": "Farm Class",
+        "table": "mapunit",
+        "units": ""
+      },
+      "flodfreqdcd": {
+        "label": "Flooding Frequency - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "flodfreqmax": {
+        "label": "Flooding Frequency - Maximum",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "forpehrtdcp": {
+        "label": "FOR - Potential Erosion Hazard (Road/Trail) - Dominant Component",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "hydclprs": {
+        "label": "Hydric Classification - Presence",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "hydgrpdcd": {
+        "label": "Hydrologic Group - Dominant Conditions",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "iacornsr": {
+        "label": "IA CSR",
+        "table": "mapunit",
+        "units": ""
+      },
+      "iccdcd": {
+        "label": "Irrigated Capability Class - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "iccdcdpct": {
+        "label": "Irrigated Capability Class - Dominant Condition Aggregate Percent",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "interpfocus": {
+        "label": "Interpretive Focus",
+        "table": "mapunit",
+        "units": ""
+      },
+      "invesintens": {
+        "label": "Order of Mapping",
+        "table": "mapunit",
+        "units": ""
+      },
+      "lkey": {
+        "label": "Legend Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mapunitlfw_h": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_l": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_r": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitpfa_h": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_l": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_r": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mlraname": {
+        "label": "MLRA Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mlrasymbol": {
+        "label": "MLRA Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muacres": {
+        "label": "Total Acres",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mucertstat": {
+        "label": "Map Unit Certification Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muhelcl": {
+        "label": "HEL",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukey": {
+        "label": "Mapunit Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukind": {
+        "label": "Kind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muname": {
+        "label": "Mapunit Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "museq": {
+        "label": "Mapunit Sequence",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mustatus": {
+        "label": "Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "musym": {
+        "label": "Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwathelcl": {
+        "label": "HEL Water",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwndhelcl": {
+        "label": "HEL Wind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nationalmusym": {
+        "label": "National Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhiforsoigrp": {
+        "label": "NH Forest Soil Grp",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhspiagr": {
+        "label": "NH SPI Agr",
+        "table": "mapunit",
+        "units": ""
+      },
+      "niccdcd": {
+        "label": "Non-Irrigated Capability Class - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "niccdcdpct": {
+        "label": "Non-Irrigated Capability Class - Dominant Condition Aggregate Percent",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "pondfreqprs": {
+        "label": "Ponding Frequency - Presence",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "slopegraddcp": {
+        "label": "Slope Gradient - Dominant Component",
+        "table": "muaggatt",
+        "units": "percent"
+      },
+      "slopegradwta": {
+        "label": "Slope Gradient - Weighted Average",
+        "table": "muaggatt",
+        "units": "percent"
+      },
+      "urbrecptdcd": {
+        "label": "URB/REC - Paths and Trails - Dominant Condition",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "urbrecptwta": {
+        "label": "URB/REC - Paths and Trails - Weighted Average",
+        "table": "muaggatt",
+        "units": ""
+      },
+      "vtsepticsyscl": {
+        "label": "VT Septic System",
+        "table": "mapunit",
+        "units": ""
+      },
+      "wtdepannmin": {
+        "label": "Water Table Depth - Annual - Minimum",
+        "table": "muaggatt",
+        "units": "cm"
+      },
+      "wtdepaprjunmin": {
+        "label": "Water Table Depth - April - June - Minimum",
+        "table": "muaggatt",
+        "units": "cm"
+      }
+    },
+    "ecological_site": {
+      "airtempa_h": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_l": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_r": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "albedodry_h": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_l": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_r": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "aspectccwise": {
+        "label": "Aspect Counter Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectcwise": {
+        "label": "Aspect Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectrep": {
+        "label": "Aspect Representative",
+        "table": "component",
+        "units": "degrees"
+      },
+      "castorieindex": {
+        "label": "CA Storie Index",
+        "table": "component",
+        "units": ""
+      },
+      "coecoclasskey": {
+        "label": "Component Ecological Classification Key",
+        "table": "coecoclass",
+        "units": ""
+      },
+      "cokey": {
+        "label": "Component Key",
+        "table": "component",
+        "units": ""
+      },
+      "compkind": {
+        "label": "Kind",
+        "table": "component",
+        "units": ""
+      },
+      "compname": {
+        "label": "Component Name",
+        "table": "component",
+        "units": ""
+      },
+      "comppct_h": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_l": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_r": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "constreeshrubgrp": {
+        "label": "Cons Tree Shrub Group",
+        "table": "component",
+        "units": ""
+      },
+      "corcon": {
+        "label": "Corrosion Concrete",
+        "table": "component",
+        "units": ""
+      },
+      "corsteel": {
+        "label": "Corrosion Steel",
+        "table": "component",
+        "units": ""
+      },
+      "cropprodindex": {
+        "label": "Prod Index",
+        "table": "component",
+        "units": ""
+      },
+      "ctwetland": {
+        "label": "CT Wetland",
+        "table": "component",
+        "units": ""
+      },
+      "drainagecl": {
+        "label": "Drainage Class",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind1": {
+        "label": "Cover Kind 1",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind2": {
+        "label": "Cover Kind 2",
+        "table": "component",
+        "units": ""
+      },
+      "ecoclassid": {
+        "label": "Ecological Classification ID",
+        "table": "coecoclass",
+        "units": ""
+      },
+      "ecoclassname": {
+        "label": "Ecological Classification Name",
+        "table": "coecoclass",
+        "units": ""
+      },
+      "ecoclassref": {
+        "label": "Ecological Classification Reference",
+        "table": "coecoclass",
+        "units": ""
+      },
+      "ecoclasstypename": {
+        "label": "Ecological Classification Type Name",
+        "table": "coecoclass",
+        "units": ""
+      },
+      "ecositestatus": {
+        "label": "Ecological Site Status",
+        "table": "coecoclass",
+        "units": ""
+      },
+      "elev_h": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_l": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_r": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "erocl": {
+        "label": "Erosion Class",
+        "table": "component",
+        "units": ""
+      },
+      "farmlndcl": {
+        "label": "Farm Class",
+        "table": "mapunit",
+        "units": ""
+      },
+      "ffd_h": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_l": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_r": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "flecolcomnum": {
+        "label": "FL Ecol Comm #",
+        "table": "component",
+        "units": ""
+      },
+      "flhe": {
+        "label": "FL HE",
+        "table": "component",
+        "units": ""
+      },
+      "floodtype": {
+        "label": "Flooding Type",
+        "table": "component",
+        "units": ""
+      },
+      "flphe": {
+        "label": "FL PHE",
+        "table": "component",
+        "units": ""
+      },
+      "flsoilleachpot": {
+        "label": "FL Leach Pot",
+        "table": "component",
+        "units": ""
+      },
+      "flsoirunoffpot": {
+        "label": "FL Runoff Pot",
+        "table": "component",
+        "units": ""
+      },
+      "fltemik2use": {
+        "label": "FL Temik",
+        "table": "component",
+        "units": ""
+      },
+      "fltriumph2use": {
+        "label": "FL Triumph",
+        "table": "component",
+        "units": ""
+      },
+      "foragesuitgrpid": {
+        "label": "Forage Suitability Group ID",
+        "table": "component",
+        "units": ""
+      },
+      "frostact": {
+        "label": "Frost Action",
+        "table": "component",
+        "units": ""
+      },
+      "geomdesc": {
+        "label": "Geomorphic Description",
+        "table": "component",
+        "units": ""
+      },
+      "hydgrp": {
+        "label": "Hydrologic Group",
+        "table": "component",
+        "units": ""
+      },
+      "hydricon": {
+        "label": "Hydric Condition",
+        "table": "component",
+        "units": ""
+      },
+      "hydricrating": {
+        "label": "Hydric Rating",
+        "table": "component",
+        "units": ""
+      },
+      "hydrologystatus": {
+        "label": "Hydrology Status",
+        "table": "component",
+        "units": ""
+      },
+      "iacornsr": {
+        "label": "IA CSR",
+        "table": "mapunit",
+        "units": ""
+      },
+      "iasubsoilk": {
+        "label": "IA Subsoil K",
+        "table": "component",
+        "units": ""
+      },
+      "iasubsoilp": {
+        "label": "IA Subsoil P",
+        "table": "component",
+        "units": ""
+      },
+      "indraingrp": {
+        "label": "IN Drainage Grp",
+        "table": "component",
+        "units": ""
+      },
+      "initsub_h": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_l": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_r": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "innitrateleachi": {
+        "label": "IN NO3 Leach Index",
+        "table": "component",
+        "units": ""
+      },
+      "interpfocus": {
+        "label": "Interpretive Focus",
+        "table": "mapunit",
+        "units": ""
+      },
+      "invesintens": {
+        "label": "Order of Mapping",
+        "table": "mapunit",
+        "units": ""
+      },
+      "irrcapcl": {
+        "label": "Irr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapscl": {
+        "label": "Irr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapunit": {
+        "label": "Irr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "lkey": {
+        "label": "Legend Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "localphase": {
+        "label": "Local Phase",
+        "table": "component",
+        "units": ""
+      },
+      "majcompflag": {
+        "label": "Major Component",
+        "table": "component",
+        "units": ""
+      },
+      "map_h": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_l": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_r": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "mapunitlfw_h": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_l": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_r": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitpfa_h": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_l": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_r": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "misoimgmtgrp": {
+        "label": "MI Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "mlraname": {
+        "label": "MLRA Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mlrasymbol": {
+        "label": "MLRA Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muacres": {
+        "label": "Total Acres",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mucertstat": {
+        "label": "Map Unit Certification Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muhelcl": {
+        "label": "HEL",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukey": {
+        "label": "Mapunit Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukind": {
+        "label": "Kind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muname": {
+        "label": "Mapunit Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "museq": {
+        "label": "Mapunit Sequence",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mustatus": {
+        "label": "Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "musym": {
+        "label": "Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwathelcl": {
+        "label": "HEL Water",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwndhelcl": {
+        "label": "HEL Wind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nasiscoiid": {
+        "label": "NASIS Component Table Record ID",
+        "table": "component",
+        "units": ""
+      },
+      "nationalmusym": {
+        "label": "National Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhiforsoigrp": {
+        "label": "NH Forest Soil Grp",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhspiagr": {
+        "label": "NH SPI Agr",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nirrcapcl": {
+        "label": "Nirr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapscl": {
+        "label": "Nirr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapunit": {
+        "label": "Nirr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "otherph": {
+        "label": "SIR phase",
+        "table": "component",
+        "units": ""
+      },
+      "reannualprecip_h": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_l": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_r": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "rsprod_h": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_l": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_r": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "runoff": {
+        "label": "Runoff Class",
+        "table": "component",
+        "units": "runoff"
+      },
+      "slope_h": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_l": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_r": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slopelenusle_h": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_l": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_r": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "soilslippot": {
+        "label": "Soil Slip Pot",
+        "table": "component",
+        "units": ""
+      },
+      "soiltaxedition": {
+        "label": "Keys to Taxonomy Edition Used",
+        "table": "component",
+        "units": ""
+      },
+      "soiltempa_h": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_l": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_r": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "sourcesdwprimarykey": {
+        "label": "Source SDW Primary Key",
+        "table": "coecoclass",
+        "units": ""
+      },
+      "sourcesdwtablephysicalname": {
+        "label": "Source SDW Table Physical Name",
+        "table": "coecoclass",
+        "units": ""
+      },
+      "taxceactcl": {
+        "label": "CEC Activity Cl",
+        "table": "component",
+        "units": ""
+      },
+      "taxclname": {
+        "label": "Taxonomic Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxfamhahatmatcl": {
+        "label": "HAHT Material Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxgrtgroup": {
+        "label": "Great Group",
+        "table": "component",
+        "units": ""
+      },
+      "taxmoistscl": {
+        "label": "Moist Subclass",
+        "table": "component",
+        "units": ""
+      },
+      "taxorder": {
+        "label": "Order",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsize": {
+        "label": "Particle Size",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsizemod": {
+        "label": "Particle Size Mod",
+        "table": "component",
+        "units": ""
+      },
+      "taxreaction": {
+        "label": "Reaction",
+        "table": "component",
+        "units": ""
+      },
+      "taxsubgrp": {
+        "label": "Subgroup",
+        "table": "component",
+        "units": ""
+      },
+      "taxsuborder": {
+        "label": "Suborder",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempcl": {
+        "label": "Temp Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempregime": {
+        "label": "Temp Regime",
+        "table": "component",
+        "units": ""
+      },
+      "tfact": {
+        "label": "T",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "totalsub_h": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_l": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_r": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "vasoimgtgrp": {
+        "label": "VA Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "vtsepticsyscl": {
+        "label": "VT Septic System",
+        "table": "mapunit",
+        "units": ""
+      },
+      "watertempa_h": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_l": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_r": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "weg": {
+        "label": "WEG",
+        "table": "component",
+        "units": ""
+      },
+      "wei": {
+        "label": "WEI",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "wlconiferous": {
+        "label": "Conifer Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrain": {
+        "label": "Grain Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrass": {
+        "label": "Grass Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlhardwood": {
+        "label": "Hardwood Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlherbaceous": {
+        "label": "Herbaceous Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlopenland": {
+        "label": "Openland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlrangeland": {
+        "label": "Rangeland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlshallowwat": {
+        "label": "Water Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlshrub": {
+        "label": "Shrub Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetland": {
+        "label": "Wetland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetplant": {
+        "label": "Wetland Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwoodland": {
+        "label": "Woodland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wndbrksuitgrp": {
+        "label": "Windbreak Suitability (Obsolete)",
+        "table": "component",
+        "units": ""
+      }
+    },
+    "parent_material": {
+      "airtempa_h": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_l": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_r": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "albedodry_h": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_l": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_r": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "aspectccwise": {
+        "label": "Aspect Counter Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectcwise": {
+        "label": "Aspect Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectrep": {
+        "label": "Aspect Representative",
+        "table": "component",
+        "units": "degrees"
+      },
+      "castorieindex": {
+        "label": "CA Storie Index",
+        "table": "component",
+        "units": ""
+      },
+      "cokey": {
+        "label": "Component Key",
+        "table": "component",
+        "units": ""
+      },
+      "compkind": {
+        "label": "Kind",
+        "table": "component",
+        "units": ""
+      },
+      "compname": {
+        "label": "Component Name",
+        "table": "component",
+        "units": ""
+      },
+      "comppct_h": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_l": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_r": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "constreeshrubgrp": {
+        "label": "Cons Tree Shrub Group",
+        "table": "component",
+        "units": ""
+      },
+      "copmgrpkey": {
+        "label": "Component Parent Material Group Key",
+        "table": "copmgrp",
+        "units": ""
+      },
+      "copmkey": {
+        "label": "Component Parent Material Key",
+        "table": "copm",
+        "units": ""
+      },
+      "corcon": {
+        "label": "Corrosion Concrete",
+        "table": "component",
+        "units": ""
+      },
+      "corsteel": {
+        "label": "Corrosion Steel",
+        "table": "component",
+        "units": ""
+      },
+      "cropprodindex": {
+        "label": "Prod Index",
+        "table": "component",
+        "units": ""
+      },
+      "ctwetland": {
+        "label": "CT Wetland",
+        "table": "component",
+        "units": ""
+      },
+      "drainagecl": {
+        "label": "Drainage Class",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind1": {
+        "label": "Cover Kind 1",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind2": {
+        "label": "Cover Kind 2",
+        "table": "component",
+        "units": ""
+      },
+      "elev_h": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_l": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_r": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "erocl": {
+        "label": "Erosion Class",
+        "table": "component",
+        "units": ""
+      },
+      "farmlndcl": {
+        "label": "Farm Class",
+        "table": "mapunit",
+        "units": ""
+      },
+      "ffd_h": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_l": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_r": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "flecolcomnum": {
+        "label": "FL Ecol Comm #",
+        "table": "component",
+        "units": ""
+      },
+      "flhe": {
+        "label": "FL HE",
+        "table": "component",
+        "units": ""
+      },
+      "floodtype": {
+        "label": "Flooding Type",
+        "table": "component",
+        "units": ""
+      },
+      "flphe": {
+        "label": "FL PHE",
+        "table": "component",
+        "units": ""
+      },
+      "flsoilleachpot": {
+        "label": "FL Leach Pot",
+        "table": "component",
+        "units": ""
+      },
+      "flsoirunoffpot": {
+        "label": "FL Runoff Pot",
+        "table": "component",
+        "units": ""
+      },
+      "fltemik2use": {
+        "label": "FL Temik",
+        "table": "component",
+        "units": ""
+      },
+      "fltriumph2use": {
+        "label": "FL Triumph",
+        "table": "component",
+        "units": ""
+      },
+      "foragesuitgrpid": {
+        "label": "Forage Suitability Group ID",
+        "table": "component",
+        "units": ""
+      },
+      "frostact": {
+        "label": "Frost Action",
+        "table": "component",
+        "units": ""
+      },
+      "geomdesc": {
+        "label": "Geomorphic Description",
+        "table": "component",
+        "units": ""
+      },
+      "hydgrp": {
+        "label": "Hydrologic Group",
+        "table": "component",
+        "units": ""
+      },
+      "hydricon": {
+        "label": "Hydric Condition",
+        "table": "component",
+        "units": ""
+      },
+      "hydricrating": {
+        "label": "Hydric Rating",
+        "table": "component",
+        "units": ""
+      },
+      "hydrologystatus": {
+        "label": "Hydrology Status",
+        "table": "component",
+        "units": ""
+      },
+      "iacornsr": {
+        "label": "IA CSR",
+        "table": "mapunit",
+        "units": ""
+      },
+      "iasubsoilk": {
+        "label": "IA Subsoil K",
+        "table": "component",
+        "units": ""
+      },
+      "iasubsoilp": {
+        "label": "IA Subsoil P",
+        "table": "component",
+        "units": ""
+      },
+      "indraingrp": {
+        "label": "IN Drainage Grp",
+        "table": "component",
+        "units": ""
+      },
+      "initsub_h": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_l": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_r": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "innitrateleachi": {
+        "label": "IN NO3 Leach Index",
+        "table": "component",
+        "units": ""
+      },
+      "interpfocus": {
+        "label": "Interpretive Focus",
+        "table": "mapunit",
+        "units": ""
+      },
+      "invesintens": {
+        "label": "Order of Mapping",
+        "table": "mapunit",
+        "units": ""
+      },
+      "irrcapcl": {
+        "label": "Irr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapscl": {
+        "label": "Irr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapunit": {
+        "label": "Irr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "lkey": {
+        "label": "Legend Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "localphase": {
+        "label": "Local Phase",
+        "table": "component",
+        "units": ""
+      },
+      "majcompflag": {
+        "label": "Major Component",
+        "table": "component",
+        "units": ""
+      },
+      "map_h": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_l": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_r": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "mapunitlfw_h": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_l": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_r": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitpfa_h": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_l": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_r": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "misoimgmtgrp": {
+        "label": "MI Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "mlraname": {
+        "label": "MLRA Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mlrasymbol": {
+        "label": "MLRA Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muacres": {
+        "label": "Total Acres",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mucertstat": {
+        "label": "Map Unit Certification Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muhelcl": {
+        "label": "HEL",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukey": {
+        "label": "Mapunit Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukind": {
+        "label": "Kind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muname": {
+        "label": "Mapunit Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "museq": {
+        "label": "Mapunit Sequence",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mustatus": {
+        "label": "Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "musym": {
+        "label": "Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwathelcl": {
+        "label": "HEL Water",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwndhelcl": {
+        "label": "HEL Wind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nasiscoiid": {
+        "label": "NASIS Component Table Record ID",
+        "table": "component",
+        "units": ""
+      },
+      "nationalmusym": {
+        "label": "National Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhiforsoigrp": {
+        "label": "NH Forest Soil Grp",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhspiagr": {
+        "label": "NH SPI Agr",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nirrcapcl": {
+        "label": "Nirr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapscl": {
+        "label": "Nirr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapunit": {
+        "label": "Nirr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "otherph": {
+        "label": "SIR phase",
+        "table": "component",
+        "units": ""
+      },
+      "pmdepb_h": {
+        "label": "Bottom Depth",
+        "table": "copm",
+        "units": "cm"
+      },
+      "pmdepb_l": {
+        "label": "Bottom Depth",
+        "table": "copm",
+        "units": "cm"
+      },
+      "pmdepb_r": {
+        "label": "Bottom Depth",
+        "table": "copm",
+        "units": "cm"
+      },
+      "pmdept_h": {
+        "label": "Top Depth",
+        "table": "copm",
+        "units": "cm"
+      },
+      "pmdept_l": {
+        "label": "Top Depth",
+        "table": "copm",
+        "units": "cm"
+      },
+      "pmdept_r": {
+        "label": "Top Depth",
+        "table": "copm",
+        "units": "cm"
+      },
+      "pmgenmod": {
+        "label": "General Modifier",
+        "table": "copm",
+        "units": ""
+      },
+      "pmgroupname": {
+        "label": "Group Name",
+        "table": "copmgrp",
+        "units": ""
+      },
+      "pmkind": {
+        "label": "Kind",
+        "table": "copm",
+        "units": ""
+      },
+      "pmmodifier": {
+        "label": "Textural Modifier",
+        "table": "copm",
+        "units": ""
+      },
+      "pmorder": {
+        "label": "Vertical Order",
+        "table": "copm",
+        "units": ""
+      },
+      "pmorigin": {
+        "label": "Origin",
+        "table": "copm",
+        "units": ""
+      },
+      "reannualprecip_h": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_l": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_r": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "rsprod_h": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_l": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_r": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "runoff": {
+        "label": "Runoff Class",
+        "table": "component",
+        "units": "runoff"
+      },
+      "rvindicator": {
+        "label": "RV?",
+        "table": "copmgrp",
+        "units": ""
+      },
+      "slope_h": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_l": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_r": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slopelenusle_h": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_l": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_r": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "soilslippot": {
+        "label": "Soil Slip Pot",
+        "table": "component",
+        "units": ""
+      },
+      "soiltaxedition": {
+        "label": "Keys to Taxonomy Edition Used",
+        "table": "component",
+        "units": ""
+      },
+      "soiltempa_h": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_l": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_r": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "taxceactcl": {
+        "label": "CEC Activity Cl",
+        "table": "component",
+        "units": ""
+      },
+      "taxclname": {
+        "label": "Taxonomic Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxfamhahatmatcl": {
+        "label": "HAHT Material Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxgrtgroup": {
+        "label": "Great Group",
+        "table": "component",
+        "units": ""
+      },
+      "taxmoistscl": {
+        "label": "Moist Subclass",
+        "table": "component",
+        "units": ""
+      },
+      "taxorder": {
+        "label": "Order",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsize": {
+        "label": "Particle Size",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsizemod": {
+        "label": "Particle Size Mod",
+        "table": "component",
+        "units": ""
+      },
+      "taxreaction": {
+        "label": "Reaction",
+        "table": "component",
+        "units": ""
+      },
+      "taxsubgrp": {
+        "label": "Subgroup",
+        "table": "component",
+        "units": ""
+      },
+      "taxsuborder": {
+        "label": "Suborder",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempcl": {
+        "label": "Temp Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempregime": {
+        "label": "Temp Regime",
+        "table": "component",
+        "units": ""
+      },
+      "tfact": {
+        "label": "T",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "totalsub_h": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_l": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_r": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "vasoimgtgrp": {
+        "label": "VA Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "vtsepticsyscl": {
+        "label": "VT Septic System",
+        "table": "mapunit",
+        "units": ""
+      },
+      "watertempa_h": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_l": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_r": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "weg": {
+        "label": "WEG",
+        "table": "component",
+        "units": ""
+      },
+      "wei": {
+        "label": "WEI",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "wlconiferous": {
+        "label": "Conifer Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrain": {
+        "label": "Grain Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrass": {
+        "label": "Grass Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlhardwood": {
+        "label": "Hardwood Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlherbaceous": {
+        "label": "Herbaceous Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlopenland": {
+        "label": "Openland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlrangeland": {
+        "label": "Rangeland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlshallowwat": {
+        "label": "Water Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlshrub": {
+        "label": "Shrub Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetland": {
+        "label": "Wetland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetplant": {
+        "label": "Wetland Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwoodland": {
+        "label": "Woodland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wndbrksuitgrp": {
+        "label": "Windbreak Suitability (Obsolete)",
+        "table": "component",
+        "units": ""
+      }
+    },
+    "seasonal_hydrology": {
+      "airtempa_h": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_l": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_r": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "albedodry_h": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_l": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_r": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "aspectccwise": {
+        "label": "Aspect Counter Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectcwise": {
+        "label": "Aspect Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectrep": {
+        "label": "Aspect Representative",
+        "table": "component",
+        "units": "degrees"
+      },
+      "castorieindex": {
+        "label": "CA Storie Index",
+        "table": "component",
+        "units": ""
+      },
+      "cokey": {
+        "label": "Component Key",
+        "table": "component",
+        "units": ""
+      },
+      "comonthkey": {
+        "label": "Component Month Key",
+        "table": "comonth",
+        "units": ""
+      },
+      "compkind": {
+        "label": "Kind",
+        "table": "component",
+        "units": ""
+      },
+      "compname": {
+        "label": "Component Name",
+        "table": "component",
+        "units": ""
+      },
+      "comppct_h": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_l": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_r": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "constreeshrubgrp": {
+        "label": "Cons Tree Shrub Group",
+        "table": "component",
+        "units": ""
+      },
+      "corcon": {
+        "label": "Corrosion Concrete",
+        "table": "component",
+        "units": ""
+      },
+      "corsteel": {
+        "label": "Corrosion Steel",
+        "table": "component",
+        "units": ""
+      },
+      "cosoilmoistkey": {
+        "label": "Component Soil Moisture Key",
+        "table": "cosoilmoist",
+        "units": ""
+      },
+      "cropprodindex": {
+        "label": "Prod Index",
+        "table": "component",
+        "units": ""
+      },
+      "ctwetland": {
+        "label": "CT Wetland",
+        "table": "component",
+        "units": ""
+      },
+      "dlyavgpotet_h": {
+        "label": "Daily ET",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgpotet_l": {
+        "label": "Daily ET",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgpotet_r": {
+        "label": "Daily ET",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgprecip_h": {
+        "label": "Daily Precip",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgprecip_l": {
+        "label": "Daily Precip",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgprecip_r": {
+        "label": "Daily Precip",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "drainagecl": {
+        "label": "Drainage Class",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind1": {
+        "label": "Cover Kind 1",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind2": {
+        "label": "Cover Kind 2",
+        "table": "component",
+        "units": ""
+      },
+      "elev_h": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_l": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_r": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "erocl": {
+        "label": "Erosion Class",
+        "table": "component",
+        "units": ""
+      },
+      "farmlndcl": {
+        "label": "Farm Class",
+        "table": "mapunit",
+        "units": ""
+      },
+      "ffd_h": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_l": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_r": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "flecolcomnum": {
+        "label": "FL Ecol Comm #",
+        "table": "component",
+        "units": ""
+      },
+      "flhe": {
+        "label": "FL HE",
+        "table": "component",
+        "units": ""
+      },
+      "floddurcl": {
+        "label": "Flooding Duration",
+        "table": "comonth",
+        "units": ""
+      },
+      "flodfreqcl": {
+        "label": "Flooding Frequency",
+        "table": "comonth",
+        "units": ""
+      },
+      "floodtype": {
+        "label": "Flooding Type",
+        "table": "component",
+        "units": ""
+      },
+      "flphe": {
+        "label": "FL PHE",
+        "table": "component",
+        "units": ""
+      },
+      "flsoilleachpot": {
+        "label": "FL Leach Pot",
+        "table": "component",
+        "units": ""
+      },
+      "flsoirunoffpot": {
+        "label": "FL Runoff Pot",
+        "table": "component",
+        "units": ""
+      },
+      "fltemik2use": {
+        "label": "FL Temik",
+        "table": "component",
+        "units": ""
+      },
+      "fltriumph2use": {
+        "label": "FL Triumph",
+        "table": "component",
+        "units": ""
+      },
+      "foragesuitgrpid": {
+        "label": "Forage Suitability Group ID",
+        "table": "component",
+        "units": ""
+      },
+      "frostact": {
+        "label": "Frost Action",
+        "table": "component",
+        "units": ""
+      },
+      "geomdesc": {
+        "label": "Geomorphic Description",
+        "table": "component",
+        "units": ""
+      },
+      "hydgrp": {
+        "label": "Hydrologic Group",
+        "table": "component",
+        "units": ""
+      },
+      "hydricon": {
+        "label": "Hydric Condition",
+        "table": "component",
+        "units": ""
+      },
+      "hydricrating": {
+        "label": "Hydric Rating",
+        "table": "component",
+        "units": ""
+      },
+      "hydrologystatus": {
+        "label": "Hydrology Status",
+        "table": "component",
+        "units": ""
+      },
+      "iacornsr": {
+        "label": "IA CSR",
+        "table": "mapunit",
+        "units": ""
+      },
+      "iasubsoilk": {
+        "label": "IA Subsoil K",
+        "table": "component",
+        "units": ""
+      },
+      "iasubsoilp": {
+        "label": "IA Subsoil P",
+        "table": "component",
+        "units": ""
+      },
+      "indraingrp": {
+        "label": "IN Drainage Grp",
+        "table": "component",
+        "units": ""
+      },
+      "initsub_h": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_l": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_r": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "innitrateleachi": {
+        "label": "IN NO3 Leach Index",
+        "table": "component",
+        "units": ""
+      },
+      "interpfocus": {
+        "label": "Interpretive Focus",
+        "table": "mapunit",
+        "units": ""
+      },
+      "invesintens": {
+        "label": "Order of Mapping",
+        "table": "mapunit",
+        "units": ""
+      },
+      "irrcapcl": {
+        "label": "Irr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapscl": {
+        "label": "Irr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapunit": {
+        "label": "Irr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "lkey": {
+        "label": "Legend Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "localphase": {
+        "label": "Local Phase",
+        "table": "component",
+        "units": ""
+      },
+      "majcompflag": {
+        "label": "Major Component",
+        "table": "component",
+        "units": ""
+      },
+      "map_h": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_l": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_r": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "mapunitlfw_h": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_l": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_r": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitpfa_h": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_l": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_r": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "misoimgmtgrp": {
+        "label": "MI Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "mlraname": {
+        "label": "MLRA Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mlrasymbol": {
+        "label": "MLRA Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "month": {
+        "label": "Month",
+        "table": "comonth",
+        "units": ""
+      },
+      "monthseq": {
+        "label": "Month Sequence",
+        "table": "comonth",
+        "units": ""
+      },
+      "muacres": {
+        "label": "Total Acres",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mucertstat": {
+        "label": "Map Unit Certification Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muhelcl": {
+        "label": "HEL",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukey": {
+        "label": "Mapunit Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukind": {
+        "label": "Kind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muname": {
+        "label": "Mapunit Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "museq": {
+        "label": "Mapunit Sequence",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mustatus": {
+        "label": "Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "musym": {
+        "label": "Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwathelcl": {
+        "label": "HEL Water",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwndhelcl": {
+        "label": "HEL Wind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nasiscoiid": {
+        "label": "NASIS Component Table Record ID",
+        "table": "component",
+        "units": ""
+      },
+      "nationalmusym": {
+        "label": "National Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhiforsoigrp": {
+        "label": "NH Forest Soil Grp",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhspiagr": {
+        "label": "NH SPI Agr",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nirrcapcl": {
+        "label": "Nirr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapscl": {
+        "label": "Nirr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapunit": {
+        "label": "Nirr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "otherph": {
+        "label": "SIR phase",
+        "table": "component",
+        "units": ""
+      },
+      "ponddep_h": {
+        "label": "Ponding Depth",
+        "table": "comonth",
+        "units": "cm"
+      },
+      "ponddep_l": {
+        "label": "Ponding Depth",
+        "table": "comonth",
+        "units": "cm"
+      },
+      "ponddep_r": {
+        "label": "Ponding Depth",
+        "table": "comonth",
+        "units": "cm"
+      },
+      "ponddurcl": {
+        "label": "Ponding Duration",
+        "table": "comonth",
+        "units": ""
+      },
+      "pondfreqcl": {
+        "label": "Ponding Frequency",
+        "table": "comonth",
+        "units": ""
+      },
+      "reannualprecip_h": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_l": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_r": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "rsprod_h": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_l": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_r": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "runoff": {
+        "label": "Runoff Class",
+        "table": "component",
+        "units": "runoff"
+      },
+      "slope_h": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_l": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_r": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slopelenusle_h": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_l": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_r": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "soilslippot": {
+        "label": "Soil Slip Pot",
+        "table": "component",
+        "units": ""
+      },
+      "soiltaxedition": {
+        "label": "Keys to Taxonomy Edition Used",
+        "table": "component",
+        "units": ""
+      },
+      "soiltempa_h": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_l": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_r": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soimoistdepb_h": {
+        "label": "Bottom Depth",
+        "table": "cosoilmoist",
+        "units": "cm"
+      },
+      "soimoistdepb_l": {
+        "label": "Bottom Depth",
+        "table": "cosoilmoist",
+        "units": "cm"
+      },
+      "soimoistdepb_r": {
+        "label": "Bottom Depth",
+        "table": "cosoilmoist",
+        "units": "cm"
+      },
+      "soimoistdept_h": {
+        "label": "Top Depth",
+        "table": "cosoilmoist",
+        "units": "cm"
+      },
+      "soimoistdept_l": {
+        "label": "Top Depth",
+        "table": "cosoilmoist",
+        "units": "cm"
+      },
+      "soimoistdept_r": {
+        "label": "Top Depth",
+        "table": "cosoilmoist",
+        "units": "cm"
+      },
+      "soimoiststat": {
+        "label": "Moisture Status",
+        "table": "cosoilmoist",
+        "units": ""
+      },
+      "taxceactcl": {
+        "label": "CEC Activity Cl",
+        "table": "component",
+        "units": ""
+      },
+      "taxclname": {
+        "label": "Taxonomic Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxfamhahatmatcl": {
+        "label": "HAHT Material Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxgrtgroup": {
+        "label": "Great Group",
+        "table": "component",
+        "units": ""
+      },
+      "taxmoistscl": {
+        "label": "Moist Subclass",
+        "table": "component",
+        "units": ""
+      },
+      "taxorder": {
+        "label": "Order",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsize": {
+        "label": "Particle Size",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsizemod": {
+        "label": "Particle Size Mod",
+        "table": "component",
+        "units": ""
+      },
+      "taxreaction": {
+        "label": "Reaction",
+        "table": "component",
+        "units": ""
+      },
+      "taxsubgrp": {
+        "label": "Subgroup",
+        "table": "component",
+        "units": ""
+      },
+      "taxsuborder": {
+        "label": "Suborder",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempcl": {
+        "label": "Temp Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempregime": {
+        "label": "Temp Regime",
+        "table": "component",
+        "units": ""
+      },
+      "tfact": {
+        "label": "T",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "totalsub_h": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_l": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_r": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "vasoimgtgrp": {
+        "label": "VA Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "vtsepticsyscl": {
+        "label": "VT Septic System",
+        "table": "mapunit",
+        "units": ""
+      },
+      "watertempa_h": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_l": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_r": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "weg": {
+        "label": "WEG",
+        "table": "component",
+        "units": ""
+      },
+      "wei": {
+        "label": "WEI",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "wlconiferous": {
+        "label": "Conifer Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrain": {
+        "label": "Grain Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrass": {
+        "label": "Grass Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlhardwood": {
+        "label": "Hardwood Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlherbaceous": {
+        "label": "Herbaceous Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlopenland": {
+        "label": "Openland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlrangeland": {
+        "label": "Rangeland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlshallowwat": {
+        "label": "Water Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlshrub": {
+        "label": "Shrub Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetland": {
+        "label": "Wetland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetplant": {
+        "label": "Wetland Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwoodland": {
+        "label": "Woodland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wndbrksuitgrp": {
+        "label": "Windbreak Suitability (Obsolete)",
+        "table": "component",
+        "units": ""
+      }
+    },
+    "soil_profile": {
+      "aashind_h": {
+        "label": "AASHTO Group Index",
+        "table": "chorizon",
+        "units": ""
+      },
+      "aashind_l": {
+        "label": "AASHTO Group Index",
+        "table": "chorizon",
+        "units": ""
+      },
+      "aashind_r": {
+        "label": "AASHTO Group Index",
+        "table": "chorizon",
+        "units": ""
+      },
+      "airtempa_h": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_l": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_r": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "albedodry_h": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_l": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_r": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "aloxalate_h": {
+        "label": "Oxalate Al",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "aloxalate_l": {
+        "label": "Oxalate Al",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "aloxalate_r": {
+        "label": "Oxalate Al",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "aspectccwise": {
+        "label": "Aspect Counter Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectcwise": {
+        "label": "Aspect Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectrep": {
+        "label": "Aspect Representative",
+        "table": "component",
+        "units": "degrees"
+      },
+      "awc_h": {
+        "label": "AWC",
+        "table": "chorizon",
+        "units": "cm/cm"
+      },
+      "awc_l": {
+        "label": "AWC",
+        "table": "chorizon",
+        "units": "cm/cm"
+      },
+      "awc_r": {
+        "label": "AWC",
+        "table": "chorizon",
+        "units": "cm/cm"
+      },
+      "bdsatiated_h": {
+        "label": "Db satiated",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "bdsatiated_l": {
+        "label": "Db satiated",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "bdsatiated_r": {
+        "label": "Db satiated",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "caco3_h": {
+        "label": "CaCO3",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "caco3_l": {
+        "label": "CaCO3",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "caco3_r": {
+        "label": "CaCO3",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "castorieindex": {
+        "label": "CA Storie Index",
+        "table": "component",
+        "units": ""
+      },
+      "cec7_h": {
+        "label": "CEC-7",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "cec7_l": {
+        "label": "CEC-7",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "cec7_r": {
+        "label": "CEC-7",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "chkey": {
+        "label": "Chorizon Key",
+        "table": "chorizon",
+        "units": ""
+      },
+      "claysizedcarb_h": {
+        "label": "CaCO3 Clay",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "claysizedcarb_l": {
+        "label": "CaCO3 Clay",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "claysizedcarb_r": {
+        "label": "CaCO3 Clay",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "claytotal_h": {
+        "label": "Total Clay",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "claytotal_l": {
+        "label": "Total Clay",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "claytotal_r": {
+        "label": "Total Clay",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "cokey": {
+        "label": "Component Key",
+        "table": "component",
+        "units": ""
+      },
+      "compkind": {
+        "label": "Kind",
+        "table": "component",
+        "units": ""
+      },
+      "compname": {
+        "label": "Component Name",
+        "table": "component",
+        "units": ""
+      },
+      "comppct_h": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_l": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_r": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "constreeshrubgrp": {
+        "label": "Cons Tree Shrub Group",
+        "table": "component",
+        "units": ""
+      },
+      "corcon": {
+        "label": "Corrosion Concrete",
+        "table": "component",
+        "units": ""
+      },
+      "corsteel": {
+        "label": "Corrosion Steel",
+        "table": "component",
+        "units": ""
+      },
+      "cropprodindex": {
+        "label": "Prod Index",
+        "table": "component",
+        "units": ""
+      },
+      "ctwetland": {
+        "label": "CT Wetland",
+        "table": "component",
+        "units": ""
+      },
+      "dbfifteenbar_h": {
+        "label": "Db 15 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbfifteenbar_l": {
+        "label": "Db 15 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbfifteenbar_r": {
+        "label": "Db 15 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbovendry_h": {
+        "label": "Db oven dry",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbovendry_l": {
+        "label": "Db oven dry",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbovendry_r": {
+        "label": "Db oven dry",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbtenthbar_h": {
+        "label": "Db 0.1 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbtenthbar_l": {
+        "label": "Db 0.1 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbtenthbar_r": {
+        "label": "Db 0.1 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbthirdbar_h": {
+        "label": "Db 0.33 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbthirdbar_l": {
+        "label": "Db 0.33 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "dbthirdbar_r": {
+        "label": "Db 0.33 bar H2O",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "desgndisc": {
+        "label": "Disc",
+        "table": "chorizon",
+        "units": ""
+      },
+      "desgnmaster": {
+        "label": "Master",
+        "table": "chorizon",
+        "units": ""
+      },
+      "desgnmasterprime": {
+        "label": "Prime",
+        "table": "chorizon",
+        "units": ""
+      },
+      "desgnvert": {
+        "label": "Sub",
+        "table": "chorizon",
+        "units": ""
+      },
+      "drainagecl": {
+        "label": "Drainage Class",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind1": {
+        "label": "Cover Kind 1",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind2": {
+        "label": "Cover Kind 2",
+        "table": "component",
+        "units": ""
+      },
+      "ec15_h": {
+        "label": "EC 1:5 by volume",
+        "table": "chorizon",
+        "units": "dS/m"
+      },
+      "ec15_l": {
+        "label": "EC 1:5 by volume",
+        "table": "chorizon",
+        "units": "dS/m"
+      },
+      "ec15_r": {
+        "label": "EC 1:5 by volume",
+        "table": "chorizon",
+        "units": "dS/m"
+      },
+      "ec_h": {
+        "label": "EC",
+        "table": "chorizon",
+        "units": "dS/m"
+      },
+      "ec_l": {
+        "label": "EC",
+        "table": "chorizon",
+        "units": "dS/m"
+      },
+      "ec_r": {
+        "label": "EC",
+        "table": "chorizon",
+        "units": "dS/m"
+      },
+      "ecec_h": {
+        "label": "ECEC",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "ecec_l": {
+        "label": "ECEC",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "ecec_r": {
+        "label": "ECEC",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "elev_h": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_l": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_r": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "erocl": {
+        "label": "Erosion Class",
+        "table": "component",
+        "units": ""
+      },
+      "esp_h": {
+        "label": "ESP",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "esp_l": {
+        "label": "ESP",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "esp_r": {
+        "label": "ESP",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "excavdifcl": {
+        "label": "Excav Diff",
+        "table": "chorizon",
+        "units": ""
+      },
+      "excavdifms": {
+        "label": "Excav Diff Moisture",
+        "table": "chorizon",
+        "units": ""
+      },
+      "extracid_h": {
+        "label": "Ext Acidity",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "extracid_l": {
+        "label": "Ext Acidity",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "extracid_r": {
+        "label": "Ext Acidity",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "extral_h": {
+        "label": "Extract Al",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "extral_l": {
+        "label": "Extract Al",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "extral_r": {
+        "label": "Extract Al",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "farmlndcl": {
+        "label": "Farm Class",
+        "table": "mapunit",
+        "units": ""
+      },
+      "feoxalate_h": {
+        "label": "Oxalate Fe",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "feoxalate_l": {
+        "label": "Oxalate Fe",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "feoxalate_r": {
+        "label": "Oxalate Fe",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "ffd_h": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_l": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_r": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "fiberrubbedpct_h": {
+        "label": "Rubbed Fiber %",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fiberrubbedpct_l": {
+        "label": "Rubbed Fiber %",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fiberrubbedpct_r": {
+        "label": "Rubbed Fiber %",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fiberunrubbedpct_h": {
+        "label": "Unrubbed Fiber Pct",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fiberunrubbedpct_l": {
+        "label": "Unrubbed Fiber Pct",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fiberunrubbedpct_r": {
+        "label": "Unrubbed Fiber Pct",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "flecolcomnum": {
+        "label": "FL Ecol Comm #",
+        "table": "component",
+        "units": ""
+      },
+      "flhe": {
+        "label": "FL HE",
+        "table": "component",
+        "units": ""
+      },
+      "floodtype": {
+        "label": "Flooding Type",
+        "table": "component",
+        "units": ""
+      },
+      "flphe": {
+        "label": "FL PHE",
+        "table": "component",
+        "units": ""
+      },
+      "flsoilleachpot": {
+        "label": "FL Leach Pot",
+        "table": "component",
+        "units": ""
+      },
+      "flsoirunoffpot": {
+        "label": "FL Runoff Pot",
+        "table": "component",
+        "units": ""
+      },
+      "fltemik2use": {
+        "label": "FL Temik",
+        "table": "component",
+        "units": ""
+      },
+      "fltriumph2use": {
+        "label": "FL Triumph",
+        "table": "component",
+        "units": ""
+      },
+      "foragesuitgrpid": {
+        "label": "Forage Suitability Group ID",
+        "table": "component",
+        "units": ""
+      },
+      "frag3to10_h": {
+        "label": "Rock 3-10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "frag3to10_l": {
+        "label": "Rock 3-10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "frag3to10_r": {
+        "label": "Rock 3-10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fraggt10_h": {
+        "label": "Rock >10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fraggt10_l": {
+        "label": "Rock >10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fraggt10_r": {
+        "label": "Rock >10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fragvoltot_h": {
+        "label": "Fragement Volume Total",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fragvoltot_l": {
+        "label": "Fragement Volume Total",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "fragvoltot_r": {
+        "label": "Fragement Volume Total",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "freeiron_h": {
+        "label": "Free Iron",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "freeiron_l": {
+        "label": "Free Iron",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "freeiron_r": {
+        "label": "Free Iron",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "frostact": {
+        "label": "Frost Action",
+        "table": "component",
+        "units": ""
+      },
+      "geomdesc": {
+        "label": "Geomorphic Description",
+        "table": "component",
+        "units": ""
+      },
+      "gypsum_h": {
+        "label": "Gypsum",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "gypsum_l": {
+        "label": "Gypsum",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "gypsum_r": {
+        "label": "Gypsum",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "horztype": {
+        "label": "Horizon Type",
+        "table": "chorizon",
+        "units": ""
+      },
+      "huartvoltot_h": {
+        "label": "Total Human Artifact Volume",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "huartvoltot_l": {
+        "label": "Total Human Artifact Volume",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "huartvoltot_r": {
+        "label": "Total Human Artifact Volume",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "hydgrp": {
+        "label": "Hydrologic Group",
+        "table": "component",
+        "units": ""
+      },
+      "hydricon": {
+        "label": "Hydric Condition",
+        "table": "component",
+        "units": ""
+      },
+      "hydricrating": {
+        "label": "Hydric Rating",
+        "table": "component",
+        "units": ""
+      },
+      "hydrologystatus": {
+        "label": "Hydrology Status",
+        "table": "component",
+        "units": ""
+      },
+      "hzdepb_h": {
+        "label": "Bottom Depth",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "hzdepb_l": {
+        "label": "Bottom Depth",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "hzdepb_r": {
+        "label": "Bottom Depth",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "hzdept_h": {
+        "label": "Top Depth",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "hzdept_l": {
+        "label": "Top Depth",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "hzdept_r": {
+        "label": "Top Depth",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "hzname": {
+        "label": "Designation",
+        "table": "chorizon",
+        "units": ""
+      },
+      "hzthk_h": {
+        "label": "Thickness",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "hzthk_l": {
+        "label": "Thickness",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "hzthk_r": {
+        "label": "Thickness",
+        "table": "chorizon",
+        "units": "cm"
+      },
+      "iacornsr": {
+        "label": "IA CSR",
+        "table": "mapunit",
+        "units": ""
+      },
+      "iasubsoilk": {
+        "label": "IA Subsoil K",
+        "table": "component",
+        "units": ""
+      },
+      "iasubsoilp": {
+        "label": "IA Subsoil P",
+        "table": "component",
+        "units": ""
+      },
+      "indraingrp": {
+        "label": "IN Drainage Grp",
+        "table": "component",
+        "units": ""
+      },
+      "initsub_h": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_l": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_r": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "innitrateleachi": {
+        "label": "IN NO3 Leach Index",
+        "table": "component",
+        "units": ""
+      },
+      "interpfocus": {
+        "label": "Interpretive Focus",
+        "table": "mapunit",
+        "units": ""
+      },
+      "invesintens": {
+        "label": "Order of Mapping",
+        "table": "mapunit",
+        "units": ""
+      },
+      "irrcapcl": {
+        "label": "Irr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapscl": {
+        "label": "Irr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapunit": {
+        "label": "Irr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "kffact": {
+        "label": "Kf",
+        "table": "chorizon",
+        "units": ""
+      },
+      "ksat_h": {
+        "label": "Ksat",
+        "table": "chorizon",
+        "units": "um/s"
+      },
+      "ksat_l": {
+        "label": "Ksat",
+        "table": "chorizon",
+        "units": "um/s"
+      },
+      "ksat_r": {
+        "label": "Ksat",
+        "table": "chorizon",
+        "units": "um/s"
+      },
+      "kwfact": {
+        "label": "Kw",
+        "table": "chorizon",
+        "units": ""
+      },
+      "lep_h": {
+        "label": "LEP",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "lep_l": {
+        "label": "LEP",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "lep_r": {
+        "label": "LEP",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "lkey": {
+        "label": "Legend Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "ll_h": {
+        "label": "LL",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "ll_l": {
+        "label": "LL",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "ll_r": {
+        "label": "LL",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "localphase": {
+        "label": "Local Phase",
+        "table": "component",
+        "units": ""
+      },
+      "majcompflag": {
+        "label": "Major Component",
+        "table": "component",
+        "units": ""
+      },
+      "map_h": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_l": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_r": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "mapunitlfw_h": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_l": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_r": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitpfa_h": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_l": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_r": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "micafinepct_h": {
+        "label": "Mica 0.25-2 mm",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "micafinepct_l": {
+        "label": "Mica 0.25-2 mm",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "micafinepct_r": {
+        "label": "Mica 0.25-2 mm",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "micakind": {
+        "label": "Mica Kind",
+        "table": "chorizon",
+        "units": ""
+      },
+      "micaveryfinepct_h": {
+        "label": "Mica 0.02-0.25 mm",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "micaveryfinepct_l": {
+        "label": "Mica 0.02-0.25 mm",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "micaveryfinepct_r": {
+        "label": "Mica 0.02-0.25 mm",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "misoimgmtgrp": {
+        "label": "MI Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "mlraname": {
+        "label": "MLRA Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mlrasymbol": {
+        "label": "MLRA Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "monosulfidepresence": {
+        "label": "Monosulfide Presence",
+        "table": "chorizon",
+        "units": ""
+      },
+      "muacres": {
+        "label": "Total Acres",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mucertstat": {
+        "label": "Map Unit Certification Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muhelcl": {
+        "label": "HEL",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukey": {
+        "label": "Mapunit Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukind": {
+        "label": "Kind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muname": {
+        "label": "Mapunit Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "museq": {
+        "label": "Mapunit Sequence",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mustatus": {
+        "label": "Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "musym": {
+        "label": "Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwathelcl": {
+        "label": "HEL Water",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwndhelcl": {
+        "label": "HEL Wind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nasischiid": {
+        "label": "NASIS Horizon Table Record ID",
+        "table": "chorizon",
+        "units": ""
+      },
+      "nasiscoiid": {
+        "label": "NASIS Component Table Record ID",
+        "table": "component",
+        "units": ""
+      },
+      "nationalmusym": {
+        "label": "National Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhiforsoigrp": {
+        "label": "NH Forest Soil Grp",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhspiagr": {
+        "label": "NH SPI Agr",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nirrcapcl": {
+        "label": "Nirr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapscl": {
+        "label": "Nirr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapunit": {
+        "label": "Nirr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "nzpretention_h": {
+        "label": "NZ Phos Retention",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "nzpretention_l": {
+        "label": "NZ Phos Retention",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "nzpretention_r": {
+        "label": "NZ Phos Retention",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "om_h": {
+        "label": "OM",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "om_l": {
+        "label": "OM",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "om_r": {
+        "label": "OM",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "otherph": {
+        "label": "SIR phase",
+        "table": "component",
+        "units": ""
+      },
+      "partdensity": {
+        "label": "Dp",
+        "table": "chorizon",
+        "units": "g/cm3"
+      },
+      "pbray1_h": {
+        "label": "Bray 1 Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "pbray1_l": {
+        "label": "Bray 1 Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "pbray1_r": {
+        "label": "Bray 1 Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "ph01mcacl2_h": {
+        "label": "pH CaCl2",
+        "table": "chorizon",
+        "units": ""
+      },
+      "ph01mcacl2_l": {
+        "label": "pH CaCl2",
+        "table": "chorizon",
+        "units": ""
+      },
+      "ph01mcacl2_r": {
+        "label": "pH CaCl2",
+        "table": "chorizon",
+        "units": ""
+      },
+      "ph1to1h2o_h": {
+        "label": "pH H2O",
+        "table": "chorizon",
+        "units": ""
+      },
+      "ph1to1h2o_l": {
+        "label": "pH H2O",
+        "table": "chorizon",
+        "units": ""
+      },
+      "ph1to1h2o_r": {
+        "label": "pH H2O",
+        "table": "chorizon",
+        "units": ""
+      },
+      "ph2osoluble_h": {
+        "label": "Water Soluble Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "ph2osoluble_l": {
+        "label": "Water Soluble Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "ph2osoluble_r": {
+        "label": "Water Soluble Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "phoxidized_h": {
+        "label": "pH Oxidized",
+        "table": "chorizon",
+        "units": ""
+      },
+      "phoxidized_l": {
+        "label": "pH Oxidized",
+        "table": "chorizon",
+        "units": ""
+      },
+      "phoxidized_r": {
+        "label": "pH Oxidized",
+        "table": "chorizon",
+        "units": ""
+      },
+      "pi_h": {
+        "label": "PI",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "pi_l": {
+        "label": "PI",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "pi_r": {
+        "label": "PI",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "poxalate_h": {
+        "label": "Oxalate Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "poxalate_l": {
+        "label": "Oxalate Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "poxalate_r": {
+        "label": "Oxalate Phos",
+        "table": "chorizon",
+        "units": "mg/kg"
+      },
+      "ptotal_h": {
+        "label": "Total Phos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "ptotal_l": {
+        "label": "Total Phos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "ptotal_r": {
+        "label": "Total Phos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "reannualprecip_h": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_l": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_r": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "rsprod_h": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_l": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_r": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "runoff": {
+        "label": "Runoff Class",
+        "table": "component",
+        "units": "runoff"
+      },
+      "sandco_h": {
+        "label": "cos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandco_l": {
+        "label": "cos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandco_r": {
+        "label": "cos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandfine_h": {
+        "label": "fs",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandfine_l": {
+        "label": "fs",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandfine_r": {
+        "label": "fs",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandmed_h": {
+        "label": "ms",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandmed_l": {
+        "label": "ms",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandmed_r": {
+        "label": "ms",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandtotal_h": {
+        "label": "Total Sand",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandtotal_l": {
+        "label": "Total Sand",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandtotal_r": {
+        "label": "Total Sand",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandvc_h": {
+        "label": "vcos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandvc_l": {
+        "label": "vcos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandvc_r": {
+        "label": "vcos",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandvf_h": {
+        "label": "vfs",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandvf_l": {
+        "label": "vfs",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sandvf_r": {
+        "label": "vfs",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sar_h": {
+        "label": "SAR",
+        "table": "chorizon",
+        "units": ""
+      },
+      "sar_l": {
+        "label": "SAR",
+        "table": "chorizon",
+        "units": ""
+      },
+      "sar_r": {
+        "label": "SAR",
+        "table": "chorizon",
+        "units": ""
+      },
+      "sieveno10_h": {
+        "label": "#10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno10_l": {
+        "label": "#10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno10_r": {
+        "label": "#10",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno200_h": {
+        "label": "#200",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno200_l": {
+        "label": "#200",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno200_r": {
+        "label": "#200",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno40_h": {
+        "label": "#40",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno40_l": {
+        "label": "#40",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno40_r": {
+        "label": "#40",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno4_h": {
+        "label": "#4",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno4_l": {
+        "label": "#4",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "sieveno4_r": {
+        "label": "#4",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "siltco_h": {
+        "label": "Coarse Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "siltco_l": {
+        "label": "Coarse Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "siltco_r": {
+        "label": "Coarse Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "siltfine_h": {
+        "label": "Fine Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "siltfine_l": {
+        "label": "Fine Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "siltfine_r": {
+        "label": "Fine Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "silttotal_h": {
+        "label": "Total Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "silttotal_l": {
+        "label": "Total Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "silttotal_r": {
+        "label": "Total Silt",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "slope_h": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_l": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_r": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slopelenusle_h": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_l": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_r": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "soilslippot": {
+        "label": "Soil Slip Pot",
+        "table": "component",
+        "units": ""
+      },
+      "soiltaxedition": {
+        "label": "Keys to Taxonomy Edition Used",
+        "table": "component",
+        "units": ""
+      },
+      "soiltempa_h": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_l": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_r": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "sumbases_h": {
+        "label": "Sum of Bases",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "sumbases_l": {
+        "label": "Sum of Bases",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "sumbases_r": {
+        "label": "Sum of Bases",
+        "table": "chorizon",
+        "units": "cmol(+)/kg"
+      },
+      "taxceactcl": {
+        "label": "CEC Activity Cl",
+        "table": "component",
+        "units": ""
+      },
+      "taxclname": {
+        "label": "Taxonomic Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxfamhahatmatcl": {
+        "label": "HAHT Material Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxgrtgroup": {
+        "label": "Great Group",
+        "table": "component",
+        "units": ""
+      },
+      "taxmoistscl": {
+        "label": "Moist Subclass",
+        "table": "component",
+        "units": ""
+      },
+      "taxorder": {
+        "label": "Order",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsize": {
+        "label": "Particle Size",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsizemod": {
+        "label": "Particle Size Mod",
+        "table": "component",
+        "units": ""
+      },
+      "taxreaction": {
+        "label": "Reaction",
+        "table": "component",
+        "units": ""
+      },
+      "taxsubgrp": {
+        "label": "Subgroup",
+        "table": "component",
+        "units": ""
+      },
+      "taxsuborder": {
+        "label": "Suborder",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempcl": {
+        "label": "Temp Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempregime": {
+        "label": "Temp Regime",
+        "table": "component",
+        "units": ""
+      },
+      "texturerv": {
+        "label": "Rep Tex Mod and Class",
+        "table": "chorizon",
+        "units": ""
+      },
+      "tfact": {
+        "label": "T",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "totalsub_h": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_l": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_r": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "vasoimgtgrp": {
+        "label": "VA Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "vtsepticsyscl": {
+        "label": "VT Septic System",
+        "table": "mapunit",
+        "units": ""
+      },
+      "watertempa_h": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_l": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_r": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "weg": {
+        "label": "WEG",
+        "table": "component",
+        "units": ""
+      },
+      "wei": {
+        "label": "WEI",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "wfifteenbar_h": {
+        "label": "15 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wfifteenbar_l": {
+        "label": "15 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wfifteenbar_r": {
+        "label": "15 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wlconiferous": {
+        "label": "Conifer Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrain": {
+        "label": "Grain Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrass": {
+        "label": "Grass Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlhardwood": {
+        "label": "Hardwood Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlherbaceous": {
+        "label": "Herbaceous Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlopenland": {
+        "label": "Openland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlrangeland": {
+        "label": "Rangeland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlshallowwat": {
+        "label": "Water Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlshrub": {
+        "label": "Shrub Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetland": {
+        "label": "Wetland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetplant": {
+        "label": "Wetland Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwoodland": {
+        "label": "Woodland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wndbrksuitgrp": {
+        "label": "Windbreak Suitability (Obsolete)",
+        "table": "component",
+        "units": ""
+      },
+      "wsatiated_h": {
+        "label": "Satiated H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wsatiated_l": {
+        "label": "Satiated H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wsatiated_r": {
+        "label": "Satiated H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wtenthbar_h": {
+        "label": "0.1 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wtenthbar_l": {
+        "label": "0.1 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wtenthbar_r": {
+        "label": "0.1 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wthirdbar_h": {
+        "label": "0.33 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wthirdbar_l": {
+        "label": "0.33 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      },
+      "wthirdbar_r": {
+        "label": "0.33 bar H2O",
+        "table": "chorizon",
+        "units": "percent"
+      }
+    },
+    "soil_temperature": {
+      "airtempa_h": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_l": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_r": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "albedodry_h": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_l": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_r": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "aspectccwise": {
+        "label": "Aspect Counter Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectcwise": {
+        "label": "Aspect Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectrep": {
+        "label": "Aspect Representative",
+        "table": "component",
+        "units": "degrees"
+      },
+      "castorieindex": {
+        "label": "CA Storie Index",
+        "table": "component",
+        "units": ""
+      },
+      "cokey": {
+        "label": "Component Key",
+        "table": "component",
+        "units": ""
+      },
+      "comonthkey": {
+        "label": "Component Month Key",
+        "table": "comonth",
+        "units": ""
+      },
+      "compkind": {
+        "label": "Kind",
+        "table": "component",
+        "units": ""
+      },
+      "compname": {
+        "label": "Component Name",
+        "table": "component",
+        "units": ""
+      },
+      "comppct_h": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_l": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_r": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "constreeshrubgrp": {
+        "label": "Cons Tree Shrub Group",
+        "table": "component",
+        "units": ""
+      },
+      "corcon": {
+        "label": "Corrosion Concrete",
+        "table": "component",
+        "units": ""
+      },
+      "corsteel": {
+        "label": "Corrosion Steel",
+        "table": "component",
+        "units": ""
+      },
+      "cosoiltempkey": {
+        "label": "Component Soil Temperature Key",
+        "table": "cosoiltemp",
+        "units": ""
+      },
+      "cropprodindex": {
+        "label": "Prod Index",
+        "table": "component",
+        "units": ""
+      },
+      "ctwetland": {
+        "label": "CT Wetland",
+        "table": "component",
+        "units": ""
+      },
+      "dlyavgpotet_h": {
+        "label": "Daily ET",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgpotet_l": {
+        "label": "Daily ET",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgpotet_r": {
+        "label": "Daily ET",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgprecip_h": {
+        "label": "Daily Precip",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgprecip_l": {
+        "label": "Daily Precip",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "dlyavgprecip_r": {
+        "label": "Daily Precip",
+        "table": "comonth",
+        "units": "mm"
+      },
+      "drainagecl": {
+        "label": "Drainage Class",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind1": {
+        "label": "Cover Kind 1",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind2": {
+        "label": "Cover Kind 2",
+        "table": "component",
+        "units": ""
+      },
+      "elev_h": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_l": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_r": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "erocl": {
+        "label": "Erosion Class",
+        "table": "component",
+        "units": ""
+      },
+      "farmlndcl": {
+        "label": "Farm Class",
+        "table": "mapunit",
+        "units": ""
+      },
+      "ffd_h": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_l": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_r": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "flecolcomnum": {
+        "label": "FL Ecol Comm #",
+        "table": "component",
+        "units": ""
+      },
+      "flhe": {
+        "label": "FL HE",
+        "table": "component",
+        "units": ""
+      },
+      "floddurcl": {
+        "label": "Flooding Duration",
+        "table": "comonth",
+        "units": ""
+      },
+      "flodfreqcl": {
+        "label": "Flooding Frequency",
+        "table": "comonth",
+        "units": ""
+      },
+      "floodtype": {
+        "label": "Flooding Type",
+        "table": "component",
+        "units": ""
+      },
+      "flphe": {
+        "label": "FL PHE",
+        "table": "component",
+        "units": ""
+      },
+      "flsoilleachpot": {
+        "label": "FL Leach Pot",
+        "table": "component",
+        "units": ""
+      },
+      "flsoirunoffpot": {
+        "label": "FL Runoff Pot",
+        "table": "component",
+        "units": ""
+      },
+      "fltemik2use": {
+        "label": "FL Temik",
+        "table": "component",
+        "units": ""
+      },
+      "fltriumph2use": {
+        "label": "FL Triumph",
+        "table": "component",
+        "units": ""
+      },
+      "foragesuitgrpid": {
+        "label": "Forage Suitability Group ID",
+        "table": "component",
+        "units": ""
+      },
+      "frostact": {
+        "label": "Frost Action",
+        "table": "component",
+        "units": ""
+      },
+      "geomdesc": {
+        "label": "Geomorphic Description",
+        "table": "component",
+        "units": ""
+      },
+      "hydgrp": {
+        "label": "Hydrologic Group",
+        "table": "component",
+        "units": ""
+      },
+      "hydricon": {
+        "label": "Hydric Condition",
+        "table": "component",
+        "units": ""
+      },
+      "hydricrating": {
+        "label": "Hydric Rating",
+        "table": "component",
+        "units": ""
+      },
+      "hydrologystatus": {
+        "label": "Hydrology Status",
+        "table": "component",
+        "units": ""
+      },
+      "iacornsr": {
+        "label": "IA CSR",
+        "table": "mapunit",
+        "units": ""
+      },
+      "iasubsoilk": {
+        "label": "IA Subsoil K",
+        "table": "component",
+        "units": ""
+      },
+      "iasubsoilp": {
+        "label": "IA Subsoil P",
+        "table": "component",
+        "units": ""
+      },
+      "indraingrp": {
+        "label": "IN Drainage Grp",
+        "table": "component",
+        "units": ""
+      },
+      "initsub_h": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_l": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_r": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "innitrateleachi": {
+        "label": "IN NO3 Leach Index",
+        "table": "component",
+        "units": ""
+      },
+      "interpfocus": {
+        "label": "Interpretive Focus",
+        "table": "mapunit",
+        "units": ""
+      },
+      "invesintens": {
+        "label": "Order of Mapping",
+        "table": "mapunit",
+        "units": ""
+      },
+      "irrcapcl": {
+        "label": "Irr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapscl": {
+        "label": "Irr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapunit": {
+        "label": "Irr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "lkey": {
+        "label": "Legend Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "localphase": {
+        "label": "Local Phase",
+        "table": "component",
+        "units": ""
+      },
+      "majcompflag": {
+        "label": "Major Component",
+        "table": "component",
+        "units": ""
+      },
+      "map_h": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_l": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_r": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "mapunitlfw_h": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_l": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_r": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitpfa_h": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_l": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_r": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "misoimgmtgrp": {
+        "label": "MI Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "mlraname": {
+        "label": "MLRA Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mlrasymbol": {
+        "label": "MLRA Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "month": {
+        "label": "Month",
+        "table": "comonth",
+        "units": ""
+      },
+      "monthseq": {
+        "label": "Month Sequence",
+        "table": "comonth",
+        "units": ""
+      },
+      "muacres": {
+        "label": "Total Acres",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mucertstat": {
+        "label": "Map Unit Certification Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muhelcl": {
+        "label": "HEL",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukey": {
+        "label": "Mapunit Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukind": {
+        "label": "Kind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muname": {
+        "label": "Mapunit Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "museq": {
+        "label": "Mapunit Sequence",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mustatus": {
+        "label": "Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "musym": {
+        "label": "Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwathelcl": {
+        "label": "HEL Water",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwndhelcl": {
+        "label": "HEL Wind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nasiscoiid": {
+        "label": "NASIS Component Table Record ID",
+        "table": "component",
+        "units": ""
+      },
+      "nationalmusym": {
+        "label": "National Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhiforsoigrp": {
+        "label": "NH Forest Soil Grp",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhspiagr": {
+        "label": "NH SPI Agr",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nirrcapcl": {
+        "label": "Nirr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapscl": {
+        "label": "Nirr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapunit": {
+        "label": "Nirr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "otherph": {
+        "label": "SIR phase",
+        "table": "component",
+        "units": ""
+      },
+      "ponddep_h": {
+        "label": "Ponding Depth",
+        "table": "comonth",
+        "units": "cm"
+      },
+      "ponddep_l": {
+        "label": "Ponding Depth",
+        "table": "comonth",
+        "units": "cm"
+      },
+      "ponddep_r": {
+        "label": "Ponding Depth",
+        "table": "comonth",
+        "units": "cm"
+      },
+      "ponddurcl": {
+        "label": "Ponding Duration",
+        "table": "comonth",
+        "units": ""
+      },
+      "pondfreqcl": {
+        "label": "Ponding Frequency",
+        "table": "comonth",
+        "units": ""
+      },
+      "reannualprecip_h": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_l": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_r": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "rsprod_h": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_l": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_r": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "runoff": {
+        "label": "Runoff Class",
+        "table": "component",
+        "units": "runoff"
+      },
+      "slope_h": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_l": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_r": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slopelenusle_h": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_l": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_r": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "soilslippot": {
+        "label": "Soil Slip Pot",
+        "table": "component",
+        "units": ""
+      },
+      "soiltaxedition": {
+        "label": "Keys to Taxonomy Edition Used",
+        "table": "component",
+        "units": ""
+      },
+      "soiltempa_h": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_l": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_r": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soitempdepb_h": {
+        "label": "Bottom Depth",
+        "table": "cosoiltemp",
+        "units": "cm"
+      },
+      "soitempdepb_l": {
+        "label": "Bottom Depth",
+        "table": "cosoiltemp",
+        "units": "cm"
+      },
+      "soitempdepb_r": {
+        "label": "Bottom Depth",
+        "table": "cosoiltemp",
+        "units": "cm"
+      },
+      "soitempdept_h": {
+        "label": "Top Depth",
+        "table": "cosoiltemp",
+        "units": "cm"
+      },
+      "soitempdept_l": {
+        "label": "Top Depth",
+        "table": "cosoiltemp",
+        "units": "cm"
+      },
+      "soitempdept_r": {
+        "label": "Top Depth",
+        "table": "cosoiltemp",
+        "units": "cm"
+      },
+      "soitempmm": {
+        "label": "Monthly Temp",
+        "table": "cosoiltemp",
+        "units": "c"
+      },
+      "taxceactcl": {
+        "label": "CEC Activity Cl",
+        "table": "component",
+        "units": ""
+      },
+      "taxclname": {
+        "label": "Taxonomic Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxfamhahatmatcl": {
+        "label": "HAHT Material Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxgrtgroup": {
+        "label": "Great Group",
+        "table": "component",
+        "units": ""
+      },
+      "taxmoistscl": {
+        "label": "Moist Subclass",
+        "table": "component",
+        "units": ""
+      },
+      "taxorder": {
+        "label": "Order",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsize": {
+        "label": "Particle Size",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsizemod": {
+        "label": "Particle Size Mod",
+        "table": "component",
+        "units": ""
+      },
+      "taxreaction": {
+        "label": "Reaction",
+        "table": "component",
+        "units": ""
+      },
+      "taxsubgrp": {
+        "label": "Subgroup",
+        "table": "component",
+        "units": ""
+      },
+      "taxsuborder": {
+        "label": "Suborder",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempcl": {
+        "label": "Temp Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempregime": {
+        "label": "Temp Regime",
+        "table": "component",
+        "units": ""
+      },
+      "tfact": {
+        "label": "T",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "totalsub_h": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_l": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_r": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "vasoimgtgrp": {
+        "label": "VA Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "vtsepticsyscl": {
+        "label": "VT Septic System",
+        "table": "mapunit",
+        "units": ""
+      },
+      "watertempa_h": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_l": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_r": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "weg": {
+        "label": "WEG",
+        "table": "component",
+        "units": ""
+      },
+      "wei": {
+        "label": "WEI",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "wlconiferous": {
+        "label": "Conifer Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrain": {
+        "label": "Grain Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrass": {
+        "label": "Grass Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlhardwood": {
+        "label": "Hardwood Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlherbaceous": {
+        "label": "Herbaceous Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlopenland": {
+        "label": "Openland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlrangeland": {
+        "label": "Rangeland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlshallowwat": {
+        "label": "Water Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlshrub": {
+        "label": "Shrub Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetland": {
+        "label": "Wetland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetplant": {
+        "label": "Wetland Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwoodland": {
+        "label": "Woodland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wndbrksuitgrp": {
+        "label": "Windbreak Suitability (Obsolete)",
+        "table": "component",
+        "units": ""
+      }
+    },
+    "subsurface_barriers": {
+      "airtempa_h": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_l": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "airtempa_r": {
+        "label": "MAAT",
+        "table": "component",
+        "units": "c"
+      },
+      "albedodry_h": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_l": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "albedodry_r": {
+        "label": "Albedo Dry",
+        "table": "component",
+        "units": ""
+      },
+      "aspectccwise": {
+        "label": "Aspect Counter Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectcwise": {
+        "label": "Aspect Clockwise",
+        "table": "component",
+        "units": "degrees"
+      },
+      "aspectrep": {
+        "label": "Aspect Representative",
+        "table": "component",
+        "units": "degrees"
+      },
+      "castorieindex": {
+        "label": "CA Storie Index",
+        "table": "component",
+        "units": ""
+      },
+      "cokey": {
+        "label": "Component Key",
+        "table": "component",
+        "units": ""
+      },
+      "compkind": {
+        "label": "Kind",
+        "table": "component",
+        "units": ""
+      },
+      "compname": {
+        "label": "Component Name",
+        "table": "component",
+        "units": ""
+      },
+      "comppct_h": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_l": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "comppct_r": {
+        "label": "Comp %",
+        "table": "component",
+        "units": "percent"
+      },
+      "constreeshrubgrp": {
+        "label": "Cons Tree Shrub Group",
+        "table": "component",
+        "units": ""
+      },
+      "corcon": {
+        "label": "Corrosion Concrete",
+        "table": "component",
+        "units": ""
+      },
+      "corestrictkey": {
+        "label": "Component Restrictions Key",
+        "table": "corestrictions",
+        "units": ""
+      },
+      "corsteel": {
+        "label": "Corrosion Steel",
+        "table": "component",
+        "units": ""
+      },
+      "cropprodindex": {
+        "label": "Prod Index",
+        "table": "component",
+        "units": ""
+      },
+      "ctwetland": {
+        "label": "CT Wetland",
+        "table": "component",
+        "units": ""
+      },
+      "drainagecl": {
+        "label": "Drainage Class",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind1": {
+        "label": "Cover Kind 1",
+        "table": "component",
+        "units": ""
+      },
+      "earthcovkind2": {
+        "label": "Cover Kind 2",
+        "table": "component",
+        "units": ""
+      },
+      "elev_h": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_l": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "elev_r": {
+        "label": "Elevation",
+        "table": "component",
+        "units": "meters"
+      },
+      "erocl": {
+        "label": "Erosion Class",
+        "table": "component",
+        "units": ""
+      },
+      "farmlndcl": {
+        "label": "Farm Class",
+        "table": "mapunit",
+        "units": ""
+      },
+      "ffd_h": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_l": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "ffd_r": {
+        "label": "Frost Free Days",
+        "table": "component",
+        "units": "days"
+      },
+      "flecolcomnum": {
+        "label": "FL Ecol Comm #",
+        "table": "component",
+        "units": ""
+      },
+      "flhe": {
+        "label": "FL HE",
+        "table": "component",
+        "units": ""
+      },
+      "floodtype": {
+        "label": "Flooding Type",
+        "table": "component",
+        "units": ""
+      },
+      "flphe": {
+        "label": "FL PHE",
+        "table": "component",
+        "units": ""
+      },
+      "flsoilleachpot": {
+        "label": "FL Leach Pot",
+        "table": "component",
+        "units": ""
+      },
+      "flsoirunoffpot": {
+        "label": "FL Runoff Pot",
+        "table": "component",
+        "units": ""
+      },
+      "fltemik2use": {
+        "label": "FL Temik",
+        "table": "component",
+        "units": ""
+      },
+      "fltriumph2use": {
+        "label": "FL Triumph",
+        "table": "component",
+        "units": ""
+      },
+      "foragesuitgrpid": {
+        "label": "Forage Suitability Group ID",
+        "table": "component",
+        "units": ""
+      },
+      "frostact": {
+        "label": "Frost Action",
+        "table": "component",
+        "units": ""
+      },
+      "geomdesc": {
+        "label": "Geomorphic Description",
+        "table": "component",
+        "units": ""
+      },
+      "hydgrp": {
+        "label": "Hydrologic Group",
+        "table": "component",
+        "units": ""
+      },
+      "hydricon": {
+        "label": "Hydric Condition",
+        "table": "component",
+        "units": ""
+      },
+      "hydricrating": {
+        "label": "Hydric Rating",
+        "table": "component",
+        "units": ""
+      },
+      "hydrologystatus": {
+        "label": "Hydrology Status",
+        "table": "component",
+        "units": ""
+      },
+      "iacornsr": {
+        "label": "IA CSR",
+        "table": "mapunit",
+        "units": ""
+      },
+      "iasubsoilk": {
+        "label": "IA Subsoil K",
+        "table": "component",
+        "units": ""
+      },
+      "iasubsoilp": {
+        "label": "IA Subsoil P",
+        "table": "component",
+        "units": ""
+      },
+      "indraingrp": {
+        "label": "IN Drainage Grp",
+        "table": "component",
+        "units": ""
+      },
+      "initsub_h": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_l": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "initsub_r": {
+        "label": "Init Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "innitrateleachi": {
+        "label": "IN NO3 Leach Index",
+        "table": "component",
+        "units": ""
+      },
+      "interpfocus": {
+        "label": "Interpretive Focus",
+        "table": "mapunit",
+        "units": ""
+      },
+      "invesintens": {
+        "label": "Order of Mapping",
+        "table": "mapunit",
+        "units": ""
+      },
+      "irrcapcl": {
+        "label": "Irr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapscl": {
+        "label": "Irr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "irrcapunit": {
+        "label": "Irr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "lkey": {
+        "label": "Legend Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "localphase": {
+        "label": "Local Phase",
+        "table": "component",
+        "units": ""
+      },
+      "majcompflag": {
+        "label": "Major Component",
+        "table": "component",
+        "units": ""
+      },
+      "map_h": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_l": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "map_r": {
+        "label": "MAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "mapunitlfw_h": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_l": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitlfw_r": {
+        "label": "Linear Feature Width",
+        "table": "mapunit",
+        "units": "meters"
+      },
+      "mapunitpfa_h": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_l": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mapunitpfa_r": {
+        "label": "Point Feature Area",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "misoimgmtgrp": {
+        "label": "MI Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "mlraname": {
+        "label": "MLRA Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mlrasymbol": {
+        "label": "MLRA Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muacres": {
+        "label": "Total Acres",
+        "table": "mapunit",
+        "units": "acres"
+      },
+      "mucertstat": {
+        "label": "Map Unit Certification Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muhelcl": {
+        "label": "HEL",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukey": {
+        "label": "Mapunit Key",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mukind": {
+        "label": "Kind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muname": {
+        "label": "Mapunit Name",
+        "table": "mapunit",
+        "units": ""
+      },
+      "museq": {
+        "label": "Mapunit Sequence",
+        "table": "mapunit",
+        "units": ""
+      },
+      "mustatus": {
+        "label": "Status",
+        "table": "mapunit",
+        "units": ""
+      },
+      "musym": {
+        "label": "Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwathelcl": {
+        "label": "HEL Water",
+        "table": "mapunit",
+        "units": ""
+      },
+      "muwndhelcl": {
+        "label": "HEL Wind",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nasiscoiid": {
+        "label": "NASIS Component Table Record ID",
+        "table": "component",
+        "units": ""
+      },
+      "nationalmusym": {
+        "label": "National Mapunit Symbol",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhiforsoigrp": {
+        "label": "NH Forest Soil Grp",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nhspiagr": {
+        "label": "NH SPI Agr",
+        "table": "mapunit",
+        "units": ""
+      },
+      "nirrcapcl": {
+        "label": "Nirr LCC",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapscl": {
+        "label": "Nirr Subcl",
+        "table": "component",
+        "units": ""
+      },
+      "nirrcapunit": {
+        "label": "Nirr LCU",
+        "table": "component",
+        "units": ""
+      },
+      "otherph": {
+        "label": "SIR phase",
+        "table": "component",
+        "units": ""
+      },
+      "reannualprecip_h": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_l": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "reannualprecip_r": {
+        "label": "REAP",
+        "table": "component",
+        "units": "mm"
+      },
+      "resdepb_h": {
+        "label": "Bottom Depth",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "resdepb_l": {
+        "label": "Bottom Depth",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "resdepb_r": {
+        "label": "Bottom Depth",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "resdept_h": {
+        "label": "Top Depth",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "resdept_l": {
+        "label": "Top Depth",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "resdept_r": {
+        "label": "Top Depth",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "reshard": {
+        "label": "Hardness",
+        "table": "corestrictions",
+        "units": ""
+      },
+      "reskind": {
+        "label": "Kind",
+        "table": "corestrictions",
+        "units": ""
+      },
+      "resthk_h": {
+        "label": "Thickness",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "resthk_l": {
+        "label": "Thickness",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "resthk_r": {
+        "label": "Thickness",
+        "table": "corestrictions",
+        "units": "cm"
+      },
+      "rsprod_h": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_l": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "rsprod_r": {
+        "label": "Range Prod",
+        "table": "component",
+        "units": "lbs/acre/yr"
+      },
+      "runoff": {
+        "label": "Runoff Class",
+        "table": "component",
+        "units": "runoff"
+      },
+      "slope_h": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_l": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slope_r": {
+        "label": "Slope Gradient",
+        "table": "component",
+        "units": "percent"
+      },
+      "slopelenusle_h": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_l": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "slopelenusle_r": {
+        "label": "Slope Length USLE",
+        "table": "component",
+        "units": "meters"
+      },
+      "soilslippot": {
+        "label": "Soil Slip Pot",
+        "table": "component",
+        "units": ""
+      },
+      "soiltaxedition": {
+        "label": "Keys to Taxonomy Edition Used",
+        "table": "component",
+        "units": ""
+      },
+      "soiltempa_h": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_l": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "soiltempa_r": {
+        "label": "MAST",
+        "table": "component",
+        "units": "c"
+      },
+      "taxceactcl": {
+        "label": "CEC Activity Cl",
+        "table": "component",
+        "units": ""
+      },
+      "taxclname": {
+        "label": "Taxonomic Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxfamhahatmatcl": {
+        "label": "HAHT Material Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxgrtgroup": {
+        "label": "Great Group",
+        "table": "component",
+        "units": ""
+      },
+      "taxmoistscl": {
+        "label": "Moist Subclass",
+        "table": "component",
+        "units": ""
+      },
+      "taxorder": {
+        "label": "Order",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsize": {
+        "label": "Particle Size",
+        "table": "component",
+        "units": ""
+      },
+      "taxpartsizemod": {
+        "label": "Particle Size Mod",
+        "table": "component",
+        "units": ""
+      },
+      "taxreaction": {
+        "label": "Reaction",
+        "table": "component",
+        "units": ""
+      },
+      "taxsubgrp": {
+        "label": "Subgroup",
+        "table": "component",
+        "units": ""
+      },
+      "taxsuborder": {
+        "label": "Suborder",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempcl": {
+        "label": "Temp Class",
+        "table": "component",
+        "units": ""
+      },
+      "taxtempregime": {
+        "label": "Temp Regime",
+        "table": "component",
+        "units": ""
+      },
+      "tfact": {
+        "label": "T",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "totalsub_h": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_l": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "totalsub_r": {
+        "label": "Total Subsid",
+        "table": "component",
+        "units": "cm"
+      },
+      "vasoimgtgrp": {
+        "label": "VA Soil Mgmt Grp",
+        "table": "component",
+        "units": ""
+      },
+      "vtsepticsyscl": {
+        "label": "VT Septic System",
+        "table": "mapunit",
+        "units": ""
+      },
+      "watertempa_h": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_l": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "watertempa_r": {
+        "label": "MAWT",
+        "table": "component",
+        "units": "c"
+      },
+      "weg": {
+        "label": "WEG",
+        "table": "component",
+        "units": ""
+      },
+      "wei": {
+        "label": "WEI",
+        "table": "component",
+        "units": "tons/acre/yr"
+      },
+      "wlconiferous": {
+        "label": "Conifer Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrain": {
+        "label": "Grain Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlgrass": {
+        "label": "Grass Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlhardwood": {
+        "label": "Hardwood Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlherbaceous": {
+        "label": "Herbaceous Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlopenland": {
+        "label": "Openland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlrangeland": {
+        "label": "Rangeland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlshallowwat": {
+        "label": "Water Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlshrub": {
+        "label": "Shrub Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetland": {
+        "label": "Wetland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wlwetplant": {
+        "label": "Wetland Habitat",
+        "table": "component",
+        "units": ""
+      },
+      "wlwoodland": {
+        "label": "Woodland Wildlife",
+        "table": "component",
+        "units": ""
+      },
+      "wndbrksuitgrp": {
+        "label": "Windbreak Suitability (Obsolete)",
+        "table": "component",
+        "units": ""
+      }
+    }
+  }
+}

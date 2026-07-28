@@ -17,7 +17,8 @@ from env_data_mcp.models import (
 )
 from env_data_mcp.server import mcp
 
-from ._query import VariableInfo, get_base_variable_list, get_variable_info, query_bbox
+from ._query import query_bbox
+from ._var_cache import VariableInfo, get_base_variable_list, get_variable_info
 from .constants import DEFAULT_VARIABLES, LICENSE_INFO
 
 

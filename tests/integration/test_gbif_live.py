@@ -11,7 +11,6 @@ from dataclasses import dataclass
 import httpx
 import pytest
 
-from env_data_mcp.sources.gbif._query import _get_variable_info
 from env_data_mcp.sources.gbif.constants import _DEFAULT_VARIABLES, _QueryType
 from env_data_mcp.sources.gbif.tools import (
     gbif_occurrence_available_variables,
@@ -181,26 +180,6 @@ def wide_bbox_result(dc: _DatasetCase) -> dict:
         limit=100,
         **dc.spec.extra_bbox_kwargs,
     )
-
-
-# ---------------------------------------------------------------------------
-# Module-level: _get_variable_info round-trip (not parametrised by fixture)
-# ---------------------------------------------------------------------------
-
-
-def test_gbif_result_schema_ingest():
-    """Every GBIF query type returns variable info with descriptions for all default vars."""
-    for query_type in _QueryType:
-        var_info = _get_variable_info(query_type)
-        assert len(var_info) > 0, f"No variable info returned for GBIF query {query_type}"
-        for var, info in var_info.items():
-            assert "description" in info, (
-                f"Missing description for GBIF {query_type} variable {var}"
-            )
-        for var in _DEFAULT_VARIABLES[query_type]:
-            assert var in var_info, (
-                f"Missing default variable {var} in available variables for GBIF {query_type}"
-            )
 
 
 # ---------------------------------------------------------------------------

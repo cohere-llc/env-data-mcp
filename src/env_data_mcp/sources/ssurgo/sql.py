@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from ._client import _get_column_table_map
+from ._var_cache import _get_column_table_map
 
 _RULE_NAME_RE = re.compile(
     r"^[\x20-\x7E]+$"

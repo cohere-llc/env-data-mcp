@@ -50,6 +50,34 @@ def get_by_path(data: dict, path: str, default: Any = None, sep: str = "."):
 
 
 # ---------------------------------------------------------------------------
+# JSON cache helpers
+# ---------------------------------------------------------------------------
+
+
+def load_json_cache(path: pathlib.Path) -> Any:
+    """Load a JSON cache file from disk.
+
+    Thin wrapper around :func:`json.load` used by adapter variable caches
+    (see :mod:`env_data_mcp.scripts.refresh_variable_caches`).
+    """
+    with path.open(encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def save_json_cache(path: pathlib.Path, data: Any) -> None:
+    """Write *data* to *path* as pretty-printed JSON.
+
+    Uses ``sort_keys=True``, ``indent=2``, and a trailing newline so the file
+    is stable and diff-friendly under source control.  Parent directories are
+    created as needed.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True, indent=2)
+        fh.write("\n")
+
+
+# ---------------------------------------------------------------------------
 # Runtime estimation
 # ---------------------------------------------------------------------------
 

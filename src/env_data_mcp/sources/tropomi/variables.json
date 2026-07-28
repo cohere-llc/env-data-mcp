@@ -1,0 +1,191 @@
+{
+  "NRTI-L2_AER_AI": {
+    "cogt_name": "aerosol_index_340_380",
+    "description": "Near real-time: UV Aerosol Index ",
+    "name": "NRTI-L2_AER_AI",
+    "product_type": "NRTI",
+    "property_name": "L2_AER_AI",
+    "underscored_name": "L2__AER_AI",
+    "units": "unitless"
+  },
+  "NRTI-L2_AER_LH": {
+    "cogt_name": "aerosol_mid_height",
+    "description": "Near real-time: L2__AER_LH",
+    "name": "NRTI-L2_AER_LH",
+    "product_type": "NRTI",
+    "property_name": "L2_AER_LH",
+    "underscored_name": "L2__AER_LH",
+    "units": "m"
+  },
+  "NRTI-L2_CLOUD": {
+    "cogt_name": "cloud_fraction",
+    "description": "Near real-time: Cloud fraction, top pressure",
+    "name": "NRTI-L2_CLOUD",
+    "product_type": "NRTI",
+    "property_name": "L2_CLOUD",
+    "underscored_name": "L2__CLOUD_",
+    "units": "unitless"
+  },
+  "NRTI-L2_CO": {
+    "cogt_name": "carbonmonoxide_total_column",
+    "description": "Near real-time: Carbon Monoxide (CO) total column",
+    "name": "NRTI-L2_CO",
+    "product_type": "NRTI",
+    "property_name": "L2_CO",
+    "underscored_name": "L2__CO____",
+    "units": "mol m-2"
+  },
+  "NRTI-L2_HCHO": {
+    "cogt_name": "formaldehyde_tropospheric_vertical_column",
+    "description": "Near real-time: Formaldehyde (HCHO) total column",
+    "name": "NRTI-L2_HCHO",
+    "product_type": "NRTI",
+    "property_name": "L2_HCHO",
+    "underscored_name": "L2__HCHO__",
+    "units": "mol m-2"
+  },
+  "NRTI-L2_NO2": {
+    "cogt_name": "nitrogendioxide_tropospheric_column",
+    "description": "Near real-time: Nitrogen Dioxide (NO2)",
+    "name": "NRTI-L2_NO2",
+    "product_type": "NRTI",
+    "property_name": "L2_NO2",
+    "underscored_name": "L2__NO2___",
+    "units": "mol m-2"
+  },
+  "NRTI-L2_O3": {
+    "cogt_name": "ozone_total_vertical_column",
+    "description": "Near real-time: Ozone (O3) total column",
+    "name": "NRTI-L2_O3",
+    "product_type": "NRTI",
+    "property_name": "L2_O3",
+    "underscored_name": "L2__O3____",
+    "units": "DU"
+  },
+  "NRTI-L2_SO2": {
+    "cogt_name": "sulfurdioxide_total_vertical_column",
+    "description": "Near real-time: Sulphur Dioxide (SO2) total column",
+    "name": "NRTI-L2_SO2",
+    "product_type": "NRTI",
+    "property_name": "L2_SO2",
+    "underscored_name": "L2__SO2___",
+    "units": "mol m-2"
+  },
+  "OFFL-L2_AER_AI": {
+    "cogt_name": "aerosol_index_340_380",
+    "description": "Offline processed: UV Aerosol Index ",
+    "name": "OFFL-L2_AER_AI",
+    "product_type": "OFFL",
+    "property_name": "L2_AER_AI",
+    "underscored_name": "L2__AER_AI",
+    "units": "unitless"
+  },
+  "OFFL-L2_AER_LH": {
+    "cogt_name": "aerosol_mid_height",
+    "description": "Offline processed: L2__AER_LH",
+    "name": "OFFL-L2_AER_LH",
+    "product_type": "OFFL",
+    "property_name": "L2_AER_LH",
+    "underscored_name": "L2__AER_LH",
+    "units": "m"
+  },
+  "OFFL-L2_CH4": {
+    "cogt_name": "methane_mixing_ratio",
+    "description": "Offline processed: L2__CH4___",
+    "name": "OFFL-L2_CH4",
+    "product_type": "OFFL",
+    "property_name": "L2_CH4",
+    "underscored_name": "L2__CH4___",
+    "units": "ppb"
+  },
+  "OFFL-L2_CLOUD": {
+    "cogt_name": "cloud_fraction",
+    "description": "Offline processed: Cloud fraction, top pressure",
+    "name": "OFFL-L2_CLOUD",
+    "product_type": "OFFL",
+    "property_name": "L2_CLOUD",
+    "underscored_name": "L2__CLOUD_",
+    "units": "unitless"
+  },
+  "OFFL-L2_CO": {
+    "cogt_name": "carbonmonoxide_total_column",
+    "description": "Offline processed: Carbon Monoxide (CO) total column",
+    "name": "OFFL-L2_CO",
+    "product_type": "OFFL",
+    "property_name": "L2_CO",
+    "underscored_name": "L2__CO____",
+    "units": "mol m-2"
+  },
+  "OFFL-L2_HCHO": {
+    "cogt_name": "formaldehyde_tropospheric_vertical_column",
+    "description": "Offline processed: Formaldehyde (HCHO) total column",
+    "name": "OFFL-L2_HCHO",
+    "product_type": "OFFL",
+    "property_name": "L2_HCHO",
+    "underscored_name": "L2__HCHO__",
+    "units": "mol m-2"
+  },
+  "OFFL-L2_NO2": {
+    "cogt_name": "SUPPORT_DATA_DETAILED_RESULTS_nitrogendioxide_summed_total_column",
+    "description": "Offline processed: Nitrogen Dioxide (NO2)",
+    "name": "OFFL-L2_NO2",
+    "product_type": "OFFL",
+    "property_name": "L2_NO2",
+    "underscored_name": "L2__NO2___",
+    "units": "mol m-2"
+  },
+  "OFFL-L2_O3": {
+    "cogt_name": "ozone_total_vertical_column",
+    "description": "Offline processed: Ozone (O3) total column",
+    "name": "OFFL-L2_O3",
+    "product_type": "OFFL",
+    "property_name": "L2_O3",
+    "underscored_name": "L2__O3____",
+    "units": "DU"
+  },
+  "OFFL-L2_O3_TCL": {
+    "cogt_name": "ozone_tropospheric_vertical_column",
+    "description": "Offline processed: L2__O3_TCL",
+    "name": "OFFL-L2_O3_TCL",
+    "product_type": "OFFL",
+    "property_name": "L2_O3_TCL",
+    "underscored_name": "L2__O3_TCL",
+    "units": "DU"
+  },
+  "OFFL-L2_SO2": {
+    "cogt_name": "sulfurdioxide_total_vertical_column",
+    "description": "Offline processed: Sulphur Dioxide (SO2) total column",
+    "name": "OFFL-L2_SO2",
+    "product_type": "OFFL",
+    "property_name": "L2_SO2",
+    "underscored_name": "L2__SO2___",
+    "units": "mol m-2"
+  },
+  "RPRO-L2_CO": {
+    "cogt_name": "carbonmonoxide_total_column",
+    "description": "Reprocessed: Carbon Monoxide (CO) total column",
+    "name": "RPRO-L2_CO",
+    "product_type": "RPRO",
+    "property_name": "L2_CO",
+    "underscored_name": "L2__CO____",
+    "units": "mol m-2"
+  },
+  "RPRO-L2_NO2": {
+    "cogt_name": "SUPPORT_DATA_DETAILED_RESULTS_nitrogendioxide_summed_total_column",
+    "description": "Reprocessed: Nitrogen Dioxide (NO2)",
+    "name": "RPRO-L2_NO2",
+    "product_type": "RPRO",
+    "property_name": "L2_NO2",
+    "underscored_name": "L2__NO2___",
+    "units": "mol m-2"
+  },
+  "RPRO-L2_SO2": {
+    "cogt_name": "sulfurdioxide_total_vertical_column",
+    "description": "Reprocessed: Sulphur Dioxide (SO2) total column",
+    "name": "RPRO-L2_SO2",
+    "product_type": "RPRO",
+    "property_name": "L2_SO2",
+    "underscored_name": "L2__SO2___",
+    "units": "mol m-2"
+  }
+}

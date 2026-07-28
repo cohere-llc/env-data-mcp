@@ -19,6 +19,26 @@ from dotenv import load_dotenv
 # caller to manually `source .env` before running pytest.
 load_dotenv()
 
+
+# ---------------------------------------------------------------------------
+# Custom pytest options
+# ---------------------------------------------------------------------------
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Register repo-wide custom pytest command-line options."""
+    parser.addoption(
+        "--update-caches",
+        action="store_true",
+        default=False,
+        help=(
+            "When set, variable-cache drift tests overwrite the on-disk "
+            "cache files with the freshly-fetched upstream data instead of "
+            "asserting equality. Use to regenerate committed caches."
+        ),
+    )
+
+
 # ---------------------------------------------------------------------------
 # GROW point-sample fixtures
 # ---------------------------------------------------------------------------

@@ -15,7 +15,8 @@ from env_data_mcp.models import (
 )
 from env_data_mcp.server import mcp
 
-from ._query import _estimate_query_runtime_s, _get_variable_info, _query_bbox, _query_point
+from ._query import _estimate_query_runtime_s, _query_bbox, _query_point
+from ._var_cache import _get_variable_info
 from .constants import _DEFAULT_OCCURRENCE_VARIABLES, LICENSE_INFO, _QueryType
 
 _KM_TO_DEG = 0.01  # approximate conversion of km to degrees for runtime estimates

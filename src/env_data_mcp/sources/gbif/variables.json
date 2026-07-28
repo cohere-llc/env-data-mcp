@@ -1,0 +1,512 @@
+{
+  "occurrence": {
+    "acceptedScientificName": {
+      "description": "The accepted scientific name (including authorship) for the taxon from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "acceptedTaxonKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the accepted taxon of this occurrence.",
+      "units": ""
+    },
+    "associatedSequences": {
+      "description": "A list (concatenated and separated) of identifiers (publication, global unique identifier, URI) of genetic sequence information associated with the material entity.",
+      "units": ""
+    },
+    "basisOfRecord": {
+      "description": "The values of the Darwin Core term Basis of Record which can apply to occurrences.\n\nSee GBIF's [Darwin Core Type Vocabulary](https://rs.gbif.org/vocabulary/dwc/basis_of_record.xml) for definitions.",
+      "units": ""
+    },
+    "bed": {
+      "description": "The full name of the lithostratigraphic bed from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "class": {
+      "description": "The class name (excluding authorship) for the class from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "classKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the class of thisoccurrence.",
+      "units": ""
+    },
+    "classifications": {
+      "description": "The map of classifications associated with this occurrence keyed by checklistKey.",
+      "units": ""
+    },
+    "collectionKey": {
+      "description": "**Experimental.**  The UUID of the collection containing the specimen occurrence, from GRSciColl.",
+      "units": ""
+    },
+    "continent": {
+      "description": "The continent, based on a 7 continent model described on [Wikipedia](https://en.wikipedia.org/wiki/Continent#Number_of_continents) and the [World Geographical Scheme for Recording Plant Distributions (WGSRPD)](https://www.tdwg.org/standards/109).\n\nIn particular this splits the Americas into North and South America with North America including the Caribbean (except Trinidad and Tobago) and reaching down and including Panama.\n\nSee the [GBIF Continents](https://github.com/gbif/continents/) for the exact divisions.\n\n*This is a geographical division.  See `GBIFRegion` for GBIF's political divisions.*",
+      "units": ""
+    },
+    "coordinateAccuracy": {
+      "description": "**Deprecated.**  This value is always null.  It is an obsolete Darwin Core term.",
+      "units": ""
+    },
+    "coordinatePrecision": {
+      "description": "A decimal representation of the precision of the coordinates given in the decimalLatitude and decimalLongitude.",
+      "units": ""
+    },
+    "coordinateUncertaintyInMeters": {
+      "description": "The horizontal distance (in metres) from the given decimalLatitude and decimalLongitude describing the smallest circle containing the whole of the Location.",
+      "units": ""
+    },
+    "country": {
+      "description": "The title (as per ISO-3166-1) of the country, territory or area in which the occurrence was recorded.",
+      "units": ""
+    },
+    "countryCode": {
+      "description": "The 2-letter country code (as per ISO-3166-1) of the country, territory or area in which the occurrence was recorded.",
+      "units": ""
+    },
+    "crawlId": {
+      "description": "The sequence number of the attempt by GBIF to download (\u201dcrawl\u201d), interpret and index the dataset to which this occurrence belongs.",
+      "units": ""
+    },
+    "datasetID": {
+      "description": "An identifier for the set of data. May be a global unique identifier or an identifier specific to a collection or institution.",
+      "units": ""
+    },
+    "datasetKey": {
+      "description": "The UUID of the GBIF dataset containing this occurrence.",
+      "units": ""
+    },
+    "datasetName": {
+      "description": "The name identifying the data set from which the record was derived.",
+      "units": ""
+    },
+    "dateIdentified": {
+      "description": "The date on which the subject was determined as representing the Taxon.",
+      "units": ""
+    },
+    "day": {
+      "description": "The integer day of the month on which the Event occurred.",
+      "units": ""
+    },
+    "decimalLatitude": {
+      "description": "The geographic latitude (in decimal degrees, using the WGS84 datum) of the geographic centre of the location of the occurrence.",
+      "units": ""
+    },
+    "decimalLongitude": {
+      "description": "The geographic longitude (in decimal degrees, using the WGS84 datum) of the geographic centre of the location of the occurrence.",
+      "units": ""
+    },
+    "degreeOfEstablishment": {
+      "description": "The degree to which an Organism survives, reproduces, and expands its range at the given place and time.\n\nValues are aligned to the [GBIF DegreeOfEstablishment vocabulary](https://registry.gbif.org/vocabulary/DegreeOfEstablishment/concepts), which is derived from the [Darwin Core DegreeOfEstablishment vocabulary](https://dwc.tdwg.org/doe/).",
+      "units": ""
+    },
+    "depth": {
+      "description": "Depth in metres below sea level.  This is not a current Darwin Core term.",
+      "units": ""
+    },
+    "depthAccuracy": {
+      "description": "The value of the potential error associated with the depth.  This is not a current Darwin Core term.",
+      "units": ""
+    },
+    "distanceFromCentroidInMeters": {
+      "description": "The distance in metres of the occurrence from a centroid known to be applied to occurrences during georeferencing.  This can potentially indicate low-precision georeferencing, check the values of `coordinateUncertaintyInMeters` and `georeferenceRemarks`.",
+      "units": ""
+    },
+    "dnaSequenceID": {
+      "description": "**Deprecated: use the nucleotideSequence instead.**  The DNA sequence ID of an occurrence.",
+      "units": ""
+    },
+    "earliestAgeOrLowestStage": {
+      "description": "The full name of the earliest possible geochronologic age or lowest chronostratigraphic stage attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "earliestEonOrLowestEonothem": {
+      "description": "The full name of the earliest possible geochronologic eon or lowest chrono-stratigraphic eonothem or the informal name (\"Precambrian\") attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "earliestEpochOrLowestSeries": {
+      "description": "The full name of the earliest possible geochronologic epoch or lowest chronostratigraphic series attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "earliestEraOrLowestErathem": {
+      "description": "The full name of the earliest possible geochronologic era or lowest chronostratigraphic erathem attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "earliestPeriodOrLowestSystem": {
+      "description": "The full name of the earliest possible geochronologic period or lowest chronostratigraphic system attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "elevation": {
+      "description": "Elevation (altitude) in metres above sea level.  This is not a current Darwin Core term.",
+      "units": ""
+    },
+    "elevationAccuracy": {
+      "description": "The value of the potential error associated with the elevation.  This is not a current Darwin Core term.",
+      "units": ""
+    },
+    "endDayOfYear": {
+      "description": "The earliest integer day of the year on which the Event occurred (1 for 1 January, 365 for 31 December, except in a leap year, in which case it is 366).",
+      "units": ""
+    },
+    "establishmentMeans": {
+      "description": "Statement about whether an organism or organisms have been introduced to a given place and time through the direct or indirect activity of modern humans.\n\nValues are aligned to the [GBIF EstablishmentMeans vocabulary](https://registry.gbif.org/vocabulary/EstablishmentMeans/concepts), which is derived from the [Darwin Core EstablishmentMeans vocabulary](https://dwc.tdwg.org/em/).",
+      "units": ""
+    },
+    "eventDate": {
+      "description": "The date-time during which an Event occurred. For occurrences, this is the date-time when the event was recorded. Not suitable for a time in a geological context.",
+      "units": ""
+    },
+    "extensions": {
+      "description": "The verbatim Darwin Core Archive extension fields for this occurrence.\n\nThe main key is the record class term (the row type in Darwin Core Archive), within that are  values with extension terms as keys.",
+      "units": ""
+    },
+    "facts": {
+      "description": "Measurements or facts about the the occurrence.",
+      "units": ""
+    },
+    "family": {
+      "description": "The family name (excluding authorship) for the family from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "familyKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the family of thisoccurrence.",
+      "units": ""
+    },
+    "formation": {
+      "description": "The full name of the lithostratigraphic formation from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "gadm": {
+      "description": "The administrative divisions according to the [GADM database](https://gadm.org/).\n\nThis value is applied by GBIF's processing without consideration of the `stateProvince`, `county` or `locality` fields.",
+      "units": ""
+    },
+    "gbifRegion": {
+      "description": "An enumeration for all GBIF Regions. These are based on [IPBES regions](https://www.nature.com/articles/sdata20167/figures/1).\n\n*This is a political division,* part of GBIF's governance structure.",
+      "units": ""
+    },
+    "genericName": {
+      "description": "The genus name part of the species name from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "genus": {
+      "description": "The genus name (excluding authorship) for the genus from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "genusKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the genus of thisoccurrence.",
+      "units": ""
+    },
+    "geodeticDatum": {
+      "description": "The geodetic datum for the interpreted decimal coordinates.\n\nCoordinates are reprojected to WGS84 if they exist, so this field is either null or `WGS84`.",
+      "units": ""
+    },
+    "georeferencedBy": {
+      "description": "A list (concatenated and separated) of names of people, groups, or organizations who determined the georeference (spatial representation) for the dcterms:Location.",
+      "units": ""
+    },
+    "group": {
+      "description": "The full name of the lithostratigraphic group from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "higherGeography": {
+      "description": "A list (concatenated and separated) of geographic names less specific than the information captured in the dwc:locality term.",
+      "units": ""
+    },
+    "highestBiostratigraphicZone": {
+      "description": "The full name of the highest possible geological biostratigraphic zone of the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "hostingOrganizationKey": {
+      "description": "The UUID of the publishing organization which operates the technical installation hosting the dataset containing this occurrence.",
+      "units": ""
+    },
+    "identifiedBy": {
+      "description": "A list (concatenated and separated) of names of people, groups, or organizations who assigned the Taxon to the occurrence.",
+      "units": ""
+    },
+    "identifiedByIDs": {
+      "description": "A list of the globally unique identifiers for the person, people, groups, or organizations responsible for assigning the Taxon to the occurrence.",
+      "units": ""
+    },
+    "identifiers": {
+      "description": "Alternative identifiers for the occurrence.",
+      "units": ""
+    },
+    "individualCount": {
+      "description": "The number of individuals present at the time of the Occurrence.",
+      "units": ""
+    },
+    "infraspecificEpithet": {
+      "description": "The infraspecific name part of the species name from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "installationKey": {
+      "description": "The UUID of the technical installation hosted the dataset containing this occurrence.",
+      "units": ""
+    },
+    "institutionKey": {
+      "description": "**Experimental.**  The UUID of the institution holding the specimen occurrence, from GRSciColl.",
+      "units": ""
+    },
+    "isInCluster": {
+      "description": "**Experimental.**  Whether the occurrence belongs to a machine-calculated cluster of probable duplicate occurrences.",
+      "units": ""
+    },
+    "isSequenced": {
+      "description": "Flag occurrence when associatedSequences/extension exists",
+      "units": ""
+    },
+    "issues": {
+      "description": "A specific interpretation issue found during processing and interpretation of the record.\n\nSee the https://links.gbif.org/occurrence-issues[list of occurrence issues] and the https://gbif.github.io/gbif-api/apidocs/org/gbif/api/vocabulary/OccurrenceIssue.html[OccurrenceIssue enumeration] for possible values and definitions.",
+      "units": ""
+    },
+    "iucnRedListCategory": {
+      "description": "The IUCN Red List Category of the taxon of this occurrence.\n\nSee the [GBIF vocabulary](https://rs.gbif.org/vocabulary/iucn/threat_status/) for the values and their definitions, and the [IUCN Red List of Threatened Species dataset in GBIF](https://doi.org/10.15468/0qnb58) for the version of the Red List GBIF's interpretation procedures are using.",
+      "units": ""
+    },
+    "key": {
+      "description": "Unique GBIF key for the occurrence.\n\nWe aim to keep these keys stable, but this is not possible in every case.",
+      "units": ""
+    },
+    "kingdom": {
+      "description": "The kingdom name (excluding authorship) for the kingdom from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "kingdomKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the kingdom of thisoccurrence.",
+      "units": ""
+    },
+    "lastCrawled": {
+      "description": "The time this occurrence was last retrieved from the publisher's systems.",
+      "units": ""
+    },
+    "lastInterpreted": {
+      "description": "The time this occurrence was last processed by GBIF's interpretation system \u201cPipelines\u201d.\n\nThis is the time the record was last changed in GBIF, **not** the time the record was last changed by the publisher.  Data is also reprocessed when we changed the taxonomic backbone, geographic data sources or other interpretation procedures.\n\nAn earlier interpretation system distinguished between \u201cparsing\u201d and \u201cinterpretation\u201d, but in the current system there is only one process \u2014 the two dates will always be the same.",
+      "units": ""
+    },
+    "lastParsed": {
+      "description": "The time this occurrence was last processed by GBIF's interpretation system \u201cPipelines\u201d.\n\nThis is the time the record was last changed in GBIF, **not** the time the record was last changed by the publisher.  Data is also reprocessed when we changed the taxonomic backbone, geographic data sources or other interpretation procedures.\n\nAn earlier interpretation system distinguished between \u201cparsing\u201d and \u201cinterpretation\u201d, but in the current system there is only one process \u2014 the two dates will always be the same.",
+      "units": ""
+    },
+    "latestAgeOrHighestStage": {
+      "description": "The full name of the latest possible geochronologic age or highest chronostratigraphic stage attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "latestEonOrHighestEonothem": {
+      "description": "The full name of the latest possible geochronologic eon or highest chrono-stratigraphic eonothem or the informal name (\"Precambrian\") attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "latestEpochOrHighestSeries": {
+      "description": "The full name of the latest possible geochronologic epoch or highest chronostratigraphic series attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "latestEraOrHighestErathem": {
+      "description": "The full name of the latest possible geochronologic era or highest chronostratigraphic erathem attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "latestPeriodOrHighestSystem": {
+      "description": "The full name of the latest possible geochronologic period or highest chronostratigraphic system attributable to the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "license": {
+      "description": "A legal document giving official permission to do something with the occurrence.",
+      "units": ""
+    },
+    "lifeStage": {
+      "description": "The age class or life stage of the Organism(s) at the time the Occurrence was recorded.\n\nValues are aligned to the [GBIF LifeStage vocabulary](https://registry.gbif.org/vocabulary/LifeStage/concepts)",
+      "units": ""
+    },
+    "lowestBiostratigraphicZone": {
+      "description": "The full name of the lowest possible geological biostratigraphic zone of the stratigraphic horizon from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "media": {
+      "description": "Multimedia related to te occurrence.",
+      "units": ""
+    },
+    "member": {
+      "description": "The full name of the lithostratigraphic member from which the dwc:MaterialEntity was collected.",
+      "units": ""
+    },
+    "modified": {
+      "description": "The most recent date-time on which the occurrence was changed, according to the publisher.",
+      "units": ""
+    },
+    "month": {
+      "description": "The integer month in which the Event occurred.",
+      "units": ""
+    },
+    "networkKeys": {
+      "description": "Any networks to which the dataset containing this occurrence is registered.",
+      "units": ""
+    },
+    "nucleotideSequence": {
+      "description": "Nucleotide Sequence objects of an occurrence.",
+      "units": ""
+    },
+    "occurrenceStatus": {
+      "description": "A statement about the presence or absence of a Taxon at a Location.\n\nFor definitions, see the [GBIF occurrence status vocabulary](https://rs.gbif.org/vocabulary/gbif/occurrence_status/).",
+      "units": ""
+    },
+    "order": {
+      "description": "The order name (excluding authorship) for the order from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "orderKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the order of thisoccurrence.",
+      "units": ""
+    },
+    "organismQuantity": {
+      "description": "A number or enumeration value for the quantity of organisms.",
+      "units": ""
+    },
+    "organismQuantityType": {
+      "description": "The type of quantification system used for the quantity of organisms.",
+      "units": ""
+    },
+    "otherCatalogNumbers": {
+      "description": "A list (concatenated and separated) of previous or alternate fully qualified catalogue numbers or other human-used identifiers for the same occurrence, whether in the current or any other data set or collection.",
+      "units": ""
+    },
+    "pathway": {
+      "description": "The process by which an Organism came to be in a given place at a given time.\n\nValues are aligned to the [GBIF Pathway vocabulary](https://registry.gbif.org/vocabulary/Pathway/concepts), which is derived from the [Darwin Core Pathway vocabulary](https://dwc.tdwg.org/pw/).",
+      "units": ""
+    },
+    "phylum": {
+      "description": "The phylum name (excluding authorship) for the phylum from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "phylumKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the phylum of thisoccurrence.",
+      "units": ""
+    },
+    "preparations": {
+      "description": "A preparation or preservation method for a specimen.",
+      "units": ""
+    },
+    "programmeAcronym": {
+      "description": "The identifier for a programme which funded the digitization of this occurrence.",
+      "units": ""
+    },
+    "projectId": {
+      "description": "The identifier for a project, often assigned by a funded programme.",
+      "units": ""
+    },
+    "protocol": {
+      "description": "The technical protocol by which this occurrence was retrieved from the publisher's systems.",
+      "units": ""
+    },
+    "publishedByGbifRegion": {
+      "description": "An enumeration for all GBIF Regions. These are based on [IPBES regions](https://www.nature.com/articles/sdata20167/figures/1).\n\n*This is a political division,* part of GBIF's governance structure.",
+      "units": ""
+    },
+    "publishingCountry": {
+      "description": "The country, territory or island based on ISO-3166 of the organization publishing the dataset containing this occurrence.",
+      "units": ""
+    },
+    "publishingOrgKey": {
+      "description": "The UUID of the organization which publishes the dataset containing this occurrence.",
+      "units": ""
+    },
+    "recordedBy": {
+      "description": "A person, group, or organization responsible for recording the original occurrence.",
+      "units": ""
+    },
+    "recordedByIDs": {
+      "description": "A list of the globally unique identifiers for the person, people, groups, or organizations responsible for recording the original Occurrence.",
+      "units": ""
+    },
+    "references": {
+      "description": "A related resource that is referenced, cited, or otherwise pointed to by the described resource.",
+      "units": ""
+    },
+    "relations": {
+      "description": "Relationships between occurrences.",
+      "units": ""
+    },
+    "relativeOrganismQuantity": {
+      "description": "The relative measurement of the quantity of the organism (i.e. without absolute units).",
+      "units": ""
+    },
+    "sampleSizeUnit": {
+      "description": "The unit of measurement of the size (time duration, length, area, or volume) of a sample in a sampling event.",
+      "units": ""
+    },
+    "sampleSizeValue": {
+      "description": "A numeric value for a measurement of the size (time duration, length, area, or volume) of a sample in a sampling event.",
+      "units": ""
+    },
+    "samplingProtocol": {
+      "description": "The methods or protocols used during an Event, denoted by an IRI.",
+      "units": ""
+    },
+    "scientificName": {
+      "description": "The scientific name (including authorship) for the taxon from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.  This could be a synonym, see also `acceptedScientificName`.",
+      "units": ""
+    },
+    "scientificNameAuthorship": {
+      "description": "The scientific name authorship for the taxon from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.  This could be a synonym, see also `acceptedScientificName`.",
+      "units": ""
+    },
+    "sex": {
+      "description": "sex",
+      "units": ""
+    },
+    "species": {
+      "description": "The species name (excluding authorship) for the species from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "speciesKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the species of thisoccurrence.",
+      "units": ""
+    },
+    "specificEpithet": {
+      "description": "The specific name part of the species name from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "startDayOfYear": {
+      "description": "The latest integer day of the year on which the Event occurred (1 for 1 January, 365 for 31 December, except in a leap year, in which case it is 366).",
+      "units": ""
+    },
+    "stateProvince": {
+      "description": "The name of the next-smaller administrative region than country (state, province, canton, department, region, etc.) in which the occurrence occurs.\n\nThis value is unaltered by GBIF's processing; see also the GADM fields.",
+      "units": ""
+    },
+    "subgenus": {
+      "description": "The subgenus name (excluding authorship) for the subgenus from the [GBIF backbone](https://doi.org/10.15468/39omei) matched to this occurrence.",
+      "units": ""
+    },
+    "subgenusKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the subgenus of thisoccurrence.",
+      "units": ""
+    },
+    "taxonKey": {
+      "description": "A taxon key from the [GBIF backbone](https://doi.org/10.15468/39omei) for the most specific (lowest rank) taxon for this occurrence.  This could be a synonym, see `acceptedTaxonKey`.",
+      "units": ""
+    },
+    "taxonRank": {
+      "description": "The taxonomic rank of the most specific name in the scientificName.",
+      "units": ""
+    },
+    "taxonomicStatus": {
+      "description": "The status of the use of the scientificName as a label for a taxon.",
+      "units": ""
+    },
+    "typeStatus": {
+      "description": "A list (concatenated and separated) of nomenclatural types (type status, typified scientific name, publication) applied to the occurrence.",
+      "units": ""
+    },
+    "typifiedName": {
+      "description": "The scientific name that is based on the type specimen.\n\nThis is not yet a Darwin Core term, see the [proposal to add it](https://github.com/tdwg/dwc/issues/28).",
+      "units": ""
+    },
+    "verbatimScientificName": {
+      "description": "verbatimScientificName",
+      "units": ""
+    },
+    "waterBody": {
+      "description": "The name of the water body in which the Location occurs.",
+      "units": ""
+    },
+    "year": {
+      "description": "The four-digit year in which the event occurred, according to the Common Era calendar.",
+      "units": ""
+    }
+  }
+}

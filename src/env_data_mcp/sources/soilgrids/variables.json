@@ -1,0 +1,1605 @@
+{
+  "bdod": {
+    "base": {
+      "conventional_units": "kg/dm3",
+      "conversion_factor": 100.0,
+      "description": "Bulk density",
+      "mapped_units": "cg/cm3",
+      "name": "bdod"
+    },
+    "coverages": {
+      "bdod_0-5cm_Q0.05": {
+        "description": "Bulk density; depth: 0-5cm; quantile: 5% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_0-5cm_Q0.5": {
+        "description": "Bulk density; depth: 0-5cm; quantile: median",
+        "units": "kg/dm3"
+      },
+      "bdod_0-5cm_Q0.95": {
+        "description": "Bulk density; depth: 0-5cm; quantile: 95% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_0-5cm_mean": {
+        "description": "Bulk density; depth: 0-5cm; quantile: mean",
+        "units": "kg/dm3"
+      },
+      "bdod_0-5cm_uncertainty": {
+        "description": "Bulk density; depth: 0-5cm; quantile: uncertainty",
+        "units": "kg/dm3"
+      },
+      "bdod_100-200cm_Q0.05": {
+        "description": "Bulk density; depth: 100-200cm; quantile: 5% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_100-200cm_Q0.5": {
+        "description": "Bulk density; depth: 100-200cm; quantile: median",
+        "units": "kg/dm3"
+      },
+      "bdod_100-200cm_Q0.95": {
+        "description": "Bulk density; depth: 100-200cm; quantile: 95% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_100-200cm_mean": {
+        "description": "Bulk density; depth: 100-200cm; quantile: mean",
+        "units": "kg/dm3"
+      },
+      "bdod_100-200cm_uncertainty": {
+        "description": "Bulk density; depth: 100-200cm; quantile: uncertainty",
+        "units": "kg/dm3"
+      },
+      "bdod_15-30cm_Q0.05": {
+        "description": "Bulk density; depth: 15-30cm; quantile: 5% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_15-30cm_Q0.5": {
+        "description": "Bulk density; depth: 15-30cm; quantile: median",
+        "units": "kg/dm3"
+      },
+      "bdod_15-30cm_Q0.95": {
+        "description": "Bulk density; depth: 15-30cm; quantile: 95% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_15-30cm_mean": {
+        "description": "Bulk density; depth: 15-30cm; quantile: mean",
+        "units": "kg/dm3"
+      },
+      "bdod_15-30cm_uncertainty": {
+        "description": "Bulk density; depth: 15-30cm; quantile: uncertainty",
+        "units": "kg/dm3"
+      },
+      "bdod_30-60cm_Q0.05": {
+        "description": "Bulk density; depth: 30-60cm; quantile: 5% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_30-60cm_Q0.5": {
+        "description": "Bulk density; depth: 30-60cm; quantile: median",
+        "units": "kg/dm3"
+      },
+      "bdod_30-60cm_Q0.95": {
+        "description": "Bulk density; depth: 30-60cm; quantile: 95% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_30-60cm_mean": {
+        "description": "Bulk density; depth: 30-60cm; quantile: mean",
+        "units": "kg/dm3"
+      },
+      "bdod_30-60cm_uncertainty": {
+        "description": "Bulk density; depth: 30-60cm; quantile: uncertainty",
+        "units": "kg/dm3"
+      },
+      "bdod_5-15cm_Q0.05": {
+        "description": "Bulk density; depth: 5-15cm; quantile: 5% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_5-15cm_Q0.5": {
+        "description": "Bulk density; depth: 5-15cm; quantile: median",
+        "units": "kg/dm3"
+      },
+      "bdod_5-15cm_Q0.95": {
+        "description": "Bulk density; depth: 5-15cm; quantile: 95% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_5-15cm_mean": {
+        "description": "Bulk density; depth: 5-15cm; quantile: mean",
+        "units": "kg/dm3"
+      },
+      "bdod_5-15cm_uncertainty": {
+        "description": "Bulk density; depth: 5-15cm; quantile: uncertainty",
+        "units": "kg/dm3"
+      },
+      "bdod_60-100cm_Q0.05": {
+        "description": "Bulk density; depth: 60-100cm; quantile: 5% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_60-100cm_Q0.5": {
+        "description": "Bulk density; depth: 60-100cm; quantile: median",
+        "units": "kg/dm3"
+      },
+      "bdod_60-100cm_Q0.95": {
+        "description": "Bulk density; depth: 60-100cm; quantile: 95% quantile",
+        "units": "kg/dm3"
+      },
+      "bdod_60-100cm_mean": {
+        "description": "Bulk density; depth: 60-100cm; quantile: mean",
+        "units": "kg/dm3"
+      },
+      "bdod_60-100cm_uncertainty": {
+        "description": "Bulk density; depth: 60-100cm; quantile: uncertainty",
+        "units": "kg/dm3"
+      }
+    }
+  },
+  "cec": {
+    "base": {
+      "conventional_units": "cmol(c)/kg",
+      "conversion_factor": 10.0,
+      "description": "CEC buffered at pH7",
+      "mapped_units": "mmol(c)/kg",
+      "name": "cec"
+    },
+    "coverages": {
+      "cec_0-5cm_Q0.05": {
+        "description": "CEC buffered at pH7; depth: 0-5cm; quantile: 5% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_0-5cm_Q0.5": {
+        "description": "CEC buffered at pH7; depth: 0-5cm; quantile: median",
+        "units": "cmol(c)/kg"
+      },
+      "cec_0-5cm_Q0.95": {
+        "description": "CEC buffered at pH7; depth: 0-5cm; quantile: 95% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_0-5cm_mean": {
+        "description": "CEC buffered at pH7; depth: 0-5cm; quantile: mean",
+        "units": "cmol(c)/kg"
+      },
+      "cec_0-5cm_uncertainty": {
+        "description": "CEC buffered at pH7; depth: 0-5cm; quantile: uncertainty",
+        "units": "cmol(c)/kg"
+      },
+      "cec_100-200cm_Q0.05": {
+        "description": "CEC buffered at pH7; depth: 100-200cm; quantile: 5% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_100-200cm_Q0.5": {
+        "description": "CEC buffered at pH7; depth: 100-200cm; quantile: median",
+        "units": "cmol(c)/kg"
+      },
+      "cec_100-200cm_Q0.95": {
+        "description": "CEC buffered at pH7; depth: 100-200cm; quantile: 95% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_100-200cm_mean": {
+        "description": "CEC buffered at pH7; depth: 100-200cm; quantile: mean",
+        "units": "cmol(c)/kg"
+      },
+      "cec_100-200cm_uncertainty": {
+        "description": "CEC buffered at pH7; depth: 100-200cm; quantile: uncertainty",
+        "units": "cmol(c)/kg"
+      },
+      "cec_15-30cm_Q0.05": {
+        "description": "CEC buffered at pH7; depth: 15-30cm; quantile: 5% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_15-30cm_Q0.5": {
+        "description": "CEC buffered at pH7; depth: 15-30cm; quantile: median",
+        "units": "cmol(c)/kg"
+      },
+      "cec_15-30cm_Q0.95": {
+        "description": "CEC buffered at pH7; depth: 15-30cm; quantile: 95% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_15-30cm_mean": {
+        "description": "CEC buffered at pH7; depth: 15-30cm; quantile: mean",
+        "units": "cmol(c)/kg"
+      },
+      "cec_15-30cm_uncertainty": {
+        "description": "CEC buffered at pH7; depth: 15-30cm; quantile: uncertainty",
+        "units": "cmol(c)/kg"
+      },
+      "cec_30-60cm_Q0.05": {
+        "description": "CEC buffered at pH7; depth: 30-60cm; quantile: 5% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_30-60cm_Q0.5": {
+        "description": "CEC buffered at pH7; depth: 30-60cm; quantile: median",
+        "units": "cmol(c)/kg"
+      },
+      "cec_30-60cm_Q0.95": {
+        "description": "CEC buffered at pH7; depth: 30-60cm; quantile: 95% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_30-60cm_mean": {
+        "description": "CEC buffered at pH7; depth: 30-60cm; quantile: mean",
+        "units": "cmol(c)/kg"
+      },
+      "cec_30-60cm_uncertainty": {
+        "description": "CEC buffered at pH7; depth: 30-60cm; quantile: uncertainty",
+        "units": "cmol(c)/kg"
+      },
+      "cec_5-15cm_Q0.05": {
+        "description": "CEC buffered at pH7; depth: 5-15cm; quantile: 5% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_5-15cm_Q0.5": {
+        "description": "CEC buffered at pH7; depth: 5-15cm; quantile: median",
+        "units": "cmol(c)/kg"
+      },
+      "cec_5-15cm_Q0.95": {
+        "description": "CEC buffered at pH7; depth: 5-15cm; quantile: 95% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_5-15cm_mean": {
+        "description": "CEC buffered at pH7; depth: 5-15cm; quantile: mean",
+        "units": "cmol(c)/kg"
+      },
+      "cec_5-15cm_uncertainty": {
+        "description": "CEC buffered at pH7; depth: 5-15cm; quantile: uncertainty",
+        "units": "cmol(c)/kg"
+      },
+      "cec_60-100cm_Q0.05": {
+        "description": "CEC buffered at pH7; depth: 60-100cm; quantile: 5% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_60-100cm_Q0.5": {
+        "description": "CEC buffered at pH7; depth: 60-100cm; quantile: median",
+        "units": "cmol(c)/kg"
+      },
+      "cec_60-100cm_Q0.95": {
+        "description": "CEC buffered at pH7; depth: 60-100cm; quantile: 95% quantile",
+        "units": "cmol(c)/kg"
+      },
+      "cec_60-100cm_mean": {
+        "description": "CEC buffered at pH7; depth: 60-100cm; quantile: mean",
+        "units": "cmol(c)/kg"
+      },
+      "cec_60-100cm_uncertainty": {
+        "description": "CEC buffered at pH7; depth: 60-100cm; quantile: uncertainty",
+        "units": "cmol(c)/kg"
+      }
+    }
+  },
+  "cfvo": {
+    "base": {
+      "conventional_units": "cm3/100cm3(vol%)",
+      "conversion_factor": 10.0,
+      "description": "Coarse fragments",
+      "mapped_units": "cm3/dm3(vol\u2030)",
+      "name": "cfvo"
+    },
+    "coverages": {
+      "cfvo_0-5cm_Q0.05": {
+        "description": "Coarse fragments; depth: 0-5cm; quantile: 5% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_0-5cm_Q0.5": {
+        "description": "Coarse fragments; depth: 0-5cm; quantile: median",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_0-5cm_Q0.95": {
+        "description": "Coarse fragments; depth: 0-5cm; quantile: 95% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_0-5cm_mean": {
+        "description": "Coarse fragments; depth: 0-5cm; quantile: mean",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_0-5cm_uncertainty": {
+        "description": "Coarse fragments; depth: 0-5cm; quantile: uncertainty",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_100-200cm_Q0.05": {
+        "description": "Coarse fragments; depth: 100-200cm; quantile: 5% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_100-200cm_Q0.5": {
+        "description": "Coarse fragments; depth: 100-200cm; quantile: median",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_100-200cm_Q0.95": {
+        "description": "Coarse fragments; depth: 100-200cm; quantile: 95% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_100-200cm_mean": {
+        "description": "Coarse fragments; depth: 100-200cm; quantile: mean",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_100-200cm_uncertainty": {
+        "description": "Coarse fragments; depth: 100-200cm; quantile: uncertainty",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_15-30cm_Q0.05": {
+        "description": "Coarse fragments; depth: 15-30cm; quantile: 5% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_15-30cm_Q0.5": {
+        "description": "Coarse fragments; depth: 15-30cm; quantile: median",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_15-30cm_Q0.95": {
+        "description": "Coarse fragments; depth: 15-30cm; quantile: 95% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_15-30cm_mean": {
+        "description": "Coarse fragments; depth: 15-30cm; quantile: mean",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_15-30cm_uncertainty": {
+        "description": "Coarse fragments; depth: 15-30cm; quantile: uncertainty",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_30-60cm_Q0.05": {
+        "description": "Coarse fragments; depth: 30-60cm; quantile: 5% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_30-60cm_Q0.5": {
+        "description": "Coarse fragments; depth: 30-60cm; quantile: median",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_30-60cm_Q0.95": {
+        "description": "Coarse fragments; depth: 30-60cm; quantile: 95% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_30-60cm_mean": {
+        "description": "Coarse fragments; depth: 30-60cm; quantile: mean",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_30-60cm_uncertainty": {
+        "description": "Coarse fragments; depth: 30-60cm; quantile: uncertainty",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_5-15cm_Q0.05": {
+        "description": "Coarse fragments; depth: 5-15cm; quantile: 5% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_5-15cm_Q0.5": {
+        "description": "Coarse fragments; depth: 5-15cm; quantile: median",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_5-15cm_Q0.95": {
+        "description": "Coarse fragments; depth: 5-15cm; quantile: 95% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_5-15cm_mean": {
+        "description": "Coarse fragments; depth: 5-15cm; quantile: mean",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_5-15cm_uncertainty": {
+        "description": "Coarse fragments; depth: 5-15cm; quantile: uncertainty",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_60-100cm_Q0.05": {
+        "description": "Coarse fragments; depth: 60-100cm; quantile: 5% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_60-100cm_Q0.5": {
+        "description": "Coarse fragments; depth: 60-100cm; quantile: median",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_60-100cm_Q0.95": {
+        "description": "Coarse fragments; depth: 60-100cm; quantile: 95% quantile",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_60-100cm_mean": {
+        "description": "Coarse fragments; depth: 60-100cm; quantile: mean",
+        "units": "cm3/100cm3(vol%)"
+      },
+      "cfvo_60-100cm_uncertainty": {
+        "description": "Coarse fragments; depth: 60-100cm; quantile: uncertainty",
+        "units": "cm3/100cm3(vol%)"
+      }
+    }
+  },
+  "clay": {
+    "base": {
+      "conventional_units": "g/100g (%)",
+      "conversion_factor": 10.0,
+      "description": "Clay",
+      "mapped_units": "g/kg",
+      "name": "clay"
+    },
+    "coverages": {
+      "clay_0-5cm_Q0.05": {
+        "description": "Clay; depth: 0-5cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_0-5cm_Q0.5": {
+        "description": "Clay; depth: 0-5cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "clay_0-5cm_Q0.95": {
+        "description": "Clay; depth: 0-5cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_0-5cm_mean": {
+        "description": "Clay; depth: 0-5cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "clay_0-5cm_uncertainty": {
+        "description": "Clay; depth: 0-5cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "clay_100-200cm_Q0.05": {
+        "description": "Clay; depth: 100-200cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_100-200cm_Q0.5": {
+        "description": "Clay; depth: 100-200cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "clay_100-200cm_Q0.95": {
+        "description": "Clay; depth: 100-200cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_100-200cm_mean": {
+        "description": "Clay; depth: 100-200cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "clay_100-200cm_uncertainty": {
+        "description": "Clay; depth: 100-200cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "clay_15-30cm_Q0.05": {
+        "description": "Clay; depth: 15-30cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_15-30cm_Q0.5": {
+        "description": "Clay; depth: 15-30cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "clay_15-30cm_Q0.95": {
+        "description": "Clay; depth: 15-30cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_15-30cm_mean": {
+        "description": "Clay; depth: 15-30cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "clay_15-30cm_uncertainty": {
+        "description": "Clay; depth: 15-30cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "clay_30-60cm_Q0.05": {
+        "description": "Clay; depth: 30-60cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_30-60cm_Q0.5": {
+        "description": "Clay; depth: 30-60cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "clay_30-60cm_Q0.95": {
+        "description": "Clay; depth: 30-60cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_30-60cm_mean": {
+        "description": "Clay; depth: 30-60cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "clay_30-60cm_uncertainty": {
+        "description": "Clay; depth: 30-60cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "clay_5-15cm_Q0.05": {
+        "description": "Clay; depth: 5-15cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_5-15cm_Q0.5": {
+        "description": "Clay; depth: 5-15cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "clay_5-15cm_Q0.95": {
+        "description": "Clay; depth: 5-15cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_5-15cm_mean": {
+        "description": "Clay; depth: 5-15cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "clay_5-15cm_uncertainty": {
+        "description": "Clay; depth: 5-15cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "clay_60-100cm_Q0.05": {
+        "description": "Clay; depth: 60-100cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_60-100cm_Q0.5": {
+        "description": "Clay; depth: 60-100cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "clay_60-100cm_Q0.95": {
+        "description": "Clay; depth: 60-100cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "clay_60-100cm_mean": {
+        "description": "Clay; depth: 60-100cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "clay_60-100cm_uncertainty": {
+        "description": "Clay; depth: 60-100cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      }
+    }
+  },
+  "nitrogen": {
+    "base": {
+      "conventional_units": "g/kg",
+      "conversion_factor": 100.0,
+      "description": "Nitrogen",
+      "mapped_units": "cg/kg",
+      "name": "nitrogen"
+    },
+    "coverages": {
+      "nitrogen_0-5cm_Q0.05": {
+        "description": "Nitrogen; depth: 0-5cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_0-5cm_Q0.5": {
+        "description": "Nitrogen; depth: 0-5cm; quantile: median",
+        "units": "g/kg"
+      },
+      "nitrogen_0-5cm_Q0.95": {
+        "description": "Nitrogen; depth: 0-5cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_0-5cm_mean": {
+        "description": "Nitrogen; depth: 0-5cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "nitrogen_0-5cm_uncertainty": {
+        "description": "Nitrogen; depth: 0-5cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "nitrogen_100-200cm_Q0.05": {
+        "description": "Nitrogen; depth: 100-200cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_100-200cm_Q0.5": {
+        "description": "Nitrogen; depth: 100-200cm; quantile: median",
+        "units": "g/kg"
+      },
+      "nitrogen_100-200cm_Q0.95": {
+        "description": "Nitrogen; depth: 100-200cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_100-200cm_mean": {
+        "description": "Nitrogen; depth: 100-200cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "nitrogen_100-200cm_uncertainty": {
+        "description": "Nitrogen; depth: 100-200cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "nitrogen_15-30cm_Q0.05": {
+        "description": "Nitrogen; depth: 15-30cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_15-30cm_Q0.5": {
+        "description": "Nitrogen; depth: 15-30cm; quantile: median",
+        "units": "g/kg"
+      },
+      "nitrogen_15-30cm_Q0.95": {
+        "description": "Nitrogen; depth: 15-30cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_15-30cm_mean": {
+        "description": "Nitrogen; depth: 15-30cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "nitrogen_15-30cm_uncertainty": {
+        "description": "Nitrogen; depth: 15-30cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "nitrogen_30-60cm_Q0.05": {
+        "description": "Nitrogen; depth: 30-60cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_30-60cm_Q0.5": {
+        "description": "Nitrogen; depth: 30-60cm; quantile: median",
+        "units": "g/kg"
+      },
+      "nitrogen_30-60cm_Q0.95": {
+        "description": "Nitrogen; depth: 30-60cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_30-60cm_mean": {
+        "description": "Nitrogen; depth: 30-60cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "nitrogen_30-60cm_uncertainty": {
+        "description": "Nitrogen; depth: 30-60cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "nitrogen_5-15cm_Q0.05": {
+        "description": "Nitrogen; depth: 5-15cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_5-15cm_Q0.5": {
+        "description": "Nitrogen; depth: 5-15cm; quantile: median",
+        "units": "g/kg"
+      },
+      "nitrogen_5-15cm_Q0.95": {
+        "description": "Nitrogen; depth: 5-15cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_5-15cm_mean": {
+        "description": "Nitrogen; depth: 5-15cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "nitrogen_5-15cm_uncertainty": {
+        "description": "Nitrogen; depth: 5-15cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "nitrogen_60-100cm_Q0.05": {
+        "description": "Nitrogen; depth: 60-100cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_60-100cm_Q0.5": {
+        "description": "Nitrogen; depth: 60-100cm; quantile: median",
+        "units": "g/kg"
+      },
+      "nitrogen_60-100cm_Q0.95": {
+        "description": "Nitrogen; depth: 60-100cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "nitrogen_60-100cm_mean": {
+        "description": "Nitrogen; depth: 60-100cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "nitrogen_60-100cm_uncertainty": {
+        "description": "Nitrogen; depth: 60-100cm; quantile: uncertainty",
+        "units": "g/kg"
+      }
+    }
+  },
+  "ocd": {
+    "base": {
+      "conventional_units": "kg/m3",
+      "conversion_factor": 10.0,
+      "description": "Organic carbon density",
+      "mapped_units": "hg/m3",
+      "name": "ocd"
+    },
+    "coverages": {
+      "ocd_0-5cm_Q0.05": {
+        "description": "Organic carbon density; depth: 0-5cm; quantile: 5% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_0-5cm_Q0.5": {
+        "description": "Organic carbon density; depth: 0-5cm; quantile: median",
+        "units": "kg/m3"
+      },
+      "ocd_0-5cm_Q0.95": {
+        "description": "Organic carbon density; depth: 0-5cm; quantile: 95% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_0-5cm_mean": {
+        "description": "Organic carbon density; depth: 0-5cm; quantile: mean",
+        "units": "kg/m3"
+      },
+      "ocd_0-5cm_uncertainty": {
+        "description": "Organic carbon density; depth: 0-5cm; quantile: uncertainty",
+        "units": "kg/m3"
+      },
+      "ocd_100-200cm_Q0.05": {
+        "description": "Organic carbon density; depth: 100-200cm; quantile: 5% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_100-200cm_Q0.5": {
+        "description": "Organic carbon density; depth: 100-200cm; quantile: median",
+        "units": "kg/m3"
+      },
+      "ocd_100-200cm_Q0.95": {
+        "description": "Organic carbon density; depth: 100-200cm; quantile: 95% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_100-200cm_mean": {
+        "description": "Organic carbon density; depth: 100-200cm; quantile: mean",
+        "units": "kg/m3"
+      },
+      "ocd_100-200cm_uncertainty": {
+        "description": "Organic carbon density; depth: 100-200cm; quantile: uncertainty",
+        "units": "kg/m3"
+      },
+      "ocd_15-30cm_Q0.05": {
+        "description": "Organic carbon density; depth: 15-30cm; quantile: 5% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_15-30cm_Q0.5": {
+        "description": "Organic carbon density; depth: 15-30cm; quantile: median",
+        "units": "kg/m3"
+      },
+      "ocd_15-30cm_Q0.95": {
+        "description": "Organic carbon density; depth: 15-30cm; quantile: 95% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_15-30cm_mean": {
+        "description": "Organic carbon density; depth: 15-30cm; quantile: mean",
+        "units": "kg/m3"
+      },
+      "ocd_15-30cm_uncertainty": {
+        "description": "Organic carbon density; depth: 15-30cm; quantile: uncertainty",
+        "units": "kg/m3"
+      },
+      "ocd_30-60cm_Q0.05": {
+        "description": "Organic carbon density; depth: 30-60cm; quantile: 5% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_30-60cm_Q0.5": {
+        "description": "Organic carbon density; depth: 30-60cm; quantile: median",
+        "units": "kg/m3"
+      },
+      "ocd_30-60cm_Q0.95": {
+        "description": "Organic carbon density; depth: 30-60cm; quantile: 95% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_30-60cm_mean": {
+        "description": "Organic carbon density; depth: 30-60cm; quantile: mean",
+        "units": "kg/m3"
+      },
+      "ocd_30-60cm_uncertainty": {
+        "description": "Organic carbon density; depth: 30-60cm; quantile: uncertainty",
+        "units": "kg/m3"
+      },
+      "ocd_5-15cm_Q0.05": {
+        "description": "Organic carbon density; depth: 5-15cm; quantile: 5% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_5-15cm_Q0.5": {
+        "description": "Organic carbon density; depth: 5-15cm; quantile: median",
+        "units": "kg/m3"
+      },
+      "ocd_5-15cm_Q0.95": {
+        "description": "Organic carbon density; depth: 5-15cm; quantile: 95% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_5-15cm_mean": {
+        "description": "Organic carbon density; depth: 5-15cm; quantile: mean",
+        "units": "kg/m3"
+      },
+      "ocd_5-15cm_uncertainty": {
+        "description": "Organic carbon density; depth: 5-15cm; quantile: uncertainty",
+        "units": "kg/m3"
+      },
+      "ocd_60-100cm_Q0.05": {
+        "description": "Organic carbon density; depth: 60-100cm; quantile: 5% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_60-100cm_Q0.5": {
+        "description": "Organic carbon density; depth: 60-100cm; quantile: median",
+        "units": "kg/m3"
+      },
+      "ocd_60-100cm_Q0.95": {
+        "description": "Organic carbon density; depth: 60-100cm; quantile: 95% quantile",
+        "units": "kg/m3"
+      },
+      "ocd_60-100cm_mean": {
+        "description": "Organic carbon density; depth: 60-100cm; quantile: mean",
+        "units": "kg/m3"
+      },
+      "ocd_60-100cm_uncertainty": {
+        "description": "Organic carbon density; depth: 60-100cm; quantile: uncertainty",
+        "units": "kg/m3"
+      }
+    }
+  },
+  "ocs": {
+    "base": {
+      "conventional_units": "kg/m2",
+      "conversion_factor": 10.0,
+      "description": "Organic carbon stocks",
+      "mapped_units": "t/ha",
+      "name": "ocs"
+    },
+    "coverages": {
+      "ocs_0-30cm_Q0.05": {
+        "description": "Organic carbon stocks; depth: 0-30cm; quantile: 5% quantile",
+        "units": "kg/m2"
+      },
+      "ocs_0-30cm_Q0.5": {
+        "description": "Organic carbon stocks; depth: 0-30cm; quantile: median",
+        "units": "kg/m2"
+      },
+      "ocs_0-30cm_Q0.95": {
+        "description": "Organic carbon stocks; depth: 0-30cm; quantile: 95% quantile",
+        "units": "kg/m2"
+      },
+      "ocs_0-30cm_mean": {
+        "description": "Organic carbon stocks; depth: 0-30cm; quantile: mean",
+        "units": "kg/m2"
+      },
+      "ocs_0-30cm_uncertainty": {
+        "description": "Organic carbon stocks; depth: 0-30cm; quantile: uncertainty",
+        "units": "kg/m2"
+      }
+    }
+  },
+  "phh2o": {
+    "base": {
+      "conventional_units": "-",
+      "conversion_factor": 10.0,
+      "description": "pH water",
+      "mapped_units": "pH x 10",
+      "name": "phh2o"
+    },
+    "coverages": {
+      "phh2o_0-5cm_Q0.05": {
+        "description": "pH water; depth: 0-5cm; quantile: 5% quantile",
+        "units": "-"
+      },
+      "phh2o_0-5cm_Q0.5": {
+        "description": "pH water; depth: 0-5cm; quantile: median",
+        "units": "-"
+      },
+      "phh2o_0-5cm_Q0.95": {
+        "description": "pH water; depth: 0-5cm; quantile: 95% quantile",
+        "units": "-"
+      },
+      "phh2o_0-5cm_mean": {
+        "description": "pH water; depth: 0-5cm; quantile: mean",
+        "units": "-"
+      },
+      "phh2o_0-5cm_uncertainty": {
+        "description": "pH water; depth: 0-5cm; quantile: uncertainty",
+        "units": "-"
+      },
+      "phh2o_100-200cm_Q0.05": {
+        "description": "pH water; depth: 100-200cm; quantile: 5% quantile",
+        "units": "-"
+      },
+      "phh2o_100-200cm_Q0.5": {
+        "description": "pH water; depth: 100-200cm; quantile: median",
+        "units": "-"
+      },
+      "phh2o_100-200cm_Q0.95": {
+        "description": "pH water; depth: 100-200cm; quantile: 95% quantile",
+        "units": "-"
+      },
+      "phh2o_100-200cm_mean": {
+        "description": "pH water; depth: 100-200cm; quantile: mean",
+        "units": "-"
+      },
+      "phh2o_100-200cm_uncertainty": {
+        "description": "pH water; depth: 100-200cm; quantile: uncertainty",
+        "units": "-"
+      },
+      "phh2o_15-30cm_Q0.05": {
+        "description": "pH water; depth: 15-30cm; quantile: 5% quantile",
+        "units": "-"
+      },
+      "phh2o_15-30cm_Q0.5": {
+        "description": "pH water; depth: 15-30cm; quantile: median",
+        "units": "-"
+      },
+      "phh2o_15-30cm_Q0.95": {
+        "description": "pH water; depth: 15-30cm; quantile: 95% quantile",
+        "units": "-"
+      },
+      "phh2o_15-30cm_mean": {
+        "description": "pH water; depth: 15-30cm; quantile: mean",
+        "units": "-"
+      },
+      "phh2o_15-30cm_uncertainty": {
+        "description": "pH water; depth: 15-30cm; quantile: uncertainty",
+        "units": "-"
+      },
+      "phh2o_30-60cm_Q0.05": {
+        "description": "pH water; depth: 30-60cm; quantile: 5% quantile",
+        "units": "-"
+      },
+      "phh2o_30-60cm_Q0.5": {
+        "description": "pH water; depth: 30-60cm; quantile: median",
+        "units": "-"
+      },
+      "phh2o_30-60cm_Q0.95": {
+        "description": "pH water; depth: 30-60cm; quantile: 95% quantile",
+        "units": "-"
+      },
+      "phh2o_30-60cm_mean": {
+        "description": "pH water; depth: 30-60cm; quantile: mean",
+        "units": "-"
+      },
+      "phh2o_30-60cm_uncertainty": {
+        "description": "pH water; depth: 30-60cm; quantile: uncertainty",
+        "units": "-"
+      },
+      "phh2o_5-15cm_Q0.05": {
+        "description": "pH water; depth: 5-15cm; quantile: 5% quantile",
+        "units": "-"
+      },
+      "phh2o_5-15cm_Q0.5": {
+        "description": "pH water; depth: 5-15cm; quantile: median",
+        "units": "-"
+      },
+      "phh2o_5-15cm_Q0.95": {
+        "description": "pH water; depth: 5-15cm; quantile: 95% quantile",
+        "units": "-"
+      },
+      "phh2o_5-15cm_mean": {
+        "description": "pH water; depth: 5-15cm; quantile: mean",
+        "units": "-"
+      },
+      "phh2o_5-15cm_uncertainty": {
+        "description": "pH water; depth: 5-15cm; quantile: uncertainty",
+        "units": "-"
+      },
+      "phh2o_60-100cm_Q0.05": {
+        "description": "pH water; depth: 60-100cm; quantile: 5% quantile",
+        "units": "-"
+      },
+      "phh2o_60-100cm_Q0.5": {
+        "description": "pH water; depth: 60-100cm; quantile: median",
+        "units": "-"
+      },
+      "phh2o_60-100cm_Q0.95": {
+        "description": "pH water; depth: 60-100cm; quantile: 95% quantile",
+        "units": "-"
+      },
+      "phh2o_60-100cm_mean": {
+        "description": "pH water; depth: 60-100cm; quantile: mean",
+        "units": "-"
+      },
+      "phh2o_60-100cm_uncertainty": {
+        "description": "pH water; depth: 60-100cm; quantile: uncertainty",
+        "units": "-"
+      }
+    }
+  },
+  "sand": {
+    "base": {
+      "conventional_units": "g/100g (%)",
+      "conversion_factor": 10.0,
+      "description": "Sand",
+      "mapped_units": "g/kg",
+      "name": "sand"
+    },
+    "coverages": {
+      "sand_0-5cm_Q0.05": {
+        "description": "Sand; depth: 0-5cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_0-5cm_Q0.5": {
+        "description": "Sand; depth: 0-5cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "sand_0-5cm_Q0.95": {
+        "description": "Sand; depth: 0-5cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_0-5cm_mean": {
+        "description": "Sand; depth: 0-5cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "sand_0-5cm_uncertainty": {
+        "description": "Sand; depth: 0-5cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "sand_100-200cm_Q0.05": {
+        "description": "Sand; depth: 100-200cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_100-200cm_Q0.5": {
+        "description": "Sand; depth: 100-200cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "sand_100-200cm_Q0.95": {
+        "description": "Sand; depth: 100-200cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_100-200cm_mean": {
+        "description": "Sand; depth: 100-200cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "sand_100-200cm_uncertainty": {
+        "description": "Sand; depth: 100-200cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "sand_15-30cm_Q0.05": {
+        "description": "Sand; depth: 15-30cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_15-30cm_Q0.5": {
+        "description": "Sand; depth: 15-30cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "sand_15-30cm_Q0.95": {
+        "description": "Sand; depth: 15-30cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_15-30cm_mean": {
+        "description": "Sand; depth: 15-30cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "sand_15-30cm_uncertainty": {
+        "description": "Sand; depth: 15-30cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "sand_30-60cm_Q0.05": {
+        "description": "Sand; depth: 30-60cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_30-60cm_Q0.5": {
+        "description": "Sand; depth: 30-60cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "sand_30-60cm_Q0.95": {
+        "description": "Sand; depth: 30-60cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_30-60cm_mean": {
+        "description": "Sand; depth: 30-60cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "sand_30-60cm_uncertainty": {
+        "description": "Sand; depth: 30-60cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "sand_5-15cm_Q0.05": {
+        "description": "Sand; depth: 5-15cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_5-15cm_Q0.5": {
+        "description": "Sand; depth: 5-15cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "sand_5-15cm_Q0.95": {
+        "description": "Sand; depth: 5-15cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_5-15cm_mean": {
+        "description": "Sand; depth: 5-15cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "sand_5-15cm_uncertainty": {
+        "description": "Sand; depth: 5-15cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "sand_60-100cm_Q0.05": {
+        "description": "Sand; depth: 60-100cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_60-100cm_Q0.5": {
+        "description": "Sand; depth: 60-100cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "sand_60-100cm_Q0.95": {
+        "description": "Sand; depth: 60-100cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "sand_60-100cm_mean": {
+        "description": "Sand; depth: 60-100cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "sand_60-100cm_uncertainty": {
+        "description": "Sand; depth: 60-100cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      }
+    }
+  },
+  "silt": {
+    "base": {
+      "conventional_units": "g/100g (%)",
+      "conversion_factor": 10.0,
+      "description": "Silt",
+      "mapped_units": "g/kg",
+      "name": "silt"
+    },
+    "coverages": {
+      "silt_0-5cm_Q0.05": {
+        "description": "Silt; depth: 0-5cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_0-5cm_Q0.5": {
+        "description": "Silt; depth: 0-5cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "silt_0-5cm_Q0.95": {
+        "description": "Silt; depth: 0-5cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_0-5cm_mean": {
+        "description": "Silt; depth: 0-5cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "silt_0-5cm_uncertainty": {
+        "description": "Silt; depth: 0-5cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "silt_100-200cm_Q0.05": {
+        "description": "Silt; depth: 100-200cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_100-200cm_Q0.5": {
+        "description": "Silt; depth: 100-200cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "silt_100-200cm_Q0.95": {
+        "description": "Silt; depth: 100-200cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_100-200cm_mean": {
+        "description": "Silt; depth: 100-200cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "silt_100-200cm_uncertainty": {
+        "description": "Silt; depth: 100-200cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "silt_15-30cm_Q0.05": {
+        "description": "Silt; depth: 15-30cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_15-30cm_Q0.5": {
+        "description": "Silt; depth: 15-30cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "silt_15-30cm_Q0.95": {
+        "description": "Silt; depth: 15-30cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_15-30cm_mean": {
+        "description": "Silt; depth: 15-30cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "silt_15-30cm_uncertainty": {
+        "description": "Silt; depth: 15-30cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "silt_30-60cm_Q0.05": {
+        "description": "Silt; depth: 30-60cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_30-60cm_Q0.5": {
+        "description": "Silt; depth: 30-60cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "silt_30-60cm_Q0.95": {
+        "description": "Silt; depth: 30-60cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_30-60cm_mean": {
+        "description": "Silt; depth: 30-60cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "silt_30-60cm_uncertainty": {
+        "description": "Silt; depth: 30-60cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "silt_5-15cm_Q0.05": {
+        "description": "Silt; depth: 5-15cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_5-15cm_Q0.5": {
+        "description": "Silt; depth: 5-15cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "silt_5-15cm_Q0.95": {
+        "description": "Silt; depth: 5-15cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_5-15cm_mean": {
+        "description": "Silt; depth: 5-15cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "silt_5-15cm_uncertainty": {
+        "description": "Silt; depth: 5-15cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      },
+      "silt_60-100cm_Q0.05": {
+        "description": "Silt; depth: 60-100cm; quantile: 5% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_60-100cm_Q0.5": {
+        "description": "Silt; depth: 60-100cm; quantile: median",
+        "units": "g/100g (%)"
+      },
+      "silt_60-100cm_Q0.95": {
+        "description": "Silt; depth: 60-100cm; quantile: 95% quantile",
+        "units": "g/100g (%)"
+      },
+      "silt_60-100cm_mean": {
+        "description": "Silt; depth: 60-100cm; quantile: mean",
+        "units": "g/100g (%)"
+      },
+      "silt_60-100cm_uncertainty": {
+        "description": "Silt; depth: 60-100cm; quantile: uncertainty",
+        "units": "g/100g (%)"
+      }
+    }
+  },
+  "soc": {
+    "base": {
+      "conventional_units": "g/kg",
+      "conversion_factor": 10.0,
+      "description": "Soil organic carbon",
+      "mapped_units": "dg/kg",
+      "name": "soc"
+    },
+    "coverages": {
+      "soc_0-5cm_Q0.05": {
+        "description": "Soil organic carbon; depth: 0-5cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "soc_0-5cm_Q0.5": {
+        "description": "Soil organic carbon; depth: 0-5cm; quantile: median",
+        "units": "g/kg"
+      },
+      "soc_0-5cm_Q0.95": {
+        "description": "Soil organic carbon; depth: 0-5cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "soc_0-5cm_mean": {
+        "description": "Soil organic carbon; depth: 0-5cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "soc_0-5cm_uncertainty": {
+        "description": "Soil organic carbon; depth: 0-5cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "soc_100-200cm_Q0.05": {
+        "description": "Soil organic carbon; depth: 100-200cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "soc_100-200cm_Q0.5": {
+        "description": "Soil organic carbon; depth: 100-200cm; quantile: median",
+        "units": "g/kg"
+      },
+      "soc_100-200cm_Q0.95": {
+        "description": "Soil organic carbon; depth: 100-200cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "soc_100-200cm_mean": {
+        "description": "Soil organic carbon; depth: 100-200cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "soc_100-200cm_uncertainty": {
+        "description": "Soil organic carbon; depth: 100-200cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "soc_15-30cm_Q0.05": {
+        "description": "Soil organic carbon; depth: 15-30cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "soc_15-30cm_Q0.5": {
+        "description": "Soil organic carbon; depth: 15-30cm; quantile: median",
+        "units": "g/kg"
+      },
+      "soc_15-30cm_Q0.95": {
+        "description": "Soil organic carbon; depth: 15-30cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "soc_15-30cm_mean": {
+        "description": "Soil organic carbon; depth: 15-30cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "soc_15-30cm_uncertainty": {
+        "description": "Soil organic carbon; depth: 15-30cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "soc_30-60cm_Q0.05": {
+        "description": "Soil organic carbon; depth: 30-60cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "soc_30-60cm_Q0.5": {
+        "description": "Soil organic carbon; depth: 30-60cm; quantile: median",
+        "units": "g/kg"
+      },
+      "soc_30-60cm_Q0.95": {
+        "description": "Soil organic carbon; depth: 30-60cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "soc_30-60cm_mean": {
+        "description": "Soil organic carbon; depth: 30-60cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "soc_30-60cm_uncertainty": {
+        "description": "Soil organic carbon; depth: 30-60cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "soc_5-15cm_Q0.05": {
+        "description": "Soil organic carbon; depth: 5-15cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "soc_5-15cm_Q0.5": {
+        "description": "Soil organic carbon; depth: 5-15cm; quantile: median",
+        "units": "g/kg"
+      },
+      "soc_5-15cm_Q0.95": {
+        "description": "Soil organic carbon; depth: 5-15cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "soc_5-15cm_mean": {
+        "description": "Soil organic carbon; depth: 5-15cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "soc_5-15cm_uncertainty": {
+        "description": "Soil organic carbon; depth: 5-15cm; quantile: uncertainty",
+        "units": "g/kg"
+      },
+      "soc_60-100cm_Q0.05": {
+        "description": "Soil organic carbon; depth: 60-100cm; quantile: 5% quantile",
+        "units": "g/kg"
+      },
+      "soc_60-100cm_Q0.5": {
+        "description": "Soil organic carbon; depth: 60-100cm; quantile: median",
+        "units": "g/kg"
+      },
+      "soc_60-100cm_Q0.95": {
+        "description": "Soil organic carbon; depth: 60-100cm; quantile: 95% quantile",
+        "units": "g/kg"
+      },
+      "soc_60-100cm_mean": {
+        "description": "Soil organic carbon; depth: 60-100cm; quantile: mean",
+        "units": "g/kg"
+      },
+      "soc_60-100cm_uncertainty": {
+        "description": "Soil organic carbon; depth: 60-100cm; quantile: uncertainty",
+        "units": "g/kg"
+      }
+    }
+  },
+  "wv0010": {
+    "base": {
+      "conventional_units": "10\u22122 cm3 cm\u22123 (%)",
+      "conversion_factor": 10.0,
+      "description": "Volumetric Water Content at 10kPa",
+      "mapped_units": "10-3cm3cm-3(0.1 v% or 1 mm/m)",
+      "name": "wv0010"
+    },
+    "coverages": {
+      "wv0010_0-5cm_Q0.05": {
+        "description": "Volumetric Water Content at 10kPa; depth: 0-5cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_0-5cm_Q0.5": {
+        "description": "Volumetric Water Content at 10kPa; depth: 0-5cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_0-5cm_Q0.95": {
+        "description": "Volumetric Water Content at 10kPa; depth: 0-5cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_0-5cm_mean": {
+        "description": "Volumetric Water Content at 10kPa; depth: 0-5cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_0-5cm_uncertainty": {
+        "description": "Volumetric Water Content at 10kPa; depth: 0-5cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_100-200cm_Q0.05": {
+        "description": "Volumetric Water Content at 10kPa; depth: 100-200cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_100-200cm_Q0.5": {
+        "description": "Volumetric Water Content at 10kPa; depth: 100-200cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_100-200cm_Q0.95": {
+        "description": "Volumetric Water Content at 10kPa; depth: 100-200cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_100-200cm_mean": {
+        "description": "Volumetric Water Content at 10kPa; depth: 100-200cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_100-200cm_uncertainty": {
+        "description": "Volumetric Water Content at 10kPa; depth: 100-200cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_15-30cm_Q0.05": {
+        "description": "Volumetric Water Content at 10kPa; depth: 15-30cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_15-30cm_Q0.5": {
+        "description": "Volumetric Water Content at 10kPa; depth: 15-30cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_15-30cm_Q0.95": {
+        "description": "Volumetric Water Content at 10kPa; depth: 15-30cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_15-30cm_mean": {
+        "description": "Volumetric Water Content at 10kPa; depth: 15-30cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_15-30cm_uncertainty": {
+        "description": "Volumetric Water Content at 10kPa; depth: 15-30cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_30-60cm_Q0.05": {
+        "description": "Volumetric Water Content at 10kPa; depth: 30-60cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_30-60cm_Q0.5": {
+        "description": "Volumetric Water Content at 10kPa; depth: 30-60cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_30-60cm_Q0.95": {
+        "description": "Volumetric Water Content at 10kPa; depth: 30-60cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_30-60cm_mean": {
+        "description": "Volumetric Water Content at 10kPa; depth: 30-60cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_30-60cm_uncertainty": {
+        "description": "Volumetric Water Content at 10kPa; depth: 30-60cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_5-15cm_Q0.05": {
+        "description": "Volumetric Water Content at 10kPa; depth: 5-15cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_5-15cm_Q0.5": {
+        "description": "Volumetric Water Content at 10kPa; depth: 5-15cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_5-15cm_Q0.95": {
+        "description": "Volumetric Water Content at 10kPa; depth: 5-15cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_5-15cm_mean": {
+        "description": "Volumetric Water Content at 10kPa; depth: 5-15cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_5-15cm_uncertainty": {
+        "description": "Volumetric Water Content at 10kPa; depth: 5-15cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_60-100cm_Q0.05": {
+        "description": "Volumetric Water Content at 10kPa; depth: 60-100cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_60-100cm_Q0.5": {
+        "description": "Volumetric Water Content at 10kPa; depth: 60-100cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_60-100cm_Q0.95": {
+        "description": "Volumetric Water Content at 10kPa; depth: 60-100cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_60-100cm_mean": {
+        "description": "Volumetric Water Content at 10kPa; depth: 60-100cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv0010_60-100cm_uncertainty": {
+        "description": "Volumetric Water Content at 10kPa; depth: 60-100cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      }
+    }
+  },
+  "wv1500": {
+    "base": {
+      "conventional_units": "10\u22122 cm3 cm\u22123 (%)",
+      "conversion_factor": 10.0,
+      "description": "Volumetric Water Content at 1500kPa",
+      "mapped_units": "10-3cm3cm-3(0.1 v% or 1 mm/m)",
+      "name": "wv1500"
+    },
+    "coverages": {
+      "wv1500_0-5cm_Q0.05": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 0-5cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_0-5cm_Q0.5": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 0-5cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_0-5cm_Q0.95": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 0-5cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_0-5cm_mean": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 0-5cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_0-5cm_uncertainty": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 0-5cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_100-200cm_Q0.05": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 100-200cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_100-200cm_Q0.5": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 100-200cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_100-200cm_Q0.95": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 100-200cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_100-200cm_mean": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 100-200cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_100-200cm_uncertainty": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 100-200cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_15-30cm_Q0.05": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 15-30cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_15-30cm_Q0.5": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 15-30cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_15-30cm_Q0.95": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 15-30cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_15-30cm_mean": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 15-30cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_15-30cm_uncertainty": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 15-30cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_30-60cm_Q0.05": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 30-60cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_30-60cm_Q0.5": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 30-60cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_30-60cm_Q0.95": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 30-60cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_30-60cm_mean": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 30-60cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_30-60cm_uncertainty": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 30-60cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_5-15cm_Q0.05": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 5-15cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_5-15cm_Q0.5": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 5-15cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_5-15cm_Q0.95": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 5-15cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_5-15cm_mean": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 5-15cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_5-15cm_uncertainty": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 5-15cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_60-100cm_Q0.05": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 60-100cm; quantile: 5% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_60-100cm_Q0.5": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 60-100cm; quantile: median",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_60-100cm_Q0.95": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 60-100cm; quantile: 95% quantile",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_60-100cm_mean": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 60-100cm; quantile: mean",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      },
+      "wv1500_60-100cm_uncertainty": {
+        "description": "Volumetric Water Content at 1500kPa; depth: 60-100cm; quantile: uncertainty",
+        "units": "10\u22122 cm3 cm\u22123 (%)"
+      }
+    }
+  }
+}

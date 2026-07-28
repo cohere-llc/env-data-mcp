@@ -19,10 +19,7 @@ Query strategy
 from __future__ import annotations
 
 import datetime
-import re
-import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Any
 
@@ -34,144 +31,18 @@ from rasterio.env import Env
 
 from env_data_mcp.helpers import parse_date
 
+from ._var_cache import _get_full_variable_info, _VariableInfo
 from .constants import (
     _AWS_URL,
     _CDSE_ODATA_URL,
     _GDAL_OPTS,
     _IO_WORKERS,
     _MINIMUM_VALUE,
-    _PRODUCT_TYPES,
     _QA_THRESHOLD,
-    _UNITS_MAP,
-    ProductType,
 )
 
 # ---------------------------------------------------------------------------
-# Session-level caches
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class _VariableInfo:
-    """Full set of per-variable information."""
-
-    name: str  # Variable name exposed to MCP tool users (e.g., OFFL-L2_O3)
-    description: str
-    units: str
-    product_type: ProductType
-    property_name: str  # name of property (e.g., L2_O3)
-    underscored_name: str  # name used in building URIs (e.g., L2__O3____)
-    cogt_name: str  # descriptive name embedded in COGT file names (e.g., ozone_total_column)
-
-
-# available variables by name
-_VARIABLE_INFO_CACHE: dict[str, _VariableInfo] = {}
-
-# ---------------------------------------------------------------------------
 # Core query logic
-# ---------------------------------------------------------------------------
-
-
-def _extract_name_from_variable_url(url: str) -> tuple[str, str]:
-    """Extracts a variable name from its url in the data catalog.
-
-    URLs are of the form:
-    https://meeo-s5p.s3.amazonaws.com/COGT/OFFL/L2__CO____/catalog.json
-
-    for the variable named:
-    L2__CO____
-
-    yes, that's right, with a whole bunch of underscores to make it
-    effectively unreadable and very difficult to accurately reproduce
-    (for humans at least). So, return a cleaned name (without multiple
-    underscores in a row) for users, and the raw variable name for queries.
-
-    :return: cleaned variable name, raw variable name
-    """
-    parts = url.split("/")
-    if len(parts) < 6:
-        return "", ""
-    name = re.sub(r"_+", "_", parts[5]).rstrip("_")
-    return name, parts[5]
-
-
-# ---------------------------------------------------------------------------
-# Available variables
-# ---------------------------------------------------------------------------
-
-
-_S3_NS = "http://s3.amazonaws.com/doc/2006-03-01/"
-
-
-def _get_cogt_variable_name(product_type: ProductType, variable_folder: str) -> str:
-    """Returns the COGT variable name associated with a variable folder.
-
-    e.g., "OFFL", "L2__O3____" -> "total_column_ozone"
-    """
-    resp = httpx.get(
-        _AWS_URL,
-        params={
-            "list-type": "2",
-            "prefix": f"COGT/{product_type}/{variable_folder}/",
-            "max-keys": "4",
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    xml_resp = ET.fromstring(resp.text)
-    keys = [(el.text or "").strip() for el in xml_resp.findall(f".//{{{_S3_NS}}}Key")]
-    key = next((k for k in keys if "_PRODUCT_" in k and "qa_value" not in k), "")
-    # key = "COGT/NRTI/L2__NO2___/.../..._PRODUCT_nitrogendioxide_tropospheric_column_4326.tif"
-    parts = key.split("_PRODUCT_")
-    if len(parts) != 2:
-        raise ValueError(f"Unparsable S3 Key for COGT variable name: {key}")
-    return parts[1].removesuffix("_4326.tif")
-
-
-def _get_full_variable_info() -> dict[str, _VariableInfo]:
-    """Discover available variables for TROPOMI.
-
-    :return: dict keyed on variable with `description` and `units`
-    """
-    global _VARIABLE_INFO_CACHE
-    if _VARIABLE_INFO_CACHE:
-        return _VARIABLE_INFO_CACHE
-    for product_type, product_description in _PRODUCT_TYPES.items():
-        with httpx.Client(timeout=30) as client:
-            resp = client.get(f"{_AWS_URL}COGT/{product_type}/catalog.json")
-            resp.raise_for_status()
-            info = resp.json()
-        _VARIABLE_INFO_CACHE.update(
-            {
-                (
-                    name
-                    := f"{product_type}-{(names := _extract_name_from_variable_url(var.get('href')))[0]}"  # noqa: E501
-                ): _VariableInfo(
-                    name=name,
-                    description=f"{product_description}: {var.get('title')}",
-                    units=_UNITS_MAP.get(names[0], "unknown"),
-                    product_type=product_type,
-                    property_name=names[0],
-                    underscored_name=names[1],
-                    cogt_name=_get_cogt_variable_name(product_type, names[1]),
-                )
-                for var in info.get("links")
-                if "title" in var
-            }
-        )
-    return _VARIABLE_INFO_CACHE
-
-
-def get_variable_info() -> dict[str, dict[str, str]]:
-    """Return descriptions and units for each available variable."""
-    return {
-        key: {"description": val.description, "units": val.units}
-        for key, val in _get_full_variable_info().items()
-    }
-
-
-# ---------------------------------------------------------------------------
-# File identification
 # ---------------------------------------------------------------------------
 
 
