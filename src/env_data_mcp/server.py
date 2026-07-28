@@ -34,3 +34,7 @@ from env_data_mcp.sources import essdive
 
 def main() -> None:
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()
