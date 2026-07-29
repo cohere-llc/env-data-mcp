@@ -458,8 +458,7 @@ def _bbox_query(
 
 @mcp.tool()
 def ssurgo_soil_profile_available_variables() -> dict[str, Any]:
-    """Return all available variable names for SSURGO soil profile queries.
-    """
+    """Return all available variable names for SSURGO soil profile queries."""
     return _available_vars_response(_QueryType.SOIL_PROFILE)
 
 
@@ -534,8 +533,7 @@ def ssurgo_soil_profile_bbox_query(
 
 @mcp.tool()
 def ssurgo_area_summary_available_variables() -> dict[str, Any]:
-    """Return all available variable names for SSURGO area summary queries.
-    """
+    """Return all available variable names for SSURGO area summary queries."""
     return _available_vars_response(_QueryType.AREA_SUMMARY)
 
 
@@ -610,8 +608,7 @@ def ssurgo_area_summary_bbox_query(
 
 @mcp.tool()
 def ssurgo_subsurface_barriers_available_variables() -> dict[str, Any]:
-    """Return all available variable names for SSURGO subsurface barrier queries.
-    """
+    """Return all available variable names for SSURGO subsurface barrier queries."""
     return _available_vars_response(_QueryType.SUBSURFACE_BARRIERS)
 
 
@@ -686,8 +683,7 @@ def ssurgo_subsurface_barriers_bbox_query(
 
 @mcp.tool()
 def ssurgo_seasonal_hydrology_available_variables() -> dict[str, Any]:
-    """Return all available variable names for SSURGO seasonal hydrology queries.
-    """
+    """Return all available variable names for SSURGO seasonal hydrology queries."""
     return _available_vars_response(_QueryType.SEASONAL_HYDROLOGY)
 
 
@@ -762,8 +758,7 @@ def ssurgo_seasonal_hydrology_bbox_query(
 
 @mcp.tool()
 def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
-    """Return all available interpretation rule names for SSURGO soil suitability queries.
-    """
+    """Return all available interpretation rule names for SSURGO soil suitability queries."""
     t0 = time.perf_counter()
     try:
         with httpx.Client(timeout=120.0) as client:
@@ -1063,8 +1058,7 @@ def ssurgo_soil_suitability_bbox_query(
 
 @mcp.tool()
 def ssurgo_ecological_site_available_variables() -> dict[str, Any]:
-    """Return all available variable names for SSURGO ecological site queries.
-    """
+    """Return all available variable names for SSURGO ecological site queries."""
     return _available_vars_response(_QueryType.ECOLOGICAL_SITE)
 
 
@@ -1139,8 +1133,7 @@ def ssurgo_ecological_site_bbox_query(
 
 @mcp.tool()
 def ssurgo_parent_material_available_variables() -> dict[str, Any]:
-    """Return all available variable names for SSURGO parent material queries.
-    """
+    """Return all available variable names for SSURGO parent material queries."""
     return _available_vars_response(_QueryType.PARENT_MATERIAL)
 
 
@@ -1215,8 +1208,7 @@ def ssurgo_parent_material_bbox_query(
 
 @mcp.tool()
 def ssurgo_soil_temperature_available_variables() -> dict[str, Any]:
-    """Return all available variable names for SSURGO soil temperature queries.
-    """
+    """Return all available variable names for SSURGO soil temperature queries."""
     return _available_vars_response(_QueryType.SOIL_TEMPERATURE)
 
 

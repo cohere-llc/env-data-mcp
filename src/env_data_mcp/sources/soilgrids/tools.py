@@ -32,8 +32,7 @@ def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, A
 
 @mcp.tool()
 def soilgrids_available_variables() -> dict[str, Any]:
-    """Return a list of available SoilGrids variables with descriptions and units.
-    """
+    """Return a list of available SoilGrids variables with descriptions and units."""
     t0 = time.perf_counter()
     base_info = get_base_variable_list()
     var_info_raw: dict[str, VariableInfo] = {}
