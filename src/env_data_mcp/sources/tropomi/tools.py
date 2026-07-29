@@ -88,11 +88,10 @@ def tropomi_point_query(
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        start_date: ISO 8601 date string, e.g., "2019-08-15",
-        end_date: ISO 8601 date string, inclusive, e.g., "2019-08-15".
-        variables: TROPOMI variable names. Use tropomi_available_variables() tool to get
-            a list of valid variable names. Defaults to a standard set of commonly used
-            variables.
+        start_date: Inclusive start date, ISO 8601 date string, e.g., "2019-08-15",
+        end_date: Inclusive end date, ISO 8601 date string, e.g., "2019-08-15".
+        variables: TROPOMI variable names. Use the ``tropomi_available_variables()`` tool to get
+            a list of valid variable names. Defaults to a set of commonly used variables.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to
             be 60s.
@@ -188,15 +187,14 @@ def tropomi_bbox_query(
     Global coverage, July 2018-present.
 
     Args:
-        min_lat: Decimal degrees, WGS84 (-90 to 90).
-        max_lat: Decimal degrees, WGS84 (-90 to 90).
-        min_lon: Decimal degrees, WGS84 (-180 to 180).
-        max_lon: Decimal degrees, WGS84 (-180 to 180).
-        start_date: ISO 8601 date string, e.g., "2019-08-15",
-        end_date: ISO 8601 date string, inclusive, e.g., "2019-08-15".
-        variables: TROPOMI variable names. Use tropomi_available_variables() tool to get
-            a list of valid variable names. Defaults to a standard set of commonly used
-            variables.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
+        start_date: Inclusive start date, ISO 8601 date string, e.g., "2019-08-15",
+        end_date: Inclusive end date, ISO 8601 date string, e.g., "2019-08-15".
+        variables: TROPOMI variable names. Use the ``tropomi_available_variables()`` tool to get
+            a list of valid variable names. Defaults to a set of commonly used variables.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to
             be 60s.

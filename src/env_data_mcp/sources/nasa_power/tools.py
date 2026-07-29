@@ -97,17 +97,17 @@ def nasa_power_merra2_point_query(
 
     Returns weather variables grouped by nearest grid cell with a GeoJSON Point
     geometry, from the NASA POWER dataset via anonymous S3/Zarr.
-    Global coverage, 1980–present.
+    Global coverage, 1980-present.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        start_date: ISO 8601 date string, e.g., "2019-08-15".
-        end_date: ISO 8601 date string, inclusive, e.g., "2019-08-15".
+        start_date: Inclusive start date, ISO 8601 date string, e.g., "2019-08-15".
+        end_date: Inclusive end date, ISO 8601 date string, e.g., "2019-08-15".
         temporal_resolution: "hourly", "daily", "monthly", "annual", or "climatology".
-        variables: NASA POWER variable names. Use nasa_power_merra2_available_variables()
-            tool to get a list of valid variable names. Defaults to a standard set of commonly
-            used variables.
+        variables: NASA POWER MERRA-2 variable names. Use the
+            ``nasa_power_merra2_available_variables()`` tool to get a list of valid variable names.
+            Defaults to a standard set of commonly used variables.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
@@ -200,12 +200,12 @@ def nasa_power_syn1deg_point_query(
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        start_date: ISO 8601 date string, e.g., "2019-08-15".
-        end_date: ISO 8601 date string, inclusive, e.g., "2019-08-15".
+        start_date: Inclusive start date, ISO 8601 date string, e.g., "2019-08-15".
+        end_date: Inclusive start date, ISO 8601 date string, e.g., "2019-08-15".
         temporal_resolution: Temporal resolution of the data (e.g., daily, monthly).
-        variables: NASA POWER SYN1deg variable names. Use nasa_power_syn1deg_available_variables()
-            tool to get a list of valid variable names. Defaults to a standard set of commonly used
-            surface radiation variables.
+        variables: NASA POWER SYN1deg variable names. Use the
+            ``nasa_power_syn1deg_available_variables()`` tool to get a list of valid variable names.
+            Defaults to a standard set of commonly used surface radiation variables.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
@@ -302,11 +302,12 @@ def nasa_power_merra2_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        start_date: ISO 8601 start date, e.g., "2019-08-15".
-        end_date: ISO 8601 end date (inclusive), e.g., "2019-08-15".
+        start_date: Inclusive start date, ISO 8601 date string, e.g., "2019-08-15".
+        end_date: Inclusive end date, ISO 8601 date string, e.g., "2019-08-15".
         temporal_resolution: Temporal resolution of the data (e.g., daily, monthly).
-        variables: NASA POWER MERRA-2 variable names (defaults to standard set). Use
-            nasa_power_merra2_available_variables() tool to get a list of valid variable names.
+        variables: NASA POWER MERRA-2 variable names. Use the
+            ``nasa_power_merra2_available_variables()`` tool to get a list of valid variable names.
+            Defaults to a standard set of commonly used variables.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
@@ -412,11 +413,12 @@ def nasa_power_syn1deg_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        start_date: ISO 8601 start date, e.g., "2019-08-15".
-        end_date: ISO 8601 end date (inclusive), e.g., "2019-08-05".
+        start_date: Inclusive start date, ISO 8601 date string, e.g., "2019-08-15".
+        end_date: Inclusive end date, ISO 8601 date string, e.g., "2019-08-05".
         temporal_resolution: Temporal resolution of the data (e.g., daily, monthly).
-        variables: NASA POWER SYN1deg variable names (defaults to standard set). Use
-            nasa_power_syn1deg_available_variables() tool to get a list of valid variable names.
+        variables: NASA POWER SYN1deg variable names. Use the
+            ``nasa_power_syn1deg_available_variables()`` tool to get a list of valid variable names.
+            Defaults to a set of commonly used variables.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """

@@ -33,8 +33,6 @@ def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, A
 @mcp.tool()
 def soilgrids_available_variables() -> dict[str, Any]:
     """Return a list of available SoilGrids variables with descriptions and units.
-
-    Creating the clients is slow, so we try to create them in parallel.
     """
     t0 = time.perf_counter()
     base_info = get_base_variable_list()
@@ -79,7 +77,7 @@ def soilgrids_point_query(
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a point location.
 
-    Returns common soil properties grouped by the nearest grid cell with a GeoJSON Point
+    Returns soil properties grouped by the nearest grid cell with a GeoJSON Point
     geometry, from the SoilGrids WebCoverageService.
     Global coverage at 250 m resolution, present time.
 
@@ -90,8 +88,8 @@ def soilgrids_point_query(
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
         radius_km: Search radius in kilometers.
-        variables: SoilGrids variable names. Use soilgrids_available_variables() tool to
-            get a list of valid variable names. Defaults to a standard set of commonly
+        variables: SoilGrids variable names. Use the ``soilgrids_available_variables()`` tool to
+            get a list of valid variable names. Defaults to a set of commonly
             used variables near the surface.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed
@@ -182,19 +180,19 @@ def soilgrids_bbox_query(
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a bounding box region.
 
-    Returns common soil properties grouped by GeoJSON Point geometry, from the SoilGrids
+    Returns soil properties grouped by GeoJSON Point geometry, from the SoilGrids
     WebCoverageService. Global coverage at 250 m resolution, present time.
 
     Note: if your bounding box is smaller than the 250 m resoltion of the SoilGrids data,
     no results may be returned.
 
     Args:
-        min_lat: Decimal degrees, WGS84 (-90 to 90).
-        max_lat: Decimal degrees, WGS84 (-90 to 90).
-        min_lon: Decimal degrees, WGS84 (-180 to 180).
-        max_lon: Decimal degrees, WGS84 (-180 to 180).
-        variables: SoilGrids variable names. Use soilgrids_available_variables() tool to
-            get a list of valid variable names. Defaults to a standard set of commonly
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
+        variables: SoilGrids variable names. Use the ``soilgrids_available_variables()`` tool to
+            get a list of valid variable names. Defaults to a set of commonly
             used variables near the surface.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed

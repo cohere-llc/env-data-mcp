@@ -459,11 +459,6 @@ def _bbox_query(
 @mcp.tool()
 def ssurgo_soil_profile_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO soil profile queries.
-
-    Queries the SDA column catalogue for the tables joined in soil profile
-    queries: ``mapunit``, ``component``, and ``chorizon``.  Use the
-    ``variable`` values as the ``variables`` argument to
-    ``ssurgo_soil_profile_point_query`` or ``ssurgo_soil_profile_bbox_query``.
     """
     return _available_vars_response(_QueryType.SOIL_PROFILE)
 
@@ -474,22 +469,18 @@ def ssurgo_soil_profile_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SOIL_PROFILE_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil profile data for a point location.
-
-    Returns per-horizon physical and chemical properties for the major soil
-    components at the given location.  Default variables include texture
-    (sand/silt/clay), pH, organic matter, saturated hydraulic conductivity,
-    available water capacity, and bulk density.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to include in the response.  Defaults to a
-            curated horizon-property set.  Call
-            ``ssurgo_soil_profile_available_variables()`` for the full list.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO soil profile variable names. Use the
+            ``ssurgo_soil_profile_available_variables()`` tool to get a list of
+            valid variable names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _point_query(
         latitude,
@@ -509,22 +500,20 @@ def ssurgo_soil_profile_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: list[str] = DEFAULT_SOIL_PROFILE_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil profile data for all map units in a bounding box.
-
-    Returns per-horizon data for every soil map unit whose boundary intersects
-    the requested bounding box.  Large regions can return many records; use
-    ``max_runtime_s`` to add a runtime guard.
 
     Args:
         min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to return.  Defaults to the same curated
-            set as ``ssurgo_soil_profile_point_query``.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO soil profile variable names. Use the
+            ``ssurgo_soil_profile_available_variables()`` tool to get a list of valid variable
+            names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _bbox_query(
         min_lat,
@@ -546,10 +535,6 @@ def ssurgo_soil_profile_bbox_query(
 @mcp.tool()
 def ssurgo_area_summary_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO area summary queries.
-
-    Queries the SDA column catalogue for ``mapunit`` and ``muaggatt``.  Use
-    the ``variable`` values as the ``variables`` argument to
-    ``ssurgo_area_summary_point_query`` or ``ssurgo_area_summary_bbox_query``.
     """
     return _available_vars_response(_QueryType.AREA_SUMMARY)
 
@@ -560,21 +545,18 @@ def ssurgo_area_summary_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_AREA_SUMMARY_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO pre-aggregated area summary data for a point location.
-
-    Returns one row per map unit with NRCS-precomputed weighted averages:
-    drainage class, hydrologic group, available water storage, soil organic
-    carbon stock, crop productivity index, flooding frequency, and water table
-    depth.  No per-horizon aggregation is needed.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to include.  Call
-            ``ssurgo_area_summary_available_variables()`` for the full list.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO area summary variable names. Use the
+            ``ssurgo_area_summary_available_variables()`` tool to get a list of valid
+            variable names. Defaults to a commonly used set of variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _point_query(
         latitude,
@@ -594,7 +576,7 @@ def ssurgo_area_summary_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: list[str] = DEFAULT_AREA_SUMMARY_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO area summary data for all map units in a bounding box.
 
@@ -603,9 +585,11 @@ def ssurgo_area_summary_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to return.  Defaults to the same curated
-            set as ``ssurgo_area_summary_point_query``.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO area summary variable names. Use the
+            ``ssurgo_area_summary_available_variables()`` tool to get a list of valid variable
+            names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _bbox_query(
         min_lat,
@@ -627,9 +611,6 @@ def ssurgo_area_summary_bbox_query(
 @mcp.tool()
 def ssurgo_subsurface_barriers_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO subsurface barrier queries.
-
-    Queries the SDA column catalogue for ``mapunit``, ``component``, and
-    ``corestrictions``.
     """
     return _available_vars_response(_QueryType.SUBSURFACE_BARRIERS)
 
@@ -640,22 +621,18 @@ def ssurgo_subsurface_barriers_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO subsurface barrier (restrictive layer) data for a point.
-
-    Returns depth and hardness of layers that limit rooting, drainage, or
-    excavation, such as bedrock, fragipan, duripan, and cemented horizons.
-    Rows with no restrictive layers will have NULL values for restriction
-    columns.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to include.  Call
-            ``ssurgo_subsurface_barriers_available_variables()`` for the full
-            list.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO subsurface barriers variable names. Use the
+            ``ssurgo_subsurface_barriers_available_variables()`` tool to get a list of valid
+            variable names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _point_query(
         latitude,
@@ -675,7 +652,7 @@ def ssurgo_subsurface_barriers_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: list[str] = DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO subsurface barrier data for all map units in a bounding box.
 
@@ -684,8 +661,11 @@ def ssurgo_subsurface_barriers_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to return.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO subsurface barriers variable names. Use the
+            ``ssurgo_subsurface_barrier_variables()`` tool to get a list of valid variable
+            names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _bbox_query(
         min_lat,
@@ -707,9 +687,6 @@ def ssurgo_subsurface_barriers_bbox_query(
 @mcp.tool()
 def ssurgo_seasonal_hydrology_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO seasonal hydrology queries.
-
-    Queries the SDA column catalogue for ``mapunit``, ``component``,
-    ``comonth``, and ``cosoilmoist``.
     """
     return _available_vars_response(_QueryType.SEASONAL_HYDROLOGY)
 
@@ -720,22 +697,18 @@ def ssurgo_seasonal_hydrology_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO seasonal hydrology data for a point location.
-
-    Returns monthly flooding frequency, ponding, and water table depth for
-    the major soil components.  Typically 12 rows per component (one per
-    calendar month).  Months with no wet-layer data will have NULL values for
-    ``soimoistdept_r`` and ``soimoiststat``.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to include.  Call
-            ``ssurgo_seasonal_hydrology_available_variables()`` for the full
-            list.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO seasonal hydrology variable names. Use the
+            ``ssurgo_seasonal_hydrology_available_variables()`` tool to get a list of valid
+            variable names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _point_query(
         latitude,
@@ -755,7 +728,7 @@ def ssurgo_seasonal_hydrology_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: list[str] = DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO seasonal hydrology data for all map units in a bounding box.
 
@@ -764,8 +737,11 @@ def ssurgo_seasonal_hydrology_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to return.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO seasonal hydrology variable names. Use the
+            ``ssurgo_seasonal_hydrology_variable_names()`` tool to get a list of valid variable
+            names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _bbox_query(
         min_lat,
@@ -787,10 +763,6 @@ def ssurgo_seasonal_hydrology_bbox_query(
 @mcp.tool()
 def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
     """Return all available interpretation rule names for SSURGO soil suitability queries.
-
-    Queries ``cointerp`` for distinct ``mrulename`` values.  Use these names
-    as the ``rule_names`` argument to ``ssurgo_soil_suitability_point_query`` or
-    ``ssurgo_soil_suitability_bbox_query``.
     """
     t0 = time.perf_counter()
     try:
@@ -838,22 +810,18 @@ def ssurgo_soil_suitability_point_query(
     latitude: float,
     longitude: float,
     rule_names: list[str] = DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil suitability (interpretation) data for a point location.
-
-    Returns pre-computed NRCS suitability ratings for the requested
-    interpretation rules.  Each row contains the rule name, a class label
-    (e.g. 'Not limited', 'Very limited'), and a numeric rating (0–1).
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        rule_names: Interpretation rule names to query.  Defaults to a set
-            covering construction suitability, septic systems, agricultural
-            capability, and hydric soil status.  Call
-            ``ssurgo_soil_suitability_available_rule_names()`` for all rules.
-        max_runtime_s: Optional request timeout in seconds.
+        rule_names: SSURGO interpretation rule names. Use the
+            ``ssurgo_soil_suitability_available_rule_names()`` tool to get a list of valid rule
+            names. Defaults to a set of commonly used rule names.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     if warn := check_runtime("ssurgo", 0, 0.0, max_runtime_s):
         return _validate_grouped_geometry_response(warn)
@@ -966,7 +934,7 @@ def ssurgo_soil_suitability_bbox_query(
     min_lon: float,
     max_lon: float,
     rule_names: list[str] = DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil suitability data for all map units in a bounding box.
 
@@ -975,9 +943,11 @@ def ssurgo_soil_suitability_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        rule_names: Interpretation rule names to query.  Defaults to the same
-            set as ``ssurgo_soil_suitability_point_query``.
-        max_runtime_s: Optional request timeout in seconds.
+        rule_names: SSURGO interpretation rule names. Use the
+            ``ssurgo_soil_suitability_available_rule_names()`` tool to get a list of valid rule
+            names. Defaults to a set of commonly used rule names.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     try:
         bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
@@ -1094,9 +1064,6 @@ def ssurgo_soil_suitability_bbox_query(
 @mcp.tool()
 def ssurgo_ecological_site_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO ecological site queries.
-
-    Queries the SDA column catalogue for ``mapunit``, ``component``, and
-    ``coecoclass``.
     """
     return _available_vars_response(_QueryType.ECOLOGICAL_SITE)
 
@@ -1107,21 +1074,18 @@ def ssurgo_ecological_site_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_ECOLOGICAL_SITE_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO ecological site classification data for a point location.
-
-    Returns ecological site IDs and names that link soil to its vegetation
-    potential (rangeland and forest ecological sites).  Rows with no
-    ecological site classification will have NULL values for ``ecoclassid``
-    and related columns.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to include.  Call
-            ``ssurgo_ecological_site_available_variables()`` for the full list.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO ecological site classification variable names. Use the
+            ``ssurgo_ecological_site_available_variables()`` tool to get a list of valid variable
+            names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _point_query(
         latitude,
@@ -1141,7 +1105,7 @@ def ssurgo_ecological_site_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: list[str] = DEFAULT_ECOLOGICAL_SITE_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO ecological site data for all map units in a bounding box.
 
@@ -1150,8 +1114,11 @@ def ssurgo_ecological_site_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to return.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO ecological site classification variable names. Use the
+            ``ssurgo_ecological_site_available_variable_names()`` tool to get a list of valid
+            variable names. Defaults to a set of commonly used variable names.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _bbox_query(
         min_lat,
@@ -1173,9 +1140,6 @@ def ssurgo_ecological_site_bbox_query(
 @mcp.tool()
 def ssurgo_parent_material_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO parent material queries.
-
-    Queries the SDA column catalogue for ``mapunit``, ``component``,
-    ``copmgrp``, and ``copm``.
     """
     return _available_vars_response(_QueryType.PARENT_MATERIAL)
 
@@ -1186,21 +1150,18 @@ def ssurgo_parent_material_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_PARENT_MATERIAL_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO parent material data for a point location.
-
-    Returns geological information about what the soil formed from (loess,
-    alluvium, glacial till, volcanic ash, residuum, etc.) and its origin
-    (igneous, sedimentary, metamorphic).  Rows with no parent material data
-    will have NULL values for parent material columns.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to include.  Call
-            ``ssurgo_parent_material_available_variables()`` for the full list.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO parent material variable names. Use the
+            ``ssurgo_parent_material_available_variables()`` tool to get a list of valid
+            variable names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _point_query(
         latitude,
@@ -1220,7 +1181,7 @@ def ssurgo_parent_material_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: list[str] = DEFAULT_PARENT_MATERIAL_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO parent material data for all map units in a bounding box.
 
@@ -1229,8 +1190,11 @@ def ssurgo_parent_material_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to return.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO parent material variable names. Use the
+            ``ssurgo_parent_material_available_variables()`` tool to get a list of valid
+            variable names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _bbox_query(
         min_lat,
@@ -1252,9 +1216,6 @@ def ssurgo_parent_material_bbox_query(
 @mcp.tool()
 def ssurgo_soil_temperature_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO soil temperature queries.
-
-    Queries the SDA column catalogue for ``mapunit``, ``component``,
-    ``comonth``, and ``cosoiltemp``.
     """
     return _available_vars_response(_QueryType.SOIL_TEMPERATURE)
 
@@ -1265,20 +1226,18 @@ def ssurgo_soil_temperature_point_query(
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SOIL_TEMPERATURE_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil temperature data for a point location.
-
-    Returns mean monthly soil temperature by depth for the dominant soil
-    component.  Each row represents one month at one depth increment, giving
-    a full seasonal and depth profile of soil thermal conditions.
 
     Args:
         latitude: Decimal degrees, WGS84 (-90 to 90).
         longitude: Decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to include.  Call
-            ``ssurgo_soil_temperature_available_variables()`` for the full list.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO soil temperature variable names. Use the
+            ``ssurgo_soil_temperature_available_variables()`` tool to get a list of valid
+            variable names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _point_query(
         latitude,
@@ -1298,7 +1257,7 @@ def ssurgo_soil_temperature_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: list[str] = DEFAULT_SOIL_TEMPERATURE_VARIABLES,
-    max_runtime_s: float | None = None,
+    max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil temperature data for all map units in a bounding box.
 
@@ -1307,8 +1266,11 @@ def ssurgo_soil_temperature_bbox_query(
         max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
         min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
         max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
-        variables: Variable names to return.
-        max_runtime_s: Optional request timeout in seconds.
+        variables: SSURGO soil temperature variable names. Use the
+            ``ssurgo_soil_temperature_available_variables()`` tool to get a list of valid
+            variable names. Defaults to a set of commonly used variables.
+        max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
+            exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
     return _bbox_query(
         min_lat,

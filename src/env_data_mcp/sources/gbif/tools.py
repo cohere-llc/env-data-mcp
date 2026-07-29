@@ -94,8 +94,9 @@ def gbif_occurrence_point_query(
         end_date: Inclusive end date, ISO 8601 date string, e.g., "2019-08-16".
         radius_km: Search radius in kilometers.
         taxon_key: Optional GBIF taxon key to restrict results to a single taxon.
-        variables: GBIF occurrence variable names (defaults to standard set). Use
-            gbif_occurrence_available_variables() tool to get a list of valid variable names.
+        variables: GBIF occurrence variable names. Use the ``gbif_occurrence_available_variables()``
+            tool to get a list of valid variable names. Defaults to a standard set of commonly used
+            variables.
         limit: Optional maximum number of occurrence records to return. Omit to return all records.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
@@ -221,15 +222,16 @@ def gbif_occurrence_bbox_query(
     Global coverage, 1800s-present.
 
     Args:
-        min_lat: Decimal degrees, WGS84 (-90 to 90).
-        max_lat: Decimal degrees, WGS84 (-90 to 90).
-        min_lon: Decimal degrees, WGS84 (-180 to 180).
-        max_lon: Decimal degrees, WGS84 (-180 to 180).
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         start_date: Inclusive start date, ISO 8601 date string, e.g., "2019-08-15".
         end_date: Inclusive end date, ISO 8601 date string, e.g., "2019-08-16".
         taxon_key: Optional GBIF taxon key to restrict results to a single taxon.
-        variables: GBIF occurrence variable names (defaults to standard set). Use
-            gbif_occurrence_available_variables() tool to get a list of valid variable names.
+        variables: GBIF occurrence variable names. Use the ``gbif_occurrence_available_variables()``
+            tool to get a list of valid variable names. Defaults to a standard set of commonly used
+            variables.
         limit: Optional maximum number of occurrence records to return. Omit to return all records.
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
