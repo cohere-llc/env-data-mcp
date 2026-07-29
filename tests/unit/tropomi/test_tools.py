@@ -5,9 +5,8 @@ All query functions are mocked via a ``unittest.mock.patch``; no network access 
 
 from __future__ import annotations
 
-from http import HTTPStatus
-
 from contextlib import contextmanager
+from http import HTTPStatus
 from unittest.mock import patch
 
 import httpx

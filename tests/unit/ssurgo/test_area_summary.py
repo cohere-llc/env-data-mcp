@@ -77,7 +77,9 @@ def test_area_summary_query_non_us_returns_no_coverage(httpx_mock):
 
 
 def test_area_summary_query_http_error_returns_failure(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
+    httpx_mock.add_response(
+        method="POST", url=_SDA_URL, status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+    )
     result = ssurgo_area_summary_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["success"] is False
 

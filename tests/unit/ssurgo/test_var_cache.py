@@ -138,7 +138,9 @@ def test_load_column_metadata_live_fetches_and_parses(httpx_mock, monkeypatch):
 
 
 def test_load_column_metadata_live_http_error_returns_empty(httpx_mock):
-    httpx_mock.add_response(method="GET", url=_PDF_URL, status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
+    httpx_mock.add_response(
+        method="GET", url=_PDF_URL, status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+    )
     assert _load_column_metadata_live() == {}
 
 
