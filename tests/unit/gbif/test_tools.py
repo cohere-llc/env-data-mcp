@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import httpx
 
-from env_data_mcp.sources.gbif.constants import _QueryType
+from env_data_mcp.sources.gbif._constants import QueryType
 from env_data_mcp.sources.gbif.tools import (
     gbif_occurrence_available_variables,
     gbif_occurrence_bbox_query,
@@ -104,7 +104,7 @@ def _make_mock_query_point(*, expected_taxon_key: int | None = None, number_of_r
         lon: float,
         start_date: str,
         end_date: str,
-        query_type: _QueryType,
+        query_type: QueryType,
         radius_km: float,
         taxon_key: int | None,
         variables: list[str],
@@ -114,7 +114,7 @@ def _make_mock_query_point(*, expected_taxon_key: int | None = None, number_of_r
         assert lon == _YAKIMA_LON
         assert start_date == _START_DATE
         assert end_date == _END_DATE
-        assert query_type == _QueryType.OCCURRENCE
+        assert query_type == QueryType.OCCURRENCE
         assert radius_km == 5.0
         if expected_taxon_key:
             assert taxon_key == expected_taxon_key
@@ -136,7 +136,7 @@ def _make_mock_query_bbox(*, expected_taxon_key: int | None = None, number_of_re
         max_lon: float,
         start_date: str,
         end_date: str,
-        query_type: _QueryType,
+        query_type: QueryType,
         taxon_key: int | None,
         variables: list[str],
         limit: int | None,
@@ -147,7 +147,7 @@ def _make_mock_query_bbox(*, expected_taxon_key: int | None = None, number_of_re
         assert max_lon == _MAX_LON
         assert start_date == _START_DATE
         assert end_date == _END_DATE
-        assert query_type == _QueryType.OCCURRENCE
+        assert query_type == QueryType.OCCURRENCE
         if expected_taxon_key:
             assert taxon_key == expected_taxon_key
         else:
@@ -170,7 +170,7 @@ class TestAvailableVariables:
 
     def test_returns_results(self):
         with patch(
-            "env_data_mcp.sources.gbif.tools._get_variable_info", return_value=_EXPECTED_VARIABLES
+            "env_data_mcp.sources.gbif.tools.get_variable_info", return_value=_EXPECTED_VARIABLES
         ):
             results = gbif_occurrence_available_variables()
         assert "data" in results
@@ -184,7 +184,7 @@ class TestAvailableVariables:
 
     def test_returns_error(self):
         with patch(
-            "env_data_mcp.sources.gbif.tools._get_variable_info", side_effect=get_mock_http_error()
+            "env_data_mcp.sources.gbif.tools.get_variable_info", side_effect=get_mock_http_error()
         ):
             results = gbif_occurrence_available_variables()
         assert "data" in results
@@ -207,11 +207,11 @@ class TestQuery:
     def test_returns_results(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 return_value=_EXPECTED_VARIABLES,
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_point",
+                "env_data_mcp.sources.gbif.tools.query_point",
                 side_effect=_make_mock_query_point(),
             ),
         ):
@@ -241,11 +241,11 @@ class TestQuery:
     def test_handles_get_variable_info_error(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 side_effect=get_mock_http_error(),
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_point",
+                "env_data_mcp.sources.gbif.tools.query_point",
                 side_effect=_make_mock_query_point(),
             ),
         ):
@@ -267,11 +267,11 @@ class TestQuery:
     def test_handles_query_point_error(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 return_value=_EXPECTED_VARIABLES,
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_point",
+                "env_data_mcp.sources.gbif.tools.query_point",
                 side_effect=get_mock_http_error(),
             ),
         ):
@@ -293,11 +293,11 @@ class TestQuery:
     def test_returns_warning_for_long_query(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 return_value=_EXPECTED_VARIABLES,
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_point",
+                "env_data_mcp.sources.gbif.tools.query_point",
                 side_effect=_make_mock_query_point(),
             ),
         ):
@@ -321,11 +321,11 @@ class TestQuery:
     def test_returns_results_for_taxon_id(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 return_value=_EXPECTED_VARIABLES,
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_point",
+                "env_data_mcp.sources.gbif.tools.query_point",
                 side_effect=_make_mock_query_point(expected_taxon_key=2881663, number_of_results=1),
             ),
         ):
@@ -354,7 +354,7 @@ class TestQuery:
 
     def test_returns_empty_for_all_unknown_variables(self):
         with patch(
-            "env_data_mcp.sources.gbif.tools._get_variable_info",
+            "env_data_mcp.sources.gbif.tools.get_variable_info",
             return_value=_EXPECTED_VARIABLES,
         ):
             results = gbif_occurrence_point_query(
@@ -386,11 +386,11 @@ class TestBboxQuery:
     def test_returns_results(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 return_value=_EXPECTED_VARIABLES,
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_bbox",
+                "env_data_mcp.sources.gbif.tools.query_bbox",
                 side_effect=_make_mock_query_bbox(),
             ),
         ):
@@ -421,11 +421,11 @@ class TestBboxQuery:
     def test_handles_get_variable_info_error(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 side_effect=get_mock_http_error(),
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_bbox",
+                "env_data_mcp.sources.gbif.tools.query_bbox",
                 side_effect=_make_mock_query_bbox(),
             ),
         ):
@@ -448,11 +448,11 @@ class TestBboxQuery:
     def test_handles_query_point_error(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 return_value=_EXPECTED_VARIABLES,
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_bbox",
+                "env_data_mcp.sources.gbif.tools.query_bbox",
                 side_effect=get_mock_http_error(),
             ),
         ):
@@ -475,11 +475,11 @@ class TestBboxQuery:
     def test_returns_warning_for_long_query(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 return_value=_EXPECTED_VARIABLES,
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_bbox",
+                "env_data_mcp.sources.gbif.tools.query_bbox",
                 side_effect=_make_mock_query_bbox(),
             ),
         ):
@@ -504,11 +504,11 @@ class TestBboxQuery:
     def test_returns_results_for_taxon_id(self):
         with (
             patch(
-                "env_data_mcp.sources.gbif.tools._get_variable_info",
+                "env_data_mcp.sources.gbif.tools.get_variable_info",
                 return_value=_EXPECTED_VARIABLES,
             ),
             patch(
-                "env_data_mcp.sources.gbif.tools._query_bbox",
+                "env_data_mcp.sources.gbif.tools.query_bbox",
                 side_effect=_make_mock_query_bbox(expected_taxon_key=2881663, number_of_results=1),
             ),
         ):
@@ -538,7 +538,7 @@ class TestBboxQuery:
 
     def test_returns_empty_for_all_unknown_variables(self):
         with patch(
-            "env_data_mcp.sources.gbif.tools._get_variable_info",
+            "env_data_mcp.sources.gbif.tools.get_variable_info",
             return_value=_EXPECTED_VARIABLES,
         ):
             results = gbif_occurrence_bbox_query(

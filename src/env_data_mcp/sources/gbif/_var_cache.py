@@ -16,12 +16,12 @@ import httpx
 from env_data_mcp.helpers import get_by_path, load_json_cache
 from env_data_mcp.scripts.refresh_variable_caches import VariableCacheEntry, register
 
-from .constants import _QUERY_RESULT_SCHEMAS, _QueryType
+from ._constants import QUERY_RESULT_SCHEMAS, QueryType
 
 _VARIABLES_PATH = Path(__file__).parent / "variables.json"
 
 # Session-level cache populated lazily on the first _get_variable_info call.
-_VARIABLE_INFO_CACHE: dict[_QueryType, dict[str, dict[str, str]]] = {}
+_VARIABLE_INFO_CACHE: dict[QueryType, dict[str, dict[str, str]]] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -29,12 +29,12 @@ _VARIABLE_INFO_CACHE: dict[_QueryType, dict[str, dict[str, str]]] = {}
 # ---------------------------------------------------------------------------
 
 
-def _fetch_variable_info_live(query_type: _QueryType) -> dict[str, dict[str, str]]:
+def _fetch_variable_info_live(query_type: QueryType) -> dict[str, dict[str, str]]:
     """Discover variables for *query_type* by fetching the GBIF OpenAPI schema."""
     with httpx.Client(timeout=30) as client:
-        resp = client.get(_QUERY_RESULT_SCHEMAS[query_type]["url"])
+        resp = client.get(QUERY_RESULT_SCHEMAS[query_type]["url"])
         resp.raise_for_status()
-        info = get_by_path(resp.json(), _QUERY_RESULT_SCHEMAS[query_type]["path"], {})
+        info = get_by_path(resp.json(), QUERY_RESULT_SCHEMAS[query_type]["path"], {})
     return {
         key: {"description": val.get("description", key) or key, "units": ""}
         for key, val in info.items()
@@ -47,7 +47,7 @@ def _fetch_all_variable_info_live() -> dict[str, dict[str, dict[str, str]]]:
     Returns a JSON-serialisable ``{query_type_value: {variable: {...}}}`` dict
     suitable for writing to :data:`_VARIABLES_PATH`.
     """
-    return {qt.value: _fetch_variable_info_live(qt) for qt in _QueryType}
+    return {qt.value: _fetch_variable_info_live(qt) for qt in QueryType}
 
 
 # ---------------------------------------------------------------------------
@@ -61,12 +61,12 @@ def _load_all_variable_info_from_disk() -> dict[str, dict[str, dict[str, str]]]:
     return data
 
 
-def _get_variable_info(query_type: _QueryType) -> dict[str, dict[str, str]]:
+def get_variable_info(query_type: QueryType) -> dict[str, dict[str, str]]:
     """Return cached variable info for *query_type*, loading from disk once."""
     if query_type in _VARIABLE_INFO_CACHE:
         return _VARIABLE_INFO_CACHE[query_type]
     all_info = _load_all_variable_info_from_disk()
-    for qt in _QueryType:
+    for qt in QueryType:
         if qt.value in all_info:
             _VARIABLE_INFO_CACHE[qt] = all_info[qt.value]
     if query_type not in _VARIABLE_INFO_CACHE:

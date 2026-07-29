@@ -8,19 +8,19 @@ import httpx
 
 from env_data_mcp.helpers import check_runtime, point_to_bbox
 
-from .constants import _API_PAGE_SIZE, _QUERY_ENDPOINTS, _QueryType
+from ._constants import API_PAGE_SIZE, QUERY_ENDPOINTS, QueryType
 
 # ---------------------------------------------------------------------------
 # Core query logic
 # ---------------------------------------------------------------------------
 
 
-def _query_point(
+def query_point(
     lat: float,
     lon: float,
     start_date: str,
     end_date: str,
-    query_type: _QueryType,
+    query_type: QueryType,
     radius_km: float,
     taxon_key: int | None,
     variables: list[str],
@@ -33,7 +33,7 @@ def _query_point(
     organized by GeoJSON ``Point`` geometries (one occurrence per geometry).
     """
     bbox = point_to_bbox(latitude=lat, longitude=lon, radius_km=radius_km)
-    return _query_bbox(
+    return query_bbox(
         min_lat=bbox["min_lat"],
         max_lat=bbox["max_lat"],
         min_lon=bbox["min_lon"],
@@ -47,14 +47,14 @@ def _query_point(
     )
 
 
-def _query_bbox(
+def query_bbox(
     min_lat: float,
     max_lat: float,
     min_lon: float,
     max_lon: float,
     start_date: str,
     end_date: str,
-    query_type: _QueryType,
+    query_type: QueryType,
     taxon_key: int | None,
     variables: list[str],
     limit: int | None,
@@ -78,11 +78,11 @@ def _query_bbox(
 
     while limit is None or len(raw_records) < limit:
         if limit is not None:
-            page_size = min(limit - len(raw_records), _API_PAGE_SIZE)
+            page_size = min(limit - len(raw_records), API_PAGE_SIZE)
         else:
-            page_size = _API_PAGE_SIZE
+            page_size = API_PAGE_SIZE
         r = httpx.get(
-            _QUERY_ENDPOINTS[query_type],
+            QUERY_ENDPOINTS[query_type],
             params={**base_params, "limit": page_size, "offset": len(raw_records)},
             timeout=30,
         )
@@ -122,7 +122,7 @@ def _query_bbox(
 # ---------------------------------------------------------------------------
 
 
-def _estimate_query_runtime_s(
+def estimate_query_runtime_s(
     n_days: int,
     area_deg2: float,
     max_runtime_s: float,
