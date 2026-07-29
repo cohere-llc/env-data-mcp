@@ -516,10 +516,10 @@ def ssurgo_soil_profile_bbox_query(
     ``max_runtime_s`` to add a runtime guard.
 
     Args:
-        min_lat: South boundary, decimal degrees.
-        max_lat: North boundary, decimal degrees.
-        min_lon: West boundary, decimal degrees.
-        max_lon: East boundary, decimal degrees.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         variables: Variable names to return.  Defaults to the same curated
             set as ``ssurgo_soil_profile_point_query``.
         max_runtime_s: Optional request timeout in seconds.
@@ -595,10 +595,10 @@ def ssurgo_area_summary_bbox_query(
     """Query USDA SSURGO area summary data for all map units in a bounding box.
 
     Args:
-        min_lat: South boundary, decimal degrees.
-        max_lat: North boundary, decimal degrees.
-        min_lon: West boundary, decimal degrees.
-        max_lon: East boundary, decimal degrees.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         variables: Variable names to return.  Defaults to the same curated
             set as ``ssurgo_area_summary_point_query``.
         max_runtime_s: Optional request timeout in seconds.
@@ -674,10 +674,10 @@ def ssurgo_subsurface_barriers_bbox_query(
     """Query USDA SSURGO subsurface barrier data for all map units in a bounding box.
 
     Args:
-        min_lat: South boundary, decimal degrees.
-        max_lat: North boundary, decimal degrees.
-        min_lon: West boundary, decimal degrees.
-        max_lon: East boundary, decimal degrees.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         variables: Variable names to return.
         max_runtime_s: Optional request timeout in seconds.
     """
@@ -752,10 +752,10 @@ def ssurgo_seasonal_hydrology_bbox_query(
     """Query USDA SSURGO seasonal hydrology data for all map units in a bounding box.
 
     Args:
-        min_lat: South boundary, decimal degrees.
-        max_lat: North boundary, decimal degrees.
-        min_lon: West boundary, decimal degrees.
-        max_lon: East boundary, decimal degrees.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         variables: Variable names to return.
         max_runtime_s: Optional request timeout in seconds.
     """
@@ -961,10 +961,10 @@ def ssurgo_soil_suitability_bbox_query(
     """Query USDA SSURGO soil suitability data for all map units in a bounding box.
 
     Args:
-        min_lat: South boundary, decimal degrees.
-        max_lat: North boundary, decimal degrees.
-        min_lon: West boundary, decimal degrees.
-        max_lon: East boundary, decimal degrees.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         rule_names: Interpretation rule names to query.  Defaults to the same
             set as ``ssurgo_soil_suitability_point_query``.
         max_runtime_s: Optional request timeout in seconds.
@@ -1134,10 +1134,10 @@ def ssurgo_ecological_site_bbox_query(
     """Query USDA SSURGO ecological site data for all map units in a bounding box.
 
     Args:
-        min_lat: South boundary, decimal degrees.
-        max_lat: North boundary, decimal degrees.
-        min_lon: West boundary, decimal degrees.
-        max_lon: East boundary, decimal degrees.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         variables: Variable names to return.
         max_runtime_s: Optional request timeout in seconds.
     """
@@ -1211,10 +1211,10 @@ def ssurgo_parent_material_bbox_query(
     """Query USDA SSURGO parent material data for all map units in a bounding box.
 
     Args:
-        min_lat: South boundary, decimal degrees.
-        max_lat: North boundary, decimal degrees.
-        min_lon: West boundary, decimal degrees.
-        max_lon: East boundary, decimal degrees.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         variables: Variable names to return.
         max_runtime_s: Optional request timeout in seconds.
     """
@@ -1287,10 +1287,10 @@ def ssurgo_soil_temperature_bbox_query(
     """Query USDA SSURGO soil temperature data for all map units in a bounding box.
 
     Args:
-        min_lat: South boundary, decimal degrees.
-        max_lat: North boundary, decimal degrees.
-        min_lon: West boundary, decimal degrees.
-        max_lon: East boundary, decimal degrees.
+        min_lat: South boundary, decimal degrees, WGS84 (-90 to 90).
+        max_lat: North boundary, decimal degrees, WGS84 (-90 to 90).
+        min_lon: West boundary, decimal degrees, WGS84 (-180 to 180).
+        max_lon: East boundary, decimal degrees, WGS84 (-180 to 180).
         variables: Variable names to return.
         max_runtime_s: Optional request timeout in seconds.
     """
