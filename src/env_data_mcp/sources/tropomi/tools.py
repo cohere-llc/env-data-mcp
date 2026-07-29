@@ -71,6 +71,7 @@ def tropomi_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def tropomi_point_query(
+    *,
     latitude: float,
     longitude: float,
     start_date: str,
@@ -170,6 +171,7 @@ def tropomi_point_query(
 
 @mcp.tool()
 def tropomi_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,

@@ -470,6 +470,7 @@ def ssurgo_soil_profile_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def ssurgo_soil_profile_point_query(
+    *,
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SOIL_PROFILE_VARIABLES,
@@ -502,6 +503,7 @@ def ssurgo_soil_profile_point_query(
 
 @mcp.tool()
 def ssurgo_soil_profile_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -554,6 +556,7 @@ def ssurgo_area_summary_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def ssurgo_area_summary_point_query(
+    *,
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_AREA_SUMMARY_VARIABLES,
@@ -585,6 +588,7 @@ def ssurgo_area_summary_point_query(
 
 @mcp.tool()
 def ssurgo_area_summary_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -632,6 +636,7 @@ def ssurgo_subsurface_barriers_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def ssurgo_subsurface_barriers_point_query(
+    *,
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
@@ -664,6 +669,7 @@ def ssurgo_subsurface_barriers_point_query(
 
 @mcp.tool()
 def ssurgo_subsurface_barriers_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -710,6 +716,7 @@ def ssurgo_seasonal_hydrology_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def ssurgo_seasonal_hydrology_point_query(
+    *,
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
@@ -742,6 +749,7 @@ def ssurgo_seasonal_hydrology_point_query(
 
 @mcp.tool()
 def ssurgo_seasonal_hydrology_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -826,6 +834,7 @@ def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
 
 @mcp.tool()
 def ssurgo_soil_suitability_point_query(
+    *,
     latitude: float,
     longitude: float,
     rule_names: list[str] = DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
@@ -951,6 +960,7 @@ def ssurgo_soil_suitability_point_query(
 
 @mcp.tool()
 def ssurgo_soil_suitability_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -1093,6 +1103,7 @@ def ssurgo_ecological_site_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def ssurgo_ecological_site_point_query(
+    *,
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_ECOLOGICAL_SITE_VARIABLES,
@@ -1124,6 +1135,7 @@ def ssurgo_ecological_site_point_query(
 
 @mcp.tool()
 def ssurgo_ecological_site_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -1170,6 +1182,7 @@ def ssurgo_parent_material_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def ssurgo_parent_material_point_query(
+    *,
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_PARENT_MATERIAL_VARIABLES,
@@ -1201,6 +1214,7 @@ def ssurgo_parent_material_point_query(
 
 @mcp.tool()
 def ssurgo_parent_material_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -1247,6 +1261,7 @@ def ssurgo_soil_temperature_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def ssurgo_soil_temperature_point_query(
+    *,
     latitude: float,
     longitude: float,
     variables: list[str] = DEFAULT_SOIL_TEMPERATURE_VARIABLES,
@@ -1277,6 +1292,7 @@ def ssurgo_soil_temperature_point_query(
 
 @mcp.tool()
 def ssurgo_soil_temperature_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,

@@ -70,6 +70,7 @@ def soilgrids_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def soilgrids_point_query(
+    *,
     latitude: float,
     longitude: float,
     radius_km: float,
@@ -171,6 +172,7 @@ def soilgrids_point_query(
 
 @mcp.tool()
 def soilgrids_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,

@@ -84,6 +84,7 @@ def nasa_power_syn1deg_available_variables() -> dict[str, Any]:
 
 @mcp.tool()
 def nasa_power_merra2_point_query(
+    *,
     latitude: float,
     longitude: float,
     start_date: str,
@@ -182,6 +183,7 @@ def nasa_power_merra2_point_query(
 
 @mcp.tool()
 def nasa_power_syn1deg_point_query(
+    *,
     latitude: float,
     longitude: float,
     start_date: str,
@@ -279,6 +281,7 @@ def nasa_power_syn1deg_point_query(
 
 @mcp.tool()
 def nasa_power_merra2_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -388,6 +391,7 @@ def nasa_power_merra2_bbox_query(
 
 @mcp.tool()
 def nasa_power_syn1deg_bbox_query(
+    *,
     min_lat: float,
     max_lat: float,
     min_lon: float,
