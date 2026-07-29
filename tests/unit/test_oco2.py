@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import re
+from http import HTTPStatus
 from unittest.mock import patch
 
 import h5py
@@ -544,7 +545,7 @@ def test_cmr_search_success(httpx_mock):
 
 
 def test_fetch_granule_bytes_401_raises(httpx_mock):
-    httpx_mock.add_response(url="https://example.com/data.he5", status_code=401)
+    httpx_mock.add_response(url="https://example.com/data.he5", status_code=HTTPStatus.UNAUTHORIZED)
     with pytest.raises(ValueError, match="HTTP 401"):
         _fetch_granule_bytes("https://example.com/data.he5", "bad-token")
 

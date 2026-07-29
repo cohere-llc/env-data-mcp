@@ -6,13 +6,14 @@ EMIT OPeNDAP workflow per granule:
   1. GET {opendap_url}.nc4?/location/lat,/location/lon,/mineral_metadata/mineral_name
      → HDF5 bytes containing lat/lon arrays + mineral name list
   2. GET {opendap_url}.nc4?/spectral_abundance[i:i][j:j][0:N-1]
-     → HDF5 bytes containing a 1×1×N abundance array
+     → HDF5 bytes containing a 1x1xN abundance array
 """
 
 from __future__ import annotations
 
 import io
 import re
+from http import HTTPStatus
 from unittest.mock import patch
 
 import h5py
@@ -495,7 +496,7 @@ def test_emit_bbox_query_echoes_clamped_bbox(monkeypatch):
 def test_fetch_opendap_nc4_401_raises(httpx_mock):
     httpx_mock.add_response(
         url="https://opendap.earthdata.nasa.gov/emit/test.nc4?/location/lat",
-        status_code=401,
+        status_code=HTTPStatus.UNAUTHORIZED,
     )
     with pytest.raises(ValueError, match="HTTP 401"):
         _fetch_opendap_nc4(

@@ -5,6 +5,8 @@ All query functions are mocked via a ``unittest.mock.patch``; no network access 
 
 from __future__ import annotations
 
+from http import HTTPStatus
+
 from contextlib import contextmanager
 from unittest.mock import patch
 
@@ -102,7 +104,7 @@ _SLOW_WARN = {
 
 def get_mock_http_error():
     request = httpx.Request("GET", "https://meeo-s5p.s3.amazonaws.com")
-    response = httpx.Response(503, request=request)
+    response = httpx.Response(HTTPStatus.SERVICE_UNAVAILABLE, request=request)
     return httpx.HTTPStatusError(
         "503 Service Unavailable",
         request=request,

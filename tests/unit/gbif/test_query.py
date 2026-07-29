@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from http import HTTPStatus
 from typing import Any
 from unittest.mock import patch
 
@@ -81,7 +82,7 @@ def _make_mock_response(
 ) -> httpx.Response:
     """Return an httpx.Response with a GBIF-style JSON body."""
     return httpx.Response(
-        200,
+        HTTPStatus.OK,
         json={"count": count, "endOfRecords": end_of_records, "results": results},
     )
 

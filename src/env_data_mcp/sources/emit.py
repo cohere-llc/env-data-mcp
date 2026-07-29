@@ -28,6 +28,7 @@ import io
 import os
 import re
 import time
+from http import HTTPStatus
 from typing import Any
 
 import h5py
@@ -180,7 +181,7 @@ def _fetch_opendap_nc4(base_url: str, var_expr: str, token: str) -> bytes:
     """
     url = f"{base_url}.nc4?{var_expr}"
     resp = httpx.get(url, headers=_auth_headers(token), timeout=120.0, follow_redirects=True)
-    if resp.status_code == 401:
+    if resp.status_code == HTTPStatus.UNAUTHORIZED:
         raise ValueError(
             "EarthData token rejected (HTTP 401) — token may be expired. "
             "Regenerate at https://urs.earthdata.nasa.gov/ → Profile → Generate Token "

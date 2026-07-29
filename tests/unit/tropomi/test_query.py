@@ -6,6 +6,7 @@ All HTTP calls are mocked via ``pytest-httpx``; no network access required.
 from __future__ import annotations
 
 import re
+from http import HTTPStatus
 from pathlib import PurePosixPath
 from unittest.mock import MagicMock, patch
 
@@ -114,7 +115,7 @@ def test_get_netcdf_file_paths_unknown_prefix_returns_empty_list(httpx_mock):
 
 def test_get_netcdf_file_paths_http_error_propagates(httpx_mock):
     """Tests that CDSE HTTP errors propagate as HTTPStatusError."""
-    httpx_mock.add_response(url=_CDSE_URL_RE, status_code=503)
+    httpx_mock.add_response(url=_CDSE_URL_RE, status_code=HTTPStatus.SERVICE_UNAVAILABLE)
 
     with pytest.raises(httpx.HTTPStatusError):
         _get_netcdf_file_paths(

@@ -11,6 +11,7 @@ are skipped gracefully.
 from __future__ import annotations
 
 import os
+from http import HTTPStatus
 
 import httpx
 import pytest
@@ -37,9 +38,9 @@ def _require_openaq_available():
             headers={"X-API-Key": api_key},
             timeout=10,
         )
-        if r.status_code >= 500:
+        if r.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
             pytest.skip(f"OpenAQ API returned HTTP {r.status_code}")
-        if r.status_code == 401:
+        if r.status_code == HTTPStatus.UNAUTHORIZED:
             pytest.skip("OPENAQ_API_KEY is invalid (HTTP 401)")
     except Exception as exc:
         pytest.skip(f"OpenAQ API not reachable: {exc}")

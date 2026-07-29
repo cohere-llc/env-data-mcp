@@ -5,6 +5,7 @@ All query functions are mocked via a ``unittest.mock.patch``; no network access 
 
 from __future__ import annotations
 
+from http import HTTPStatus
 from typing import Any
 from unittest.mock import patch
 
@@ -89,7 +90,7 @@ _EXPECTED_UNIQUE_LICENSES: list[str] = [
 
 def get_mock_http_error():
     request = httpx.Request("GET", "https://api.gbif.org/v1/occurrence/search")
-    response = httpx.Response(503, request=request)
+    response = httpx.Response(HTTPStatus.SERVICE_UNAVAILABLE, request=request)
     return httpx.HTTPStatusError(
         "503 Service Unavailable",
         request=request,
