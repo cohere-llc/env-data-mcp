@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import textwrap
+from http import HTTPStatus
 
 import pytest
 
@@ -239,7 +240,7 @@ def test_fetch_mukey_geometries_http_error_returns_empty(httpx_mock):
     httpx_mock.add_response(
         method="GET",
         url=re.compile(r"https://sdmdataaccess\.sc\.egov\.usda\.gov/.*"),
-        status_code=500,
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
     )
     result = _fetch_mukey_geometries(["12345"], (-120, 46, -119, 47))
     assert result == {}

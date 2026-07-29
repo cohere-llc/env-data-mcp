@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from http import HTTPStatus
+
 import pytest
 
 from env_data_mcp.models import AvailableVariablesResponse, GroupedGeometryResponse
@@ -65,7 +67,9 @@ def test_seasonal_hydrology_query_non_us_returns_no_coverage(httpx_mock):
 
 
 def test_seasonal_hydrology_query_http_error_returns_failure(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
+    httpx_mock.add_response(
+        method="POST", url=_SDA_URL, status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+    )
     result = ssurgo_seasonal_hydrology_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["success"] is False
 

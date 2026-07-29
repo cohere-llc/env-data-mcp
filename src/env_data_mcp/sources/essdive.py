@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import time
+from http import HTTPStatus
 from typing import Any
 
 import httpx
@@ -140,7 +141,7 @@ def _search_packages(
                 req_params["cursor"] = cursor
 
             resp = client.get(_ESSDIVE_BASE, params=req_params, headers=headers)
-            if resp.status_code == 401:
+            if resp.status_code == HTTPStatus.UNAUTHORIZED:
                 raise ValueError(
                     "ESS-DIVE token rejected (HTTP 401) — token may be expired. "
                     "Regenerate at https://data.ess-dive.lbl.gov/ → "
@@ -148,7 +149,7 @@ def _search_packages(
                 )
             # ESS-DIVE returns 404 with {"detail":"No datasets were found."} when
             # the query matches no records — treat this as an empty result set.
-            if resp.status_code == 404:
+            if resp.status_code == HTTPStatus.NOT_FOUND:
                 break
             resp.raise_for_status()
 

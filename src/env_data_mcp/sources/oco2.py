@@ -14,6 +14,7 @@ import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from http import HTTPStatus
 from typing import Any, cast
 
 import h5py
@@ -160,7 +161,7 @@ def _fetch_granule_bytes(url: str, token: str) -> bytes:
     Raises ValueError with a user-friendly message on HTTP 401 (expired token).
     """
     resp = httpx.get(url, headers=_auth_headers(token), timeout=120.0, follow_redirects=True)
-    if resp.status_code == 401:
+    if resp.status_code == HTTPStatus.UNAUTHORIZED:
         raise ValueError(
             "EarthData token rejected (HTTP 401) — token may be expired. "
             "Regenerate at https://urs.earthdata.nasa.gov/ → Profile → Generate Token "

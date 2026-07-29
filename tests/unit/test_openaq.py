@@ -6,6 +6,7 @@ All httpx calls are intercepted by pytest-httpx; no network access required.
 from __future__ import annotations
 
 import re
+from http import HTTPStatus
 
 import pytest
 
@@ -217,7 +218,7 @@ def test_openaq_query_no_stations_returns_success_empty(_set_api_key, httpx_mock
 def test_openaq_query_http_error_returns_structured(_set_api_key, httpx_mock):
     httpx_mock.add_response(
         url=_LOCATIONS_URL_RE,
-        status_code=500,
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
         text="Internal Server Error",
     )
     result = openaq_query(

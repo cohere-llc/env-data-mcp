@@ -8,6 +8,7 @@ exercised against a temporary JSON file substituted for the shipped
 from __future__ import annotations
 
 import json
+from http import HTTPStatus
 from pathlib import Path
 from urllib.parse import quote
 
@@ -153,7 +154,7 @@ def test_fetch_full_variable_info_live_returns_expected_shape(httpx_mock):
 
 
 def test_fetch_full_variable_info_live_propagates_http_errors(httpx_mock):
-    httpx_mock.add_response(url=_OFFL_URL, status_code=503)
+    httpx_mock.add_response(url=_OFFL_URL, status_code=HTTPStatus.SERVICE_UNAVAILABLE)
 
     with pytest.raises(httpx.HTTPStatusError):
         _var_cache._fetch_full_variable_info_live()

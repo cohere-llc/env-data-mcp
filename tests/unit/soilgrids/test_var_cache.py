@@ -9,6 +9,7 @@ via ``monkeypatch``.
 from __future__ import annotations
 
 import json
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -142,7 +143,7 @@ def test_fetch_base_variable_list_live_returns_variables(httpx_mock):
 
 
 def test_fetch_base_variable_list_live_raises_http_status_error(httpx_mock):
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, status_code=404)
+    httpx_mock.add_response(url=_LAYERS_INFO_URL, status_code=HTTPStatus.NOT_FOUND)
 
     with pytest.raises(HTTPStatusError):
         _var_cache._fetch_base_variable_list_live()

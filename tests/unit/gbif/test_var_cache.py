@@ -8,6 +8,7 @@ exercised against a temporary JSON file substituted for the shipped
 from __future__ import annotations
 
 import json
+from http import HTTPStatus
 from pathlib import Path
 
 import httpx
@@ -57,7 +58,7 @@ def test_fetch_variable_info_live_returns_parsed_schema(httpx_mock):
 
 
 def test_fetch_variable_info_live_raises_for_status(httpx_mock):
-    httpx_mock.add_response(url=_SCHEMA_ENDPOINT, status_code=404)
+    httpx_mock.add_response(url=_SCHEMA_ENDPOINT, status_code=HTTPStatus.NOT_FOUND)
 
     with pytest.raises(httpx.HTTPStatusError):
         _var_cache._fetch_variable_info_live(_QueryType.OCCURRENCE)

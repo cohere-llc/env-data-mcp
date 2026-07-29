@@ -6,6 +6,7 @@ All HTTP calls are mocked; no network access required.
 from __future__ import annotations
 
 import re
+from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
@@ -217,7 +218,7 @@ def test_search_packages_respects_limit(httpx_mock):
 
 
 def test_search_packages_401_raises_value_error(httpx_mock):
-    httpx_mock.add_response(url=_ESSDIVE_URL, status_code=401)
+    httpx_mock.add_response(url=_ESSDIVE_URL, status_code=HTTPStatus.UNAUTHORIZED)
     with pytest.raises(ValueError, match="401"):
         _search_packages({}, limit=5, token="bad_token")
 

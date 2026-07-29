@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from http import HTTPStatus
+
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
@@ -97,7 +99,9 @@ def test_soil_profile_query_non_us_returns_no_coverage(httpx_mock):
 
 
 def test_soil_profile_query_http_error_returns_failure(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
+    httpx_mock.add_response(
+        method="POST", url=_SDA_URL, status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+    )
     result = ssurgo_soil_profile_point_query(latitude=_LAT, longitude=_LON)
     assert result["_meta"]["success"] is False
     assert result["_meta"]["error"] is not None
@@ -238,7 +242,9 @@ def test_soil_profile_bbox_query_invalid_variable_returns_error():
 
 
 def test_soil_profile_bbox_query_http_error_returns_failure(httpx_mock):
-    httpx_mock.add_response(method="POST", url=_SDA_URL, status_code=500)
+    httpx_mock.add_response(
+        method="POST", url=_SDA_URL, status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+    )
     result = ssurgo_soil_profile_bbox_query(
         min_lat=_MIN_LAT, max_lat=_MAX_LAT, min_lon=_MIN_LON, max_lon=_MAX_LON
     )

@@ -12,6 +12,7 @@ Run with:
 from __future__ import annotations
 
 import os
+from http import HTTPStatus
 
 import httpx
 import pytest
@@ -45,7 +46,7 @@ def _require_token_and_api():
             headers={"Authorization": f"Bearer {_TOKEN}", "Accept": "application/json"},
             timeout=10,
         )
-        if r.status_code >= 500:
+        if r.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
             pytest.skip(f"ESS-DIVE API returned HTTP {r.status_code} — service may be down")
     except Exception as exc:
         pytest.skip(f"ESS-DIVE API not reachable: {exc}")
