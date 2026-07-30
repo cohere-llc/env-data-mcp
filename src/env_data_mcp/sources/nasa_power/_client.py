@@ -9,7 +9,7 @@ import pandas as pd
 import zarr
 from zarr.storage import FsspecStore
 
-from .constants import _ZARR_URLS, DatasetType, TemporalResolution
+from ._constants import ZARR_URLS, DatasetType, TemporalResolution
 
 # ---------------------------------------------------------------------------
 # Zarr store cache
@@ -42,7 +42,7 @@ def _clear_store_cache() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _open_store(
+def open_store(
     dataset_type: DatasetType, temporal_resolution: TemporalResolution
 ) -> ZarrStoreCache:
     """Open (and cache) the NASA POWER Zarr store with an optional in-memory cache."""
@@ -52,7 +52,7 @@ def _open_store(
         return _zarr_cache[cache_key]
 
     source = FsspecStore.from_url(
-        _ZARR_URLS[dataset_type][temporal_resolution],
+        ZARR_URLS[dataset_type][temporal_resolution],
         read_only=True,
     )
     try:
@@ -70,7 +70,7 @@ def _open_store(
     return _zarr_cache[(dataset_type, temporal_resolution)]
 
 
-def _get_coordinates(store: ZarrStoreCache) -> tuple[np.ndarray, np.ndarray, pd.DatetimeIndex]:
+def get_coordinates(store: ZarrStoreCache) -> tuple[np.ndarray, np.ndarray, pd.DatetimeIndex]:
     """Return (lats, lons, times) for *store*, loading them once and caching.
 
     The cache is keyed on group identity: a different group object (e.g. a test

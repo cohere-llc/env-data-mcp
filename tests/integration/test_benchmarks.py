@@ -37,7 +37,7 @@ from env_data_mcp.sources.nasa_power import (
     nasa_power_merra2_point_query,
 )
 from env_data_mcp.sources.nasa_power._client import _clear_store_cache
-from env_data_mcp.sources.nasa_power.constants import TemporalResolution
+from env_data_mcp.sources.nasa_power._constants import TemporalResolution
 from env_data_mcp.sources.oco2 import oco2_bbox_query, oco2_query
 from env_data_mcp.sources.openaq import openaq_bbox_query, openaq_query
 from env_data_mcp.sources.soilgrids import soilgrids_bbox_query, soilgrids_point_query

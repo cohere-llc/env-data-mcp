@@ -19,10 +19,10 @@ from env_data_mcp.sources.nasa_power import (
     nasa_power_syn1deg_point_query,
 )
 from env_data_mcp.sources.nasa_power._client import (
-    _get_coordinates,
-    _open_store,
+    get_coordinates,
+    open_store,
 )
-from env_data_mcp.sources.nasa_power.constants import (
+from env_data_mcp.sources.nasa_power._constants import (
     DEFAULT_MERRA2_VARIABLES,
     DEFAULT_SYN1DEG_VARIABLES,
     DatasetType,
@@ -532,12 +532,12 @@ class TestHourlyQuery:
         assert len(records) == 24, f"{dc.spec.name}: expected 24 hourly records, got {len(records)}"
 
     def test_hourly_dates_are_distinct(self, dc: _DatasetCase, hourly_result: dict):
-        """Verifies the int64-truncation fix in _get_coordinates for sub-day time values."""
+        """Verifies the int64-truncation fix in get_coordinates for sub-day time values."""
         assert hourly_result["_meta"]["success"] is True
         records = hourly_result["data"][0]["records"]
         assert len(records) == 24, (
             f"{dc.spec.name}: expected 24 hourly records, got {len(records)}. "
-            "may indicate int64 truncation in _get_coordinates"
+            "may indicate int64 truncation in get_coordinates"
         )
         dates = [row["date"] for row in records]
         assert len(set(dates)) == 24, (
@@ -584,8 +584,8 @@ class TestClimatologyProbe:
     """
 
     def test_climatology_store_has_13_time_steps(self, dc: _DatasetCase):
-        store = _open_store(dc.dataset_type, TemporalResolution.CLIMATOLOGY)
-        _, _, times = _get_coordinates(store)
+        store = open_store(dc.dataset_type, TemporalResolution.CLIMATOLOGY)
+        _, _, times = get_coordinates(store)
         assert len(times) == 13, (
             f"{dc.spec.name}: expected 13 climatology time steps (12 months + annual), "
             f"got {len(times)}"

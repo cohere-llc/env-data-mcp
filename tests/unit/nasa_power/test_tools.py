@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from env_data_mcp.sources.nasa_power.constants import (
+from env_data_mcp.sources.nasa_power._constants import (
     DEFAULT_MERRA2_VARIABLES,
     DEFAULT_SYN1DEG_VARIABLES,
     SOURCE_INFO,
@@ -35,12 +35,12 @@ from .conftest import (
 )
 
 # ---------------------------------------------------------------------------
-# Patch helpers: tools.py imports _open_store from ._client directly, and
+# Patch helpers: tools.py imports open_store from ._client directly, and
 # _query.py does too, so both lookup paths must be patched for tool tests.
 # ---------------------------------------------------------------------------
 
-_PATCH_QUERY = "env_data_mcp.sources.nasa_power._query._open_store"
-_PATCH_TOOLS = "env_data_mcp.sources.nasa_power._client._open_store"
+_PATCH_QUERY = "env_data_mcp.sources.nasa_power._query.open_store"
+_PATCH_TOOLS = "env_data_mcp.sources.nasa_power._client.open_store"
 
 
 @contextmanager
