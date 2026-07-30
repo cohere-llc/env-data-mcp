@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import suppress
 from typing import Any
@@ -71,7 +70,7 @@ def soilgrids_point_query(
     latitude: float,
     longitude: float,
     radius_km: float,
-    variables: Sequence[str] | None = None,
+    variables: frozenset[str] | list[str] = DEFAULT_VARIABLES,
     max_runtime_s: float = 60.0,
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a point location.
@@ -94,7 +93,7 @@ def soilgrids_point_query(
             exceed this, a warning is returned instead of data. If not provided, assumed
             to be 60 s.
     """
-    variables = list(DEFAULT_VARIABLES if variables is None else variables)
+    variables = list(variables)
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
@@ -174,7 +173,7 @@ def soilgrids_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: Sequence[str] | None = None,
+    variables: frozenset[str] | list[str] = DEFAULT_VARIABLES,
     max_runtime_s: float = 60.0,
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a bounding box region.
@@ -197,7 +196,7 @@ def soilgrids_bbox_query(
             exceed this, a warning is returned instead of data. If not provided, assumed
             to be 60 s.
     """
-    variables = list(DEFAULT_VARIABLES if variables is None else variables)
+    variables = list(variables)
     query_params: dict[str, Any] = {
         "min_lat": min_lat,
         "max_lat": max_lat,

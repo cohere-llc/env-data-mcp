@@ -206,7 +206,7 @@ def _fetch_all_variable_info_live() -> dict[str, Any]:
     # column_table_map: PK-owning tables first so shared FK columns resolve
     # to their PK owner (mirrors first-wins insertion in _get_column_table_map).
     column_table_map: dict[str, str] = {}
-    for table in COLUMN_TABLE_PRIORITY:
+    for table in list(COLUMN_TABLE_PRIORITY):
         for col in _columns_for(table):
             if col not in column_table_map:
                 column_table_map[col] = table

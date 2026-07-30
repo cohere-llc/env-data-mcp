@@ -135,7 +135,7 @@ def test_merra2_query_default_variables():
             end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
         )
-    assert result["_meta"]["variables"] == DEFAULT_MERRA2_VARIABLES
+    assert frozenset(result["_meta"]["variables"]) == DEFAULT_MERRA2_VARIABLES
 
 
 def test_merra2_query_invalid_date_returns_error():
@@ -298,7 +298,7 @@ def test_syn1deg_query_default_variables():
             end_date="2019-08-19",
             temporal_resolution=TemporalResolution.DAILY,
         )
-    assert result["_meta"]["variables"] == DEFAULT_SYN1DEG_VARIABLES
+    assert frozenset(result["_meta"]["variables"]) == DEFAULT_SYN1DEG_VARIABLES
 
 
 def test_syn1deg_query_temporal_resolution_serialised():

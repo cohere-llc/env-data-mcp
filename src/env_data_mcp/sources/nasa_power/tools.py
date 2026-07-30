@@ -90,7 +90,7 @@ def nasa_power_merra2_point_query(
     start_date: str,
     end_date: str,
     temporal_resolution: TemporalResolution,
-    variables: list[str] = DEFAULT_MERRA2_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_MERRA2_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query NASA POWER MERRA-2 climate data for a point location.
@@ -111,6 +111,7 @@ def nasa_power_merra2_point_query(
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
+    variables = list(variables)
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
@@ -189,7 +190,7 @@ def nasa_power_syn1deg_point_query(
     start_date: str,
     end_date: str,
     temporal_resolution: TemporalResolution,
-    variables: list[str] = DEFAULT_SYN1DEG_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SYN1DEG_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query NASA POWER SYN1deg surface radiation data for a point location.
@@ -209,6 +210,7 @@ def nasa_power_syn1deg_point_query(
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
+    variables = list(variables)
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
@@ -289,7 +291,7 @@ def nasa_power_merra2_bbox_query(
     start_date: str,
     end_date: str,
     temporal_resolution: TemporalResolution,
-    variables: list[str] = DEFAULT_MERRA2_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_MERRA2_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query NASA POWER MERRA-2 climate data for a bounding-box area.
@@ -311,6 +313,7 @@ def nasa_power_merra2_bbox_query(
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
+    variables = list(variables)
     bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
 
     query_params: dict[str, Any] = {
@@ -400,7 +403,7 @@ def nasa_power_syn1deg_bbox_query(
     start_date: str,
     end_date: str,
     temporal_resolution: TemporalResolution,
-    variables: list[str] = DEFAULT_SYN1DEG_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SYN1DEG_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query NASA POWER SYN1deg surface radiation data for a bounding-box area.
@@ -422,6 +425,7 @@ def nasa_power_syn1deg_bbox_query(
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
+    variables = list(variables)
     bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
 
     query_params: dict[str, Any] = {
