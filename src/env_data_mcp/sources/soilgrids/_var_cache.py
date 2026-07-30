@@ -30,7 +30,7 @@ from env_data_mcp.helpers import load_json_cache
 from env_data_mcp.scripts.refresh_variable_caches import VariableCacheEntry, register
 
 from ._client import get_client
-from .constants import _LAYERS_INFO_URL, _QUANTILES
+from ._constants import LAYERS_INFO_URL, QUANTILES
 
 _VARIABLES_PATH = Path(__file__).parent / "variables.json"
 
@@ -98,7 +98,7 @@ def _base_variable_info_from_dict(d: dict[str, Any]) -> BaseVariableInfo:
 def _fetch_base_variable_list_live() -> dict[str, BaseVariableInfo]:
     """Scrape the ISRIC properties HTML table to discover base variables."""
     with httpx.Client(timeout=30) as client:
-        resp = client.get(_LAYERS_INFO_URL)
+        resp = client.get(LAYERS_INFO_URL)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
 
@@ -140,7 +140,7 @@ def _fetch_specific_variable_info_live(base_variable: str) -> dict[str, tuple[st
         if len(parts) != 3:
             msg = f"Invalid coverage name: {var}"
             raise ValueError(msg)
-        result[var] = parts[1], _QUANTILES.get(parts[2]) or parts[2]
+        result[var] = parts[1], QUANTILES.get(parts[2]) or parts[2]
     return result
 
 

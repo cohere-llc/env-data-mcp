@@ -9,8 +9,8 @@ client for `bdod` (soil density) would give access to coverages like:
 
 from owslib.wcs import WebCoverageService
 
+from ._constants import WEB_MAP_SERVICE_URL
 from ._types import Client
-from .constants import _WEB_MAP_SERVICE_URL
 
 # Global cache for WCS clients by coverage class
 _clients: dict[str, Client] = {}
@@ -22,9 +22,7 @@ def get_client(base_variable: str) -> Client:
     if base_variable in _clients:
         return _clients[base_variable]
 
-    wcs = WebCoverageService(
-        f"{_WEB_MAP_SERVICE_URL}?map=/map/{base_variable}.map", version="1.0.0"
-    )
+    wcs = WebCoverageService(f"{WEB_MAP_SERVICE_URL}?map=/map/{base_variable}.map", version="1.0.0")
     if not isinstance(wcs, Client):
         raise TypeError(f"Expected WCS 1.0.0 client, got {type(wcs).__name__}")
 

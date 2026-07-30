@@ -17,9 +17,9 @@ from env_data_mcp.models import (
 )
 from env_data_mcp.server import mcp
 
+from ._constants import DEFAULT_VARIABLES, LICENSE_INFO
 from ._query import query_bbox
 from ._var_cache import VariableInfo, get_base_variable_list, get_variable_info
-from .constants import DEFAULT_VARIABLES, LICENSE_INFO
 
 
 def _validate_available_variable_response(response: dict[str, Any]) -> dict[str, Any]:

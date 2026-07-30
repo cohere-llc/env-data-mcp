@@ -19,8 +19,8 @@ from httpx import HTTPStatusError
 from owslib.coverage.wcs100 import WebCoverageService_1_0_0
 
 from env_data_mcp.sources.soilgrids import _var_cache
+from env_data_mcp.sources.soilgrids._constants import LAYERS_INFO_URL
 from env_data_mcp.sources.soilgrids._var_cache import BaseVariableInfo, VariableInfo
-from env_data_mcp.sources.soilgrids.constants import _LAYERS_INFO_URL
 
 # ---------------------------------------------------------------------------
 # HTML fixtures
@@ -130,7 +130,7 @@ def _reset_caches():
 
 
 def test_fetch_base_variable_list_live_returns_variables(httpx_mock):
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
+    httpx_mock.add_response(url=LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
 
     variables = _var_cache._fetch_base_variable_list_live()
 
@@ -143,20 +143,20 @@ def test_fetch_base_variable_list_live_returns_variables(httpx_mock):
 
 
 def test_fetch_base_variable_list_live_raises_http_status_error(httpx_mock):
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, status_code=HTTPStatus.NOT_FOUND)
+    httpx_mock.add_response(url=LAYERS_INFO_URL, status_code=HTTPStatus.NOT_FOUND)
 
     with pytest.raises(HTTPStatusError):
         _var_cache._fetch_base_variable_list_live()
 
 
 def test_fetch_base_variable_list_live_returns_empty_for_bad_html(httpx_mock):
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML_BAD_TABLE)
+    httpx_mock.add_response(url=LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML_BAD_TABLE)
 
     assert _var_cache._fetch_base_variable_list_live() == {}
 
 
 def test_fetch_base_variable_list_live_skips_invalid_conversion(httpx_mock):
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML_MISSING_CONVERSION)
+    httpx_mock.add_response(url=LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML_MISSING_CONVERSION)
 
     variables = _var_cache._fetch_base_variable_list_live()
 
@@ -205,7 +205,7 @@ def test_fetch_specific_variable_info_live_raises_value_error(contents):
 
 
 def test_fetch_all_variable_info_live_orchestrates(httpx_mock):
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
+    httpx_mock.add_response(url=LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
     with patch(
         "env_data_mcp.sources.soilgrids._var_cache._fetch_specific_variable_info_live",
         side_effect=lambda base: {f"{base}_0-5cm_mean": ("0-5cm", "mean")},
@@ -222,7 +222,7 @@ def test_fetch_all_variable_info_live_orchestrates(httpx_mock):
 
 
 def test_fetch_all_variable_info_live_skips_failed_bases(httpx_mock):
-    httpx_mock.add_response(url=_LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
+    httpx_mock.add_response(url=LAYERS_INFO_URL, text=_VARIABLE_INFO_HTML)
 
     def _flaky(base: str):
         if base == "phh2o":
@@ -350,7 +350,7 @@ def test_shipped_variables_json_is_wellformed():
 
 
 def test_shipped_variables_json_covers_default_variables():
-    from env_data_mcp.sources.soilgrids.constants import DEFAULT_VARIABLES
+    from env_data_mcp.sources.soilgrids._constants import DEFAULT_VARIABLES
 
     data = _var_cache._load_all_variable_info_from_disk()
     all_coverages = {cov for block in data.values() for cov in block["coverages"]}

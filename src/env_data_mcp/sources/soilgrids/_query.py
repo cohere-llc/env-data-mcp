@@ -14,14 +14,14 @@ from rasterio.io import MemoryFile
 from rasterio.warp import transform, transform_bounds
 
 from ._client import get_client
+from ._constants import (
+    CELL_SIZE_METERS,
+    REQUEST_CRS,
+    RESPONSE_CRS,
+    TRANSFORM_CRS,
+)
 from ._types import Client
 from ._var_cache import BaseVariableInfo, VariableInfo, get_variable_info
-from .constants import (
-    _CELL_SIZE_METERS,
-    _REQUEST_CRS,
-    _RESPONSE_CRS,
-    _TRANSFORM_CRS,
-)
 
 __all__ = ["BaseVariableInfo", "VariableInfo", "query_bbox"]
 
@@ -42,8 +42,8 @@ def _bbox_to_request_grid(
 ) -> tuple[float, float, float, float]:
     """Converts lat/lon bbox in degrees to the equivalent bbox for SoilGrids queries."""
     return transform_bounds(
-        _RESPONSE_CRS,
-        _TRANSFORM_CRS,
+        RESPONSE_CRS,
+        TRANSFORM_CRS,
         min_lon,
         min_lat,
         max_lon,
@@ -97,9 +97,9 @@ def _query_one_coverage(
     response = client.getCoverage(
         identifier=coverage,
         bbox=request_grid,
-        crs=_REQUEST_CRS,
-        resx=_CELL_SIZE_METERS,
-        resy=_CELL_SIZE_METERS,
+        crs=REQUEST_CRS,
+        resx=CELL_SIZE_METERS,
+        resy=CELL_SIZE_METERS,
         format=format,
         interpolation="nearest neighbor",
     )
@@ -111,7 +111,7 @@ def _query_one_coverage(
     with MemoryFile(payload) as memory_file, memory_file.open() as dataset:
         cols, rows = np.meshgrid(np.arange(dataset.width), np.arange(dataset.height))
         xs, ys = dataset.transform * (cols.flatten(), rows.flatten())
-        coords = transform(_TRANSFORM_CRS, _RESPONSE_CRS, xs, ys)  # coords = (lons, lats)
+        coords = transform(TRANSFORM_CRS, RESPONSE_CRS, xs, ys)  # coords = (lons, lats)
 
         lats = np.asarray(coords[1], dtype=np.float64)
         lons = np.asarray(coords[0], dtype=np.float64)

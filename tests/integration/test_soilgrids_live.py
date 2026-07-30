@@ -24,10 +24,10 @@ from env_data_mcp.sources.soilgrids import (
     soilgrids_bbox_query,
     soilgrids_point_query,
 )
-from env_data_mcp.sources.soilgrids.constants import (
-    _LAYERS_INFO_URL,
-    _WEB_MAP_SERVICE_URL,
+from env_data_mcp.sources.soilgrids._constants import (
     DEFAULT_VARIABLES,
+    LAYERS_INFO_URL,
+    WEB_MAP_SERVICE_URL,
 )
 
 from .common import (
@@ -49,10 +49,10 @@ pytestmark = pytest.mark.integration
 def _require_soilgrids_available() -> None:
     """Skip the module if the ISRIC services are unreachable."""
     try:
-        r = httpx.get(_LAYERS_INFO_URL, timeout=30)
+        r = httpx.get(LAYERS_INFO_URL, timeout=30)
         if r.status_code != HTTPStatus.OK:
             pytest.skip(f"SoilGrids layer info URL returned HTTP {r.status_code}")
-        r = httpx.get(_WEB_MAP_SERVICE_URL, timeout=30)
+        r = httpx.get(WEB_MAP_SERVICE_URL, timeout=30)
         if r.status_code != HTTPStatus.OK:
             pytest.skip(f"SoilGrids WCS URL returned HTTP {r.status_code}")
     except Exception as e:
