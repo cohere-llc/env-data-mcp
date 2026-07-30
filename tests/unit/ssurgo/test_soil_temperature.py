@@ -12,7 +12,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_temperature_bbox_query,
     ssurgo_soil_temperature_point_query,
 )
-from env_data_mcp.sources.ssurgo.constants import (
+from env_data_mcp.sources.ssurgo._constants import (
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
 )
 

@@ -15,9 +15,9 @@ from env_data_mcp.models import (
 )
 from env_data_mcp.server import mcp
 
-from ._query import _estimate_query_runtime_s, _query_bbox, _query_point
-from ._var_cache import _get_variable_info
-from .constants import _DEFAULT_OCCURRENCE_VARIABLES, LICENSE_INFO, _QueryType
+from ._constants import DEFAULT_OCCURRENCE_VARIABLES, LICENSE_INFO, QueryType
+from ._query import estimate_query_runtime_s, query_bbox, query_point
+from ._var_cache import get_variable_info
 
 _KM_TO_DEG = 0.01  # approximate conversion of km to degrees for runtime estimates
 
@@ -37,7 +37,7 @@ def gbif_occurrence_available_variables() -> dict[str, Any]:
     """Return a list of available GBIF Occurrence variables with descriptions."""
     t0 = time.perf_counter()
     try:
-        variable_info = _get_variable_info(_QueryType.OCCURRENCE)
+        variable_info = get_variable_info(QueryType.OCCURRENCE)
         return _validate_available_variables_response(
             {
                 "data": variable_info,
@@ -78,7 +78,7 @@ def gbif_occurrence_point_query(
     end_date: str,
     radius_km: float = 5.0,
     taxon_key: int | None = None,
-    variables: list[str] = _DEFAULT_OCCURRENCE_VARIABLES,
+    variables: list[str] = DEFAULT_OCCURRENCE_VARIABLES,
     limit: int | None = None,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
@@ -118,7 +118,7 @@ def gbif_occurrence_point_query(
         point = PointInput(latitude=latitude, longitude=longitude)
         date_range = DateRange(start_date=start_date, end_date=end_date)
 
-        full_var_info = _get_variable_info(_QueryType.OCCURRENCE)
+        full_var_info = get_variable_info(QueryType.OCCURRENCE)
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
         unavailable_vars = [var for var in variables if var not in full_var_info]
 
@@ -148,14 +148,14 @@ def gbif_occurrence_point_query(
             latitude=point.latitude, longitude=point.longitude, radius_km=radius_km
         )
         area_deg2 = (bbox["max_lat"] - bbox["min_lat"]) * (bbox["max_lon"] - bbox["min_lon"])
-        if warn := _estimate_query_runtime_s(n_days, area_deg2, max_runtime_s):
+        if warn := estimate_query_runtime_s(n_days, area_deg2, max_runtime_s):
             return _validate_grouped_geometry_response(warn)
-        data, unique_licenses = _query_point(
+        data, unique_licenses = query_point(
             lat=point.latitude,
             lon=point.longitude,
             start_date=date_range.start_date,
             end_date=date_range.end_date,
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             radius_km=radius_km,
             taxon_key=taxon_key,
             variables=valid_vars,
@@ -212,7 +212,7 @@ def gbif_occurrence_bbox_query(
     start_date: str,
     end_date: str,
     taxon_key: int | None = None,
-    variables: list[str] = _DEFAULT_OCCURRENCE_VARIABLES,
+    variables: list[str] = DEFAULT_OCCURRENCE_VARIABLES,
     limit: int | None = None,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
@@ -254,7 +254,7 @@ def gbif_occurrence_bbox_query(
         bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
         date_range = DateRange(start_date=start_date, end_date=end_date)
 
-        full_var_info = _get_variable_info(_QueryType.OCCURRENCE)
+        full_var_info = get_variable_info(QueryType.OCCURRENCE)
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
         unavailable_vars = [var for var in variables if var not in full_var_info]
 
@@ -281,16 +281,16 @@ def gbif_occurrence_bbox_query(
         valid_vars = list(var_info.keys())
         n_days = date_range_days(start_date, end_date)
         area_deg2 = (max_lat - min_lat) * (max_lon - min_lon)
-        if warn := _estimate_query_runtime_s(n_days, area_deg2, max_runtime_s):
+        if warn := estimate_query_runtime_s(n_days, area_deg2, max_runtime_s):
             return _validate_grouped_geometry_response(warn)
-        data, unique_licenses = _query_bbox(
+        data, unique_licenses = query_bbox(
             min_lat=bbox.min_lat,
             max_lat=bbox.max_lat,
             min_lon=bbox.min_lon,
             max_lon=bbox.max_lon,
             start_date=date_range.start_date,
             end_date=date_range.end_date,
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             taxon_key=taxon_key,
             variables=valid_vars,
             limit=limit,

@@ -14,12 +14,12 @@ from unittest.mock import patch
 import httpx
 import pytest
 
+from env_data_mcp.sources.gbif._constants import QUERY_ENDPOINTS, QueryType
 from env_data_mcp.sources.gbif._query import (
-    _estimate_query_runtime_s,
-    _query_bbox,
-    _query_point,
+    estimate_query_runtime_s,
+    query_bbox,
+    query_point,
 )
-from env_data_mcp.sources.gbif.constants import _QUERY_ENDPOINTS, _QueryType
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
@@ -72,7 +72,7 @@ _EXPECTED_QUERY_OUTPUT: list[dict[str, Any]] = [
     },
 ]
 
-_OCCURRENCE_URL = re.compile(re.escape(_QUERY_ENDPOINTS[_QueryType.OCCURRENCE]) + ".*")
+_OCCURRENCE_URL = re.compile(re.escape(QUERY_ENDPOINTS[QueryType.OCCURRENCE]) + ".*")
 
 
 def _make_mock_response(
@@ -94,7 +94,7 @@ def _make_mock_get(
 ) -> Callable[[httpx.Request], httpx.Response]:
     def callback(request: httpx.Request) -> httpx.Response:
         base_url = f"{request.url.scheme}://{request.url.host}{request.url.path}"
-        assert base_url == _QUERY_ENDPOINTS[_QueryType.OCCURRENCE]
+        assert base_url == QUERY_ENDPOINTS[QueryType.OCCURRENCE]
         params = dict(request.url.params)
         lats = params["decimalLatitude"].split(",")
         assert len(lats) == 2
@@ -129,12 +129,12 @@ class TestQueryPoint:
 
     def test_returns_records(self, httpx_mock):
         httpx_mock.add_callback(_make_mock_get())
-        results, unique_licenses = _query_point(
+        results, unique_licenses = query_point(
             lat=_YAKIMA_LAT,
             lon=_YAKIMA_LON,
             start_date="2019-08-01",
             end_date="2019-08-31",
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             radius_km=5.0,
             taxon_key=None,
             variables=[
@@ -155,12 +155,12 @@ class TestQueryPoint:
 
     def test_returns_results_with_taxon_key(self, httpx_mock):
         httpx_mock.add_callback(_make_mock_get(expected_taxon_key=2881663, number_of_results=1))
-        results, unique_licenses = _query_point(
+        results, unique_licenses = query_point(
             lat=_YAKIMA_LAT,
             lon=_YAKIMA_LON,
             start_date="2019-08-01",
             end_date="2019-08-31",
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             radius_km=5.0,
             taxon_key=2881663,
             variables=[
@@ -191,12 +191,12 @@ class TestQueryPoint:
             url=_OCCURRENCE_URL,
             json={"count": 1, "endOfRecords": False, "results": [extra_record]},
         )
-        results, unique_licenses = _query_point(
+        results, unique_licenses = query_point(
             lat=_YAKIMA_LAT,
             lon=_YAKIMA_LON,
             start_date="2019-08-01",
             end_date="2019-08-31",
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             radius_km=5.0,
             taxon_key=None,
             variables=[
@@ -222,12 +222,12 @@ class TestQueryPoint:
             url=_OCCURRENCE_URL,
             json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS},
         )
-        results, unique_licenses = _query_point(
+        results, unique_licenses = query_point(
             lat=_YAKIMA_LAT,
             lon=_YAKIMA_LON,
             start_date="2019-08-01",
             end_date="2019-08-31",
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             radius_km=5.0,
             taxon_key=None,
             variables=[
@@ -258,14 +258,14 @@ class TestQueryBbox:
 
     def test_returns_records(self, httpx_mock):
         httpx_mock.add_callback(_make_mock_get())
-        results, unique_licenses = _query_bbox(
+        results, unique_licenses = query_bbox(
             min_lat=46.2,
             max_lat=46.3,
             min_lon=-119.5,
             max_lon=-119.4,
             start_date="2019-08-01",
             end_date="2019-08-31",
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             taxon_key=None,
             variables=[
                 "key",
@@ -285,14 +285,14 @@ class TestQueryBbox:
 
     def test_returns_results_with_taxon_key(self, httpx_mock):
         httpx_mock.add_callback(_make_mock_get(expected_taxon_key=2881663, number_of_results=1))
-        results, unique_licenses = _query_bbox(
+        results, unique_licenses = query_bbox(
             min_lat=46.2,
             max_lat=46.3,
             min_lon=-119.5,
             max_lon=-119.4,
             start_date="2019-08-01",
             end_date="2019-08-31",
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             taxon_key=2881663,
             variables=[
                 "key",
@@ -322,14 +322,14 @@ class TestQueryBbox:
             url=_OCCURRENCE_URL,
             json={"count": 1, "endOfRecords": False, "results": [extra_record]},
         )
-        results, unique_licenses = _query_bbox(
+        results, unique_licenses = query_bbox(
             min_lat=46.2,
             max_lat=46.3,
             min_lon=-119.5,
             max_lon=-119.4,
             start_date="2019-08-01",
             end_date="2019-08-31",
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             taxon_key=None,
             variables=[
                 "key",
@@ -354,14 +354,14 @@ class TestQueryBbox:
             url=_OCCURRENCE_URL,
             json={"count": 2, "endOfRecords": False, "results": _SAMPLE_API_RECORDS},
         )
-        results, unique_licenses = _query_bbox(
+        results, unique_licenses = query_bbox(
             min_lat=46.2,
             max_lat=46.3,
             min_lon=-119.5,
             max_lon=-119.4,
             start_date="2019-08-01",
             end_date="2019-08-31",
-            query_type=_QueryType.OCCURRENCE,
+            query_type=QueryType.OCCURRENCE,
             taxon_key=None,
             variables=[
                 "key",
@@ -395,5 +395,5 @@ def test_estimate_query_runtime_s():
         return {"success": True}
 
     with patch("env_data_mcp.sources.gbif._query.check_runtime", side_effect=mock_check_runtime):
-        result = _estimate_query_runtime_s(3, 14, 200)
+        result = estimate_query_runtime_s(3, 14, 200)
         assert result == {"success": True}

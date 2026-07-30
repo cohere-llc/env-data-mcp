@@ -8,15 +8,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from env_data_mcp.sources.nasa_power._constants import DatasetType, TemporalResolution
 from env_data_mcp.sources.nasa_power._query import (
     _CLIM_EPOCH,
     _clim_date_label,
     _clim_time_mask,
-    _estimate_query_runtime_s,
-    _query_bbox,
-    _query_point,
+    estimate_query_runtime_s,
+    query_bbox,
+    query_point,
 )
-from env_data_mcp.sources.nasa_power.constants import DatasetType, TemporalResolution
 
 from .conftest import (
     _BBOX_MAX_LAT,
@@ -33,20 +33,20 @@ from .conftest import (
     _MOCK_SYN1DEG_STORE,
 )
 
-# Patch path for _open_store as used inside _query.py
-_PATCH_OPEN_STORE = "env_data_mcp.sources.nasa_power._query._open_store"
+# Patch path for open_store as used inside _query.py
+_PATCHopen_store = "env_data_mcp.sources.nasa_power._query.open_store"
 
 # Climatology decoded timestamps (for _clim_time_mask tests)
 _CLIM_TIMES = _CLIM_EPOCH + pd.to_timedelta(np.array(_CLIM_TIME_VALS, dtype="f4"), unit="D")
 
 # ---------------------------------------------------------------------------
-# _query_point — basic tests
+# query_point — basic tests
 # ---------------------------------------------------------------------------
 
 
-def test_query_point_returns_correct_date():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        groups, _ = _query_point(
+def testquery_point_returns_correct_date():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        groups, _ = query_point(
             _LAT,
             _LON,
             "2019-08-19",
@@ -60,9 +60,9 @@ def test_query_point_returns_correct_date():
     assert groups[0]["records"][0]["date"] == "2019-08-19"
 
 
-def test_query_point_multi_day_range():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        groups, _ = _query_point(
+def testquery_point_multi_day_range():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        groups, _ = query_point(
             _LAT,
             _LON,
             "2019-08-17",
@@ -74,9 +74,9 @@ def test_query_point_multi_day_range():
     assert len(groups[0]["records"]) == 5
 
 
-def test_query_point_variable_values():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        groups, _ = _query_point(
+def testquery_point_variable_values():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        groups, _ = query_point(
             _LAT,
             _LON,
             "2019-08-19",
@@ -88,9 +88,9 @@ def test_query_point_variable_values():
     assert pytest.approx(groups[0]["records"][0]["T2M"], abs=0.01) == 20.0
 
 
-def test_query_point_units_present():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        groups, _ = _query_point(
+def testquery_point_units_present():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        groups, _ = query_point(
             _LAT,
             _LON,
             "2019-08-19",
@@ -102,9 +102,9 @@ def test_query_point_units_present():
     assert "T2M_units" in groups[0]["records"][0]
 
 
-def test_query_point_unavailable_variable():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        groups, unavailable = _query_point(
+def testquery_point_unavailable_variable():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        groups, unavailable = query_point(
             _LAT,
             _LON,
             "2019-08-19",
@@ -117,9 +117,9 @@ def test_query_point_unavailable_variable():
     assert "NONEXISTENT" not in groups[0]["records"][0]
 
 
-def test_query_point_out_of_range_returns_empty():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        groups, _ = _query_point(
+def testquery_point_out_of_range_returns_empty():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        groups, _ = query_point(
             _LAT,
             _LON,
             "2000-01-01",
@@ -131,9 +131,9 @@ def test_query_point_out_of_range_returns_empty():
     assert groups == []
 
 
-def test_query_point_syn1deg_variable():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_SYN1DEG_STORE):
-        groups, _ = _query_point(
+def testquery_point_syn1deg_variable():
+    with patch(_PATCHopen_store, return_value=_MOCK_SYN1DEG_STORE):
+        groups, _ = query_point(
             _LAT,
             _LON,
             "2019-08-19",
@@ -145,9 +145,9 @@ def test_query_point_syn1deg_variable():
     assert pytest.approx(groups[0]["records"][0]["ALLSKY_SFC_SW_DWN"], abs=0.01) == 210.0
 
 
-def test_query_point_has_geometry():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        groups, _ = _query_point(
+def testquery_point_has_geometry():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        groups, _ = query_point(
             _LAT,
             _LON,
             "2019-08-19",
@@ -161,10 +161,10 @@ def test_query_point_has_geometry():
     assert len(groups[0]["geometry"]["coordinates"]) == 2
 
 
-def test_query_point_snaps_to_grid_cell():
+def testquery_point_snaps_to_grid_cell():
     """latitude/longitude in the group reflect the snapped grid cell, not the input."""
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        groups, _ = _query_point(
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        groups, _ = query_point(
             _LAT,
             _LON,
             "2019-08-19",
@@ -178,13 +178,13 @@ def test_query_point_snaps_to_grid_cell():
 
 
 # ---------------------------------------------------------------------------
-# _query_bbox — basic tests
+# query_bbox — basic tests
 # ---------------------------------------------------------------------------
 
 
-def test_query_bbox_returns_nine_points():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        results, _ = _query_bbox(
+def testquery_bbox_returns_nine_points():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        results, _ = query_bbox(
             _BBOX_MIN_LAT,
             _BBOX_MAX_LAT,
             _BBOX_MIN_LON,
@@ -198,9 +198,9 @@ def test_query_bbox_returns_nine_points():
     assert len(results) == 9
 
 
-def test_query_bbox_grid_point_structure():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        results, _ = _query_bbox(
+def testquery_bbox_grid_point_structure():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        results, _ = query_bbox(
             _BBOX_MIN_LAT,
             _BBOX_MAX_LAT,
             _BBOX_MIN_LON,
@@ -220,9 +220,9 @@ def test_query_bbox_grid_point_structure():
     assert "records" in pt
 
 
-def test_query_bbox_in_bbox_flag():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        results, _ = _query_bbox(
+def testquery_bbox_in_bbox_flag():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        results, _ = query_bbox(
             _BBOX_MIN_LAT,
             _BBOX_MAX_LAT,
             _BBOX_MIN_LON,
@@ -239,9 +239,9 @@ def test_query_bbox_in_bbox_flag():
     assert pytest.approx(interior[0]["longitude"], abs=0.01) == -119.25
 
 
-def test_query_bbox_records_per_point():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        results, _ = _query_bbox(
+def testquery_bbox_records_per_point():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        results, _ = query_bbox(
             _BBOX_MIN_LAT,
             _BBOX_MAX_LAT,
             _BBOX_MIN_LON,
@@ -256,9 +256,9 @@ def test_query_bbox_records_per_point():
         assert len(pt["records"]) == 5
 
 
-def test_query_bbox_record_fields():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        results, _ = _query_bbox(
+def testquery_bbox_record_fields():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        results, _ = query_bbox(
             _BBOX_MIN_LAT,
             _BBOX_MAX_LAT,
             _BBOX_MIN_LON,
@@ -275,9 +275,9 @@ def test_query_bbox_record_fields():
     assert "T2M_units" in rec
 
 
-def test_query_bbox_unavailable_variable():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        _, unavailable = _query_bbox(
+def testquery_bbox_unavailable_variable():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        _, unavailable = query_bbox(
             _BBOX_MIN_LAT,
             _BBOX_MAX_LAT,
             _BBOX_MIN_LON,
@@ -291,9 +291,9 @@ def test_query_bbox_unavailable_variable():
     assert "NONEXISTENT" in unavailable
 
 
-def test_query_bbox_out_of_range_returns_empty():
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        results, _ = _query_bbox(
+def testquery_bbox_out_of_range_returns_empty():
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        results, _ = query_bbox(
             _BBOX_MIN_LAT,
             _BBOX_MAX_LAT,
             _BBOX_MIN_LON,
@@ -307,10 +307,10 @@ def test_query_bbox_out_of_range_returns_empty():
     assert results == []
 
 
-def test_query_bbox_all_interior_when_bbox_covers_grid():
+def testquery_bbox_all_interior_when_bbox_covers_grid():
     """When the bbox covers all grid cells every point should have in_bbox=True."""
-    with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-        results, _ = _query_bbox(
+    with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+        results, _ = query_bbox(
             45.0,
             47.0,
             -120.0,
@@ -325,16 +325,16 @@ def test_query_bbox_all_interior_when_bbox_covers_grid():
 
 
 # ---------------------------------------------------------------------------
-# Hourly _query_point
+# Hourly query_point
 # ---------------------------------------------------------------------------
 
 
 class TestHourlyQueryPoint:
-    """_query_point must return 24 records for a single-day hourly query."""
+    """query_point must return 24 records for a single-day hourly query."""
 
     def test_single_day_returns_24_records(self):
-        with patch(_PATCH_OPEN_STORE, return_value=_MOCK_HOURLY_H_STORE):
-            groups, _ = _query_point(
+        with patch(_PATCHopen_store, return_value=_MOCK_HOURLY_H_STORE):
+            groups, _ = query_point(
                 46.25,
                 -119.25,
                 _HOURLY_DATE,
@@ -347,8 +347,8 @@ class TestHourlyQueryPoint:
         assert len(groups[0]["records"]) == 24
 
     def test_single_day_dates_are_distinct(self):
-        with patch(_PATCH_OPEN_STORE, return_value=_MOCK_HOURLY_H_STORE):
-            groups, _ = _query_point(
+        with patch(_PATCHopen_store, return_value=_MOCK_HOURLY_H_STORE):
+            groups, _ = query_point(
                 46.25,
                 -119.25,
                 _HOURLY_DATE,
@@ -361,8 +361,8 @@ class TestHourlyQueryPoint:
         assert len(set(dates)) == 24, "Hourly dates must include time component"
 
     def test_date_format_is_iso_datetime(self):
-        with patch(_PATCH_OPEN_STORE, return_value=_MOCK_HOURLY_H_STORE):
-            groups, _ = _query_point(
+        with patch(_PATCHopen_store, return_value=_MOCK_HOURLY_H_STORE):
+            groups, _ = query_point(
                 46.25,
                 -119.25,
                 _HOURLY_DATE,
@@ -377,8 +377,8 @@ class TestHourlyQueryPoint:
 
     def test_daily_date_format_unchanged(self):
         """Non-HOURLY resolutions still use %Y-%m-%d format."""
-        with patch(_PATCH_OPEN_STORE, return_value=_MOCK_MERRA2_STORE):
-            groups, _ = _query_point(
+        with patch(_PATCHopen_store, return_value=_MOCK_MERRA2_STORE):
+            groups, _ = query_point(
                 _LAT,
                 _LON,
                 "2019-08-19",
@@ -391,16 +391,16 @@ class TestHourlyQueryPoint:
 
 
 # ---------------------------------------------------------------------------
-# Hourly _query_bbox
+# Hourly query_bbox
 # ---------------------------------------------------------------------------
 
 
 class TestHourlyQueryBbox:
-    """_query_bbox must return 24 records per grid point for a single-day hourly query."""
+    """query_bbox must return 24 records per grid point for a single-day hourly query."""
 
     def test_single_day_returns_24_records_per_point(self):
-        with patch(_PATCH_OPEN_STORE, return_value=_MOCK_HOURLY_H_STORE):
-            results, _ = _query_bbox(
+        with patch(_PATCHopen_store, return_value=_MOCK_HOURLY_H_STORE):
+            results, _ = query_bbox(
                 46.0,
                 46.5,
                 -119.5,
@@ -415,8 +415,8 @@ class TestHourlyQueryBbox:
         assert len(results[0]["records"]) == 24
 
     def test_bbox_record_date_format_is_iso_datetime(self):
-        with patch(_PATCH_OPEN_STORE, return_value=_MOCK_HOURLY_H_STORE):
-            results, _ = _query_bbox(
+        with patch(_PATCHopen_store, return_value=_MOCK_HOURLY_H_STORE):
+            results, _ = query_bbox(
                 46.0,
                 46.5,
                 -119.5,
@@ -505,19 +505,19 @@ class TestClimTimeMask:
 
 
 # ---------------------------------------------------------------------------
-# Climatology _query_point
+# Climatology query_point
 # ---------------------------------------------------------------------------
 
 
 class TestClimatologyQueryPoint:
-    """_query_point returns correctly filtered + labelled records for CLIMATOLOGY."""
+    """query_point returns correctly filtered + labelled records for CLIMATOLOGY."""
 
     def _query(self, start: str, end: str) -> list[dict]:
         with patch(
-            _PATCH_OPEN_STORE,
+            _PATCHopen_store,
             return_value=_MOCK_CLIM_STORE,
         ):
-            groups, unavail = _query_point(
+            groups, unavail = query_point(
                 _LAT,
                 _LON,
                 start,
@@ -558,19 +558,19 @@ class TestClimatologyQueryPoint:
 
 
 # ---------------------------------------------------------------------------
-# Climatology _query_bbox
+# Climatology query_bbox
 # ---------------------------------------------------------------------------
 
 
 class TestClimatologyQueryBbox:
-    """_query_bbox returns correctly filtered records for CLIMATOLOGY."""
+    """query_bbox returns correctly filtered records for CLIMATOLOGY."""
 
     def _query(self, start: str, end: str) -> list[dict]:
         with patch(
-            _PATCH_OPEN_STORE,
+            _PATCHopen_store,
             return_value=_MOCK_CLIM_STORE,
         ):
-            results, unavail = _query_bbox(
+            results, unavail = query_bbox(
                 _BBOX_MIN_LAT,
                 _BBOX_MAX_LAT,
                 _BBOX_MIN_LON,
@@ -602,12 +602,12 @@ class TestClimatologyQueryBbox:
 
 
 # ---------------------------------------------------------------------------
-# _estimate_query_runtime_s branch coverage
+# estimate_query_runtime_s branch coverage
 # ---------------------------------------------------------------------------
 
 
 def test_estimate_runtime_hourly_branch():
-    result = _estimate_query_runtime_s(
+    result = estimate_query_runtime_s(
         1, TemporalResolution.HOURLY, 1, area_deg2=0.0, max_runtime_s=0.0
     )
     assert result is not None
@@ -615,7 +615,7 @@ def test_estimate_runtime_hourly_branch():
 
 
 def test_estimate_runtime_annual_branch():
-    result = _estimate_query_runtime_s(
+    result = estimate_query_runtime_s(
         365, TemporalResolution.ANNUAL, 1, area_deg2=0.0, max_runtime_s=0.0
     )
     assert result is not None

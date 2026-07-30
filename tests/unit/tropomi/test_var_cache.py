@@ -16,15 +16,15 @@ import httpx
 import pytest
 
 from env_data_mcp.sources.tropomi import _var_cache
-from env_data_mcp.sources.tropomi.constants import _AWS_URL, ProductType
+from env_data_mcp.sources.tropomi._constants import AWS_URL, ProductType
 
 # ---------------------------------------------------------------------------
 # Catalog + S3 listing mock data
 # ---------------------------------------------------------------------------
 
-_NRTI_URL = f"{_AWS_URL}COGT/NRTI/catalog.json"
-_OFFL_URL = f"{_AWS_URL}COGT/OFFL/catalog.json"
-_RPRO_URL = f"{_AWS_URL}COGT/RPRO/catalog.json"
+_NRTI_URL = f"{AWS_URL}COGT/NRTI/catalog.json"
+_OFFL_URL = f"{AWS_URL}COGT/OFFL/catalog.json"
+_RPRO_URL = f"{AWS_URL}COGT/RPRO/catalog.json"
 
 _NRTI_CATALOG = {
     "links": [
@@ -185,7 +185,7 @@ def test_fetch_all_variable_info_live_returns_json_shape(httpx_mock):
 
 
 def test_variable_info_dict_roundtrip():
-    original = _var_cache._VariableInfo(
+    original = _var_cache.VariableInfo(
         name="OFFL-L2_O3",
         description="Offline processed: Ozone",
         units="DU",
@@ -227,7 +227,7 @@ def test_get_full_variable_info_reads_from_disk(monkeypatch, tmp_path):
     }
     monkeypatch.setattr(_var_cache, "_VARIABLES_PATH", _write_cache_file(tmp_path, payload))
 
-    info = _var_cache._get_full_variable_info()
+    info = _var_cache.get_full_variable_info()
 
     assert set(info) == {"OFFL-L2_CO"}
     entry = info["OFFL-L2_CO"]
@@ -251,9 +251,9 @@ def test_get_full_variable_info_caches_across_calls(monkeypatch, tmp_path):
     path = _write_cache_file(tmp_path, payload)
     monkeypatch.setattr(_var_cache, "_VARIABLES_PATH", path)
 
-    first = _var_cache._get_full_variable_info()
+    first = _var_cache.get_full_variable_info()
     path.unlink()  # subsequent calls must not touch disk
-    second = _var_cache._get_full_variable_info()
+    second = _var_cache.get_full_variable_info()
 
     assert first is second
 
@@ -309,7 +309,7 @@ def test_shipped_variables_json_is_wellformed():
 
 def test_shipped_variables_json_covers_default_variables():
     """Every default variable used by the TROPOMI tools is present in the cache."""
-    from env_data_mcp.sources.tropomi.constants import DEFAULT_VARIABLES
+    from env_data_mcp.sources.tropomi._constants import DEFAULT_VARIABLES
 
     data = _var_cache._load_all_variable_info_from_disk()
     missing = [v for v in DEFAULT_VARIABLES if v not in data]
@@ -319,8 +319,8 @@ def test_shipped_variables_json_covers_default_variables():
 def test_shipped_variables_json_hydrates_to_dataclass_instances():
     """The shipped cache round-trips through _get_full_variable_info to _VariableInfo."""
     _var_cache._VARIABLE_INFO_CACHE.clear()
-    info = _var_cache._get_full_variable_info()
+    info = _var_cache.get_full_variable_info()
     assert info, "no variables loaded from shipped cache"
     for name, vi in info.items():
-        assert isinstance(vi, _var_cache._VariableInfo), f"{name} not a _VariableInfo"
+        assert isinstance(vi, _var_cache.VariableInfo), f"{name} not a _VariableInfo"
         assert isinstance(vi.product_type, ProductType)

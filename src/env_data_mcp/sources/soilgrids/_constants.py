@@ -45,11 +45,11 @@ LICENSE_INFO: Final[Mapping[str, str]] = MappingProxyType(
     }
 )
 
-_WEB_MAP_SERVICE_URL = "https://maps.isric.org/mapserv"
+WEB_MAP_SERVICE_URL = "https://maps.isric.org/mapserv"
 
-_LAYERS_INFO_URL = "https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs_01.html"
+LAYERS_INFO_URL = "https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs_01.html"
 
-_QUANTILES: Final[Mapping[str, str]] = MappingProxyType(
+QUANTILES: Final[Mapping[str, str]] = MappingProxyType(
     {
         "Q0.05": "5% quantile",
         "Q0.5": "median",
@@ -61,9 +61,9 @@ _QUANTILES: Final[Mapping[str, str]] = MappingProxyType(
 
 # Coordinate systems
 
-_REQUEST_CRS: str = "EPSG:54012"
-_TRANSFORM_CRS: str = "ESRI:54012"
-_RESPONSE_CRS: str = "EPSG:4326"
+REQUEST_CRS: str = "EPSG:54012"
+TRANSFORM_CRS: str = "ESRI:54012"
+RESPONSE_CRS: str = "EPSG:4326"
 
 # Horizontal Resolution of SoilGrids data
-_CELL_SIZE_METERS = 250.0
+CELL_SIZE_METERS = 250.0

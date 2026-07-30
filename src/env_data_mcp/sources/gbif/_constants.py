@@ -25,7 +25,7 @@ LICENSE_INFO: dict[str, str] = {
 # Type 1: occurrence
 # ---------------------------------------------------------------------------
 
-_DEFAULT_OCCURRENCE_VARIABLES: list[str] = [
+DEFAULT_OCCURRENCE_VARIABLES: list[str] = [
     "key",
     "datasetKey",
     "datasetName",
@@ -66,28 +66,28 @@ _DEFAULT_OCCURRENCE_VARIABLES: list[str] = [
 # ---------------------------------------------------------------------------
 
 
-class _QueryType(StrEnum):
+class QueryType(StrEnum):
     """Identifier for each GBIF query endpoint; doubles as a cache key."""
 
     OCCURRENCE = "occurrence"
 
 
 # Default variables by query type
-_DEFAULT_VARIABLES: dict[_QueryType, list[str]] = {
-    _QueryType.OCCURRENCE: _DEFAULT_OCCURRENCE_VARIABLES,
+DEFAULT_VARIABLES: dict[QueryType, list[str]] = {
+    QueryType.OCCURRENCE: DEFAULT_OCCURRENCE_VARIABLES,
 }
 
 # Endpoints by query type
-_QUERY_ENDPOINTS: dict[_QueryType, str] = {
-    _QueryType.OCCURRENCE: "https://api.gbif.org/v1/occurrence/search"
+QUERY_ENDPOINTS: dict[QueryType, str] = {
+    QueryType.OCCURRENCE: "https://api.gbif.org/v1/occurrence/search"
 }
 
 # Results schema by query type -> { "query_type": { "url": str, "path": str } }
-_QUERY_RESULT_SCHEMAS: dict[_QueryType, dict[str, str]] = {
-    _QueryType.OCCURRENCE: {
+QUERY_RESULT_SCHEMAS: dict[QueryType, dict[str, str]] = {
+    QueryType.OCCURRENCE: {
         "url": "https://techdocs.gbif.org/openapi/occurrence.json",
         "path": "components.schemas.Occurrence.properties",
     },
 }
 
-_API_PAGE_SIZE = 300  # max records that can be returned for a single query
+API_PAGE_SIZE = 300  # max records that can be returned for a single query

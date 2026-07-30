@@ -15,7 +15,7 @@ from env_data_mcp.sources.ssurgo._client import (
     _parse_gml2_coords,
     _parse_xml,
 )
-from env_data_mcp.sources.ssurgo.constants import (
+from env_data_mcp.sources.ssurgo._constants import (
     DEFAULT_AREA_SUMMARY_VARIABLES,
     DEFAULT_ECOLOGICAL_SITE_VARIABLES,
     DEFAULT_PARENT_MATERIAL_VARIABLES,

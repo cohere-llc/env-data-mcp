@@ -17,8 +17,8 @@ import zarr
 from env_data_mcp.helpers import load_json_cache
 from env_data_mcp.scripts.refresh_variable_caches import VariableCacheEntry, register
 
-from ._client import _open_store
-from .constants import DatasetType, TemporalResolution
+from ._client import open_store
+from ._constants import DatasetType, TemporalResolution
 
 _VARIABLES_PATH = Path(__file__).parent / "variables.json"
 
@@ -59,7 +59,7 @@ def _fetch_variable_info_live(
     temporal_resolution: TemporalResolution,
 ) -> dict[str, dict[str, str]]:
     """Discover variables for one (dataset, resolution) by opening its Zarr store."""
-    store = _open_store(dataset_type, temporal_resolution)
+    store = open_store(dataset_type, temporal_resolution)
     return _variable_info_from_group(store._group)
 
 
@@ -87,7 +87,7 @@ def _load_all_variable_info_from_disk() -> dict[str, dict[str, dict[str, dict[st
     return data
 
 
-def _get_variable_info(
+def get_variable_info(
     dataset_type: DatasetType,
     temporal_resolution: TemporalResolution,
 ) -> dict[str, dict[str, str]]:

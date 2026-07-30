@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import httpx
 import pytest
 
-from env_data_mcp.sources.gbif.constants import _DEFAULT_VARIABLES, _QueryType
+from env_data_mcp.sources.gbif._constants import DEFAULT_VARIABLES, QueryType
 from env_data_mcp.sources.gbif.tools import (
     gbif_occurrence_available_variables,
     gbif_occurrence_bbox_query,
@@ -78,7 +78,7 @@ OCCURRENCE_SPEC = AdapterSpec(
     bbox_query=gbif_occurrence_bbox_query,
     supports_date_range=True,
     primary_variable="scientificName",
-    default_variables=_DEFAULT_VARIABLES[_QueryType.OCCURRENCE],
+    default_variables=DEFAULT_VARIABLES[QueryType.OCCURRENCE],
     max_runtime_s=120.0,
     data_expectations={
         "sh_rural": DataExpectation(

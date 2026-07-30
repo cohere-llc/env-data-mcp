@@ -15,7 +15,7 @@ from unittest.mock import patch
 import pytest
 
 from env_data_mcp.sources.nasa_power import _var_cache
-from env_data_mcp.sources.nasa_power.constants import DatasetType, TemporalResolution
+from env_data_mcp.sources.nasa_power._constants import DatasetType, TemporalResolution
 
 from .conftest import _MOCK_MERRA2_GROUP, _MOCK_MERRA2_STORE, _MOCK_SYN1DEG_STORE
 
@@ -43,13 +43,13 @@ def test_variable_info_from_group_skips_coordinates():
 
 
 # ---------------------------------------------------------------------------
-# _fetch_variable_info_live (via patched _open_store)
+# _fetch_variable_info_live (via patched open_store)
 # ---------------------------------------------------------------------------
 
 
-def test_fetch_variable_info_live_uses_open_store():
+def test_fetch_variable_info_live_usesopen_store():
     with patch(
-        "env_data_mcp.sources.nasa_power._var_cache._open_store",
+        "env_data_mcp.sources.nasa_power._var_cache.open_store",
         return_value=_MOCK_MERRA2_STORE,
     ):
         info = _var_cache._fetch_variable_info_live(DatasetType.MERRA2, TemporalResolution.DAILY)
@@ -60,7 +60,7 @@ def test_fetch_all_variable_info_live_covers_every_combo():
     def _pick(ds: DatasetType, _tr: TemporalResolution):
         return _MOCK_MERRA2_STORE if ds is DatasetType.MERRA2 else _MOCK_SYN1DEG_STORE
 
-    with patch("env_data_mcp.sources.nasa_power._var_cache._open_store", side_effect=_pick):
+    with patch("env_data_mcp.sources.nasa_power._var_cache.open_store", side_effect=_pick):
         result = _var_cache._fetch_all_variable_info_live()
 
     assert set(result) == {ds.value for ds in DatasetType}
@@ -92,7 +92,7 @@ def test_get_variable_info_reads_from_disk(monkeypatch, tmp_path):
     monkeypatch.setattr(_var_cache, "_VARIABLES_PATH", _write_cache_file(tmp_path, payload))
     _var_cache._VARIABLE_INFO_CACHE.clear()
 
-    result = _var_cache._get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
+    result = _var_cache.get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
 
     assert result == {"FOO": {"description": "fooness", "units": "K"}}
 
@@ -110,9 +110,9 @@ def test_get_variable_info_caches_across_calls(monkeypatch, tmp_path):
     monkeypatch.setattr(_var_cache, "_VARIABLES_PATH", path)
     _var_cache._VARIABLE_INFO_CACHE.clear()
 
-    first = _var_cache._get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
+    first = _var_cache.get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
     path.unlink()  # subsequent calls must not touch disk
-    second = _var_cache._get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
+    second = _var_cache.get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
 
     assert first is second
 
@@ -122,7 +122,7 @@ def test_get_variable_info_raises_when_combo_missing(monkeypatch, tmp_path):
     _var_cache._VARIABLE_INFO_CACHE.clear()
 
     with pytest.raises(KeyError, match="No cached variable info"):
-        _var_cache._get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
+        _var_cache.get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ def test_shipped_variables_json_is_wellformed():
 
 def test_shipped_variables_json_covers_default_variables():
     """Every default variable used by the NASA POWER tools is in the shipped cache."""
-    from env_data_mcp.sources.nasa_power.constants import (
+    from env_data_mcp.sources.nasa_power._constants import (
         DEFAULT_MERRA2_VARIABLES,
         DEFAULT_SYN1DEG_VARIABLES,
     )

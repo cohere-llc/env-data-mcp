@@ -20,10 +20,7 @@ from env_data_mcp.models import (
 from env_data_mcp.server import mcp
 
 from ._client import _fetch_mukey_geometries, _fetch_sda, _parse_xml
-from ._var_cache import _get_variable_info
-from .constants import (
-    _SDA_URL,
-    _SOIL_SUITABILITY_RULES_SQL,
+from ._constants import (
     DEFAULT_AREA_SUMMARY_VARIABLES,
     DEFAULT_ECOLOGICAL_SITE_VARIABLES,
     DEFAULT_PARENT_MATERIAL_VARIABLES,
@@ -33,20 +30,23 @@ from .constants import (
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
     DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
     LICENSE_INFO,
-    _QueryType,
+    SDA_URL,
+    SOIL_SUITABILITY_RULES_SQL,
+    QueryType,
 )
-from .sql import (
-    _build_area_summary_sql,
-    _build_ecological_site_sql,
-    _build_parent_material_sql,
-    _build_seasonal_hydrology_sql,
-    _build_soil_profile_sql,
-    _build_soil_suitability_sql,
-    _build_soil_temperature_sql,
-    _build_subsurface_barriers_sql,
-    _resolve_rule_names,
-    _resolve_variables,
+from ._sql import (
+    build_area_summary_sql,
+    build_ecological_site_sql,
+    build_parent_material_sql,
+    build_seasonal_hydrology_sql,
+    build_soil_profile_sql,
+    build_soil_suitability_sql,
+    build_soil_temperature_sql,
+    build_subsurface_barriers_sql,
+    resolve_rule_names,
+    resolve_variables,
 )
+from ._var_cache import get_variable_info
 
 # Degrees of buffer added around a point when fetching map-unit polygon geometries
 # via the SDA WFS endpoint (~5.5 km at mid-latitudes).
@@ -89,7 +89,7 @@ def _validate_suitability_rules_response(response: dict[str, Any]) -> dict[str, 
     return SuitabilityRulesResponse.model_validate(response).model_dump(by_alias=True)
 
 
-def _available_vars_response(query_type: _QueryType) -> dict[str, Any]:
+def _available_vars_response(query_type: QueryType) -> dict[str, Any]:
     """Discover available columns via XSD schema introspection.
 
     Columns are enriched with ``description`` and ``units`` parsed from the SDA
@@ -97,7 +97,7 @@ def _available_vars_response(query_type: _QueryType) -> dict[str, Any]:
     """
     t0 = time.perf_counter()
     try:
-        info = _get_variable_info(query_type)
+        info = get_variable_info(query_type)
         latency = time.perf_counter() - t0
         flat: dict[str, dict[str, Any]] = {
             col: {
@@ -144,7 +144,7 @@ def _point_query(
     variables: list[str],
     sql_builder: Any,
     max_runtime_s: float | None,
-    query_type: _QueryType,
+    query_type: QueryType,
 ) -> dict[str, Any]:
     """Shared implementation for all point-query MCP tools."""
     if warn := check_runtime("ssurgo", 0, 0.0, max_runtime_s):
@@ -170,7 +170,7 @@ def _point_query(
             }
         )
     try:
-        vars_ = _resolve_variables(variables)
+        vars_ = resolve_variables(variables)
     except ValueError as exc:
         return _validate_grouped_geometry_response(
             {
@@ -198,7 +198,7 @@ def _point_query(
     }
     t0 = time.perf_counter()
     try:
-        full_info = _get_variable_info(query_type)
+        full_info = get_variable_info(query_type)
         valid_vars = [v for v in user_vars if v in full_info]
         unavail_vars = [v for v in user_vars if v not in full_info]
         if not valid_vars:
@@ -300,7 +300,7 @@ def _bbox_query(
     variables: list[str],
     sql_builder: Any,
     max_runtime_s: float | None,
-    query_type: _QueryType,
+    query_type: QueryType,
 ) -> dict[str, Any]:
     """Shared implementation for all bbox-query MCP tools."""
     try:
@@ -336,7 +336,7 @@ def _bbox_query(
         "max_lon": bbox.max_lon,
     }
     try:
-        vars_ = _resolve_variables(variables)
+        vars_ = resolve_variables(variables)
     except ValueError as exc:
         return _validate_grouped_geometry_response(
             {
@@ -363,7 +363,7 @@ def _bbox_query(
     }
     t0 = time.perf_counter()
     try:
-        full_info = _get_variable_info(query_type)
+        full_info = get_variable_info(query_type)
         valid_vars = [v for v in user_vars if v in full_info]
         unavail_vars = [v for v in user_vars if v not in full_info]
         if not valid_vars:
@@ -459,7 +459,7 @@ def _bbox_query(
 @mcp.tool()
 def ssurgo_soil_profile_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO soil profile queries."""
-    return _available_vars_response(_QueryType.SOIL_PROFILE)
+    return _available_vars_response(QueryType.SOIL_PROFILE)
 
 
 @mcp.tool()
@@ -485,9 +485,9 @@ def ssurgo_soil_profile_point_query(
         latitude,
         longitude,
         variables,
-        _build_soil_profile_sql,
+        build_soil_profile_sql,
         max_runtime_s,
-        _QueryType.SOIL_PROFILE,
+        QueryType.SOIL_PROFILE,
     )
 
 
@@ -520,9 +520,9 @@ def ssurgo_soil_profile_bbox_query(
         min_lon,
         max_lon,
         variables,
-        _build_soil_profile_sql,
+        build_soil_profile_sql,
         max_runtime_s,
-        _QueryType.SOIL_PROFILE,
+        QueryType.SOIL_PROFILE,
     )
 
 
@@ -534,7 +534,7 @@ def ssurgo_soil_profile_bbox_query(
 @mcp.tool()
 def ssurgo_area_summary_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO area summary queries."""
-    return _available_vars_response(_QueryType.AREA_SUMMARY)
+    return _available_vars_response(QueryType.AREA_SUMMARY)
 
 
 @mcp.tool()
@@ -560,9 +560,9 @@ def ssurgo_area_summary_point_query(
         latitude,
         longitude,
         variables,
-        _build_area_summary_sql,
+        build_area_summary_sql,
         max_runtime_s,
-        _QueryType.AREA_SUMMARY,
+        QueryType.AREA_SUMMARY,
     )
 
 
@@ -595,9 +595,9 @@ def ssurgo_area_summary_bbox_query(
         min_lon,
         max_lon,
         variables,
-        _build_area_summary_sql,
+        build_area_summary_sql,
         max_runtime_s,
-        _QueryType.AREA_SUMMARY,
+        QueryType.AREA_SUMMARY,
     )
 
 
@@ -609,7 +609,7 @@ def ssurgo_area_summary_bbox_query(
 @mcp.tool()
 def ssurgo_subsurface_barriers_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO subsurface barrier queries."""
-    return _available_vars_response(_QueryType.SUBSURFACE_BARRIERS)
+    return _available_vars_response(QueryType.SUBSURFACE_BARRIERS)
 
 
 @mcp.tool()
@@ -635,9 +635,9 @@ def ssurgo_subsurface_barriers_point_query(
         latitude,
         longitude,
         variables,
-        _build_subsurface_barriers_sql,
+        build_subsurface_barriers_sql,
         max_runtime_s,
-        _QueryType.SUBSURFACE_BARRIERS,
+        QueryType.SUBSURFACE_BARRIERS,
     )
 
 
@@ -670,9 +670,9 @@ def ssurgo_subsurface_barriers_bbox_query(
         min_lon,
         max_lon,
         variables,
-        _build_subsurface_barriers_sql,
+        build_subsurface_barriers_sql,
         max_runtime_s,
-        _QueryType.SUBSURFACE_BARRIERS,
+        QueryType.SUBSURFACE_BARRIERS,
     )
 
 
@@ -684,7 +684,7 @@ def ssurgo_subsurface_barriers_bbox_query(
 @mcp.tool()
 def ssurgo_seasonal_hydrology_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO seasonal hydrology queries."""
-    return _available_vars_response(_QueryType.SEASONAL_HYDROLOGY)
+    return _available_vars_response(QueryType.SEASONAL_HYDROLOGY)
 
 
 @mcp.tool()
@@ -710,9 +710,9 @@ def ssurgo_seasonal_hydrology_point_query(
         latitude,
         longitude,
         variables,
-        _build_seasonal_hydrology_sql,
+        build_seasonal_hydrology_sql,
         max_runtime_s,
-        _QueryType.SEASONAL_HYDROLOGY,
+        QueryType.SEASONAL_HYDROLOGY,
     )
 
 
@@ -745,9 +745,9 @@ def ssurgo_seasonal_hydrology_bbox_query(
         min_lon,
         max_lon,
         variables,
-        _build_seasonal_hydrology_sql,
+        build_seasonal_hydrology_sql,
         max_runtime_s,
-        _QueryType.SEASONAL_HYDROLOGY,
+        QueryType.SEASONAL_HYDROLOGY,
     )
 
 
@@ -762,7 +762,7 @@ def ssurgo_soil_suitability_available_rule_names() -> dict[str, Any]:
     t0 = time.perf_counter()
     try:
         with httpx.Client(timeout=120.0) as client:
-            resp = client.post(_SDA_URL, data={"query": _SOIL_SUITABILITY_RULES_SQL})
+            resp = client.post(SDA_URL, data={"query": SOIL_SUITABILITY_RULES_SQL})
             resp.raise_for_status()
         latency = time.perf_counter() - t0
         records = _parse_xml(resp.text)
@@ -841,7 +841,7 @@ def ssurgo_soil_suitability_point_query(
             }
         )
     try:
-        names = _resolve_rule_names(rule_names)
+        names = resolve_rule_names(rule_names)
     except ValueError as exc:
         return _validate_grouped_geometry_response(
             {
@@ -868,7 +868,7 @@ def ssurgo_soil_suitability_point_query(
     }
     t0 = time.perf_counter()
     try:
-        sql = _build_soil_suitability_sql(wkt, names)
+        sql = build_soil_suitability_sql(wkt, names)
         records, latency = _fetch_sda(sql)
         grouped = _group_by_mukey(records)
         _buf = _GEOM_BBOX_BUFFER_DEG
@@ -978,7 +978,7 @@ def ssurgo_soil_suitability_bbox_query(
         "max_lon": bbox.max_lon,
     }
     try:
-        names = _resolve_rule_names(rule_names)
+        names = resolve_rule_names(rule_names)
     except ValueError as exc:
         return _validate_grouped_geometry_response(
             {
@@ -1004,7 +1004,7 @@ def ssurgo_soil_suitability_bbox_query(
     }
     t0 = time.perf_counter()
     try:
-        sql = _build_soil_suitability_sql(wkt, names)
+        sql = build_soil_suitability_sql(wkt, names)
         records, latency = _fetch_sda(sql)
         grouped = _group_by_mukey(records)
         geo_bbox = (bbox.min_lon, bbox.min_lat, bbox.max_lon, bbox.max_lat)
@@ -1059,7 +1059,7 @@ def ssurgo_soil_suitability_bbox_query(
 @mcp.tool()
 def ssurgo_ecological_site_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO ecological site queries."""
-    return _available_vars_response(_QueryType.ECOLOGICAL_SITE)
+    return _available_vars_response(QueryType.ECOLOGICAL_SITE)
 
 
 @mcp.tool()
@@ -1085,9 +1085,9 @@ def ssurgo_ecological_site_point_query(
         latitude,
         longitude,
         variables,
-        _build_ecological_site_sql,
+        build_ecological_site_sql,
         max_runtime_s,
-        _QueryType.ECOLOGICAL_SITE,
+        QueryType.ECOLOGICAL_SITE,
     )
 
 
@@ -1120,9 +1120,9 @@ def ssurgo_ecological_site_bbox_query(
         min_lon,
         max_lon,
         variables,
-        _build_ecological_site_sql,
+        build_ecological_site_sql,
         max_runtime_s,
-        _QueryType.ECOLOGICAL_SITE,
+        QueryType.ECOLOGICAL_SITE,
     )
 
 
@@ -1134,7 +1134,7 @@ def ssurgo_ecological_site_bbox_query(
 @mcp.tool()
 def ssurgo_parent_material_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO parent material queries."""
-    return _available_vars_response(_QueryType.PARENT_MATERIAL)
+    return _available_vars_response(QueryType.PARENT_MATERIAL)
 
 
 @mcp.tool()
@@ -1160,9 +1160,9 @@ def ssurgo_parent_material_point_query(
         latitude,
         longitude,
         variables,
-        _build_parent_material_sql,
+        build_parent_material_sql,
         max_runtime_s,
-        _QueryType.PARENT_MATERIAL,
+        QueryType.PARENT_MATERIAL,
     )
 
 
@@ -1195,9 +1195,9 @@ def ssurgo_parent_material_bbox_query(
         min_lon,
         max_lon,
         variables,
-        _build_parent_material_sql,
+        build_parent_material_sql,
         max_runtime_s,
-        _QueryType.PARENT_MATERIAL,
+        QueryType.PARENT_MATERIAL,
     )
 
 
@@ -1209,7 +1209,7 @@ def ssurgo_parent_material_bbox_query(
 @mcp.tool()
 def ssurgo_soil_temperature_available_variables() -> dict[str, Any]:
     """Return all available variable names for SSURGO soil temperature queries."""
-    return _available_vars_response(_QueryType.SOIL_TEMPERATURE)
+    return _available_vars_response(QueryType.SOIL_TEMPERATURE)
 
 
 @mcp.tool()
@@ -1235,9 +1235,9 @@ def ssurgo_soil_temperature_point_query(
         latitude,
         longitude,
         variables,
-        _build_soil_temperature_sql,
+        build_soil_temperature_sql,
         max_runtime_s,
-        _QueryType.SOIL_TEMPERATURE,
+        QueryType.SOIL_TEMPERATURE,
     )
 
 
@@ -1270,7 +1270,7 @@ def ssurgo_soil_temperature_bbox_query(
         min_lon,
         max_lon,
         variables,
-        _build_soil_temperature_sql,
+        build_soil_temperature_sql,
         max_runtime_s,
-        _QueryType.SOIL_TEMPERATURE,
+        QueryType.SOIL_TEMPERATURE,
     )

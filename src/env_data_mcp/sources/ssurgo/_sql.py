@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from ._var_cache import _get_column_table_map
+from ._var_cache import get_column_table_map
 
 _RULE_NAME_RE = re.compile(
     r"^[\x20-\x7E]+$"
@@ -33,25 +33,25 @@ def _sanitize_rule_name(name: str) -> str:
 
 def _qualify(col: str) -> str:
     """Return the table-qualified form of *col* if its table is known."""
-    table = _get_column_table_map().get(col)
+    table = get_column_table_map().get(col)
     return f"{table}.{col}" if table else col
 
 
-def _resolve_variables(variables: list[str]) -> list[str]:
+def resolve_variables(variables: list[str]) -> list[str]:
     """Validate *variables* and return them."""
     for v in variables:
         _sanitize_variable(v)
     return variables
 
 
-def _resolve_rule_names(rule_names: list[str]) -> list[str]:
+def resolve_rule_names(rule_names: list[str]) -> list[str]:
     """Validate *rule_names* and return them."""
     for n in rule_names:
         _sanitize_rule_name(n)
     return rule_names
 
 
-def _build_soil_profile_sql(wkt: str, variables: list[str]) -> str:
+def build_soil_profile_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → chorizon."""
     # Always include these context columns so callers can interpret each row.
     _PROFILE_CONTEXT = ["compname", "comppct_r", "hzname", "hzdept_r", "hzdepb_r"]
@@ -71,7 +71,7 @@ def _build_soil_profile_sql(wkt: str, variables: list[str]) -> str:
         ORDER BY mapunit.mukey, component.cokey, chorizon.hzdepb_r"""
 
 
-def _build_area_summary_sql(wkt: str, variables: list[str]) -> str:
+def build_area_summary_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → muaggatt (one aggregated row per map unit)."""
     select_vars = ",\n            ".join(_qualify(v) for v in variables)
     return f"""\
@@ -86,7 +86,7 @@ def _build_area_summary_sql(wkt: str, variables: list[str]) -> str:
         ORDER BY mapunit.mukey"""
 
 
-def _build_subsurface_barriers_sql(wkt: str, variables: list[str]) -> str:
+def build_subsurface_barriers_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → corestrictions."""
     _BARRIERS_CONTEXT = ["compname", "comppct_r", "reskind", "resdept_r", "resdepb_r"]
     all_vars = _BARRIERS_CONTEXT + [v for v in variables if v not in _BARRIERS_CONTEXT]
@@ -105,7 +105,7 @@ def _build_subsurface_barriers_sql(wkt: str, variables: list[str]) -> str:
         ORDER BY mapunit.mukey, component.cokey, corestrictions.resdept_r"""
 
 
-def _build_seasonal_hydrology_sql(wkt: str, variables: list[str]) -> str:
+def build_seasonal_hydrology_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → comonth → cosoilmoist."""
     _HYDROLOGY_CONTEXT = ["compname", "comppct_r", "monthseq", "soimoistdept_r", "soimoistdepb_r"]
     all_vars = _HYDROLOGY_CONTEXT + [v for v in variables if v not in _HYDROLOGY_CONTEXT]
@@ -126,7 +126,7 @@ def _build_seasonal_hydrology_sql(wkt: str, variables: list[str]) -> str:
                  comonth.comonthkey, cosoilmoist.soimoistdept_r"""
 
 
-def _build_soil_suitability_sql(wkt: str, rule_names: list[str]) -> str:
+def build_soil_suitability_sql(wkt: str, rule_names: list[str]) -> str:
     """SQL for mapunit → component → cointerp filtered by rule names."""
     safe_names = [_sanitize_rule_name(n) for n in rule_names]
     names_sql = ", ".join(f"'{n}'" for n in safe_names)
@@ -151,7 +151,7 @@ def _build_soil_suitability_sql(wkt: str, rule_names: list[str]) -> str:
         ORDER BY mapunit.mukey, component.cokey, cointerp.mrulename"""
 
 
-def _build_ecological_site_sql(wkt: str, variables: list[str]) -> str:
+def build_ecological_site_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → coecoclass."""
     _ECOCLASS_CONTEXT = ["compname", "comppct_r", "ecoclassid", "ecoclassname"]
     all_vars = _ECOCLASS_CONTEXT + [v for v in variables if v not in _ECOCLASS_CONTEXT]
@@ -170,7 +170,7 @@ def _build_ecological_site_sql(wkt: str, variables: list[str]) -> str:
         ORDER BY mapunit.mukey, component.cokey, coecoclass.ecoclassid"""
 
 
-def _build_parent_material_sql(wkt: str, variables: list[str]) -> str:
+def build_parent_material_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → copmgrp → copm."""
     _PARENT_MAT_CONTEXT = ["compname", "comppct_r", "pmgroupname", "pmkind", "pmorigin"]
     all_vars = _PARENT_MAT_CONTEXT + [v for v in variables if v not in _PARENT_MAT_CONTEXT]
@@ -191,7 +191,7 @@ def _build_parent_material_sql(wkt: str, variables: list[str]) -> str:
                  copmgrp.pmgroupname, copm.pmkind"""
 
 
-def _build_soil_temperature_sql(wkt: str, variables: list[str]) -> str:
+def build_soil_temperature_sql(wkt: str, variables: list[str]) -> str:
     """SQL for mapunit → component → comonth → cosoiltemp."""
     _SOIL_TEMP_CONTEXT = ["compname", "comppct_r", "monthseq", "soitempdept_r", "soitempdepb_r"]
     all_vars = _SOIL_TEMP_CONTEXT + [v for v in variables if v not in _SOIL_TEMP_CONTEXT]

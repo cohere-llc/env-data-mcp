@@ -39,12 +39,12 @@ from env_data_mcp.helpers import load_json_cache
 from env_data_mcp.scripts.refresh_variable_caches import VariableCacheEntry, register
 
 from ._client import _sda_table_columns
-from .constants import _AVAIL_SQL_TABLES, _COLUMN_TABLE_PRIORITY, _QueryType
+from ._constants import AVAIL_SQL_TABLES, COLUMN_TABLE_PRIORITY, QueryType
 
 _VARIABLES_PATH = Path(__file__).parent / "variables.json"
 
 # Session-level caches populated lazily on first access from the on-disk JSON.
-_VARIABLE_INFO_CACHE: dict[_QueryType, dict[str, dict[str, str]]] = {}
+_VARIABLE_INFO_CACHE: dict[QueryType, dict[str, dict[str, str]]] = {}
 _COLUMN_TABLE_CACHE: dict[str, str] = {}
 
 
@@ -188,9 +188,9 @@ def _fetch_all_variable_info_live() -> dict[str, Any]:
         return table_columns[table]
 
     variable_info: dict[str, dict[str, dict[str, str]]] = {}
-    for qt in _QueryType:
+    for qt in QueryType:
         info: dict[str, dict[str, str]] = {}
-        for table in _AVAIL_SQL_TABLES.get(qt, ()):
+        for table in AVAIL_SQL_TABLES.get(qt, ()):
             table_meta = pdf_metadata.get(table, {})
             for col in _columns_for(table):
                 if col in info:
@@ -206,7 +206,7 @@ def _fetch_all_variable_info_live() -> dict[str, Any]:
     # column_table_map: PK-owning tables first so shared FK columns resolve
     # to their PK owner (mirrors first-wins insertion in _get_column_table_map).
     column_table_map: dict[str, str] = {}
-    for table in _COLUMN_TABLE_PRIORITY:
+    for table in COLUMN_TABLE_PRIORITY:
         for col in _columns_for(table):
             if col not in column_table_map:
                 column_table_map[col] = table
@@ -235,14 +235,14 @@ def _hydrate_caches_from_disk() -> None:
     raw = _load_all_variable_info_from_disk()
     for qt_value, cols in raw.get("variable_info", {}).items():
         try:
-            qt = _QueryType(qt_value)
+            qt = QueryType(qt_value)
         except ValueError:
             continue  # skip query types not defined in this build
         _VARIABLE_INFO_CACHE[qt] = dict(cols)
     _COLUMN_TABLE_CACHE.update(raw.get("column_table_map", {}))
 
 
-def _get_variable_info(query_type: _QueryType) -> dict[str, dict[str, str]]:
+def get_variable_info(query_type: QueryType) -> dict[str, dict[str, str]]:
     """Return cached ``{col: {table, label, units}}`` for *query_type*.
 
     Raises :class:`RuntimeError` when no columns are cached for the query type
@@ -257,7 +257,7 @@ def _get_variable_info(query_type: _QueryType) -> dict[str, dict[str, str]]:
     return info
 
 
-def _get_column_table_map() -> dict[str, str]:
+def get_column_table_map() -> dict[str, str]:
     """Return the cached ``{col: table}`` map used to qualify SQL columns."""
     _hydrate_caches_from_disk()
     return _COLUMN_TABLE_CACHE

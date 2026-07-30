@@ -11,7 +11,7 @@ import zarr.storage
 import env_data_mcp.sources.nasa_power._client as _client_mod
 import env_data_mcp.sources.nasa_power._var_cache as _var_cache_mod
 from env_data_mcp.sources.nasa_power._client import ZarrStoreCache
-from env_data_mcp.sources.nasa_power.constants import DatasetType, TemporalResolution
+from env_data_mcp.sources.nasa_power._constants import DatasetType, TemporalResolution
 
 # ---------------------------------------------------------------------------
 # Grid constants shared across test modules

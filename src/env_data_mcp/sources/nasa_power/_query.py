@@ -9,8 +9,8 @@ import pandas as pd
 
 from env_data_mcp.helpers import check_runtime
 
-from ._client import _get_coordinates, _open_store
-from .constants import DatasetType, TemporalResolution
+from ._client import get_coordinates, open_store
+from ._constants import DatasetType, TemporalResolution
 
 # ---------------------------------------------------------------------------
 # Climatology helpers
@@ -68,7 +68,7 @@ def _clim_time_mask(
 # ---------------------------------------------------------------------------
 
 
-def _query_point(
+def query_point(
     lat: float,
     lon: float,
     start_date: str,
@@ -84,9 +84,9 @@ def _query_point(
     one ``GeometryGroup``-shaped dict with a GeoJSON ``Point`` geometry and
     the time-series ``records`` for the nearest grid cell.
     """
-    store = _open_store(dataset_type, temporal_resolution)
+    store = open_store(dataset_type, temporal_resolution)
 
-    lats, lons, times = _get_coordinates(store)
+    lats, lons, times = get_coordinates(store)
 
     lat_idx = int(np.abs(lats - lat).argmin())
     lon_idx = int(np.abs(lons - lon).argmin())
@@ -152,7 +152,7 @@ def _query_point(
     ), unavailable
 
 
-def _query_bbox(
+def query_bbox(
     min_lat: float,
     max_lat: float,
     min_lon: float,
@@ -171,9 +171,9 @@ def _query_bbox(
     ``in_bbox`` field indicates whether the cell falls strictly inside the
     requested bbox (useful for interpolation workflows).
     """
-    store = _open_store(dataset_type, temporal_resolution)
+    store = open_store(dataset_type, temporal_resolution)
 
-    lats, lons, times = _get_coordinates(store)
+    lats, lons, times = get_coordinates(store)
 
     # lats and lons are sorted ascending in the MERRA-2/SYN1deg stores.
     # Indices of the first cell >= min_lat and last cell <= max_lat.
@@ -255,7 +255,7 @@ def _query_bbox(
 # ---------------------------------------------------------------------------
 
 
-def _estimate_query_runtime_s(
+def estimate_query_runtime_s(
     n_days: int,
     temporal_resolution: TemporalResolution,
     n_param: int,

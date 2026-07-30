@@ -17,9 +17,7 @@ from env_data_mcp.models import (
 )
 from env_data_mcp.server import mcp
 
-from ._query import _estimate_query_runtime_s, _query_bbox, _query_point
-from ._var_cache import _get_variable_info
-from .constants import (
+from ._constants import (
     DEFAULT_MERRA2_VARIABLES,
     DEFAULT_SYN1DEG_VARIABLES,
     MERRA2_INFO,
@@ -28,6 +26,8 @@ from .constants import (
     DatasetType,
     TemporalResolution,
 )
+from ._query import estimate_query_runtime_s, query_bbox, query_point
+from ._var_cache import get_variable_info
 
 
 def _validate_available_variables_response(response: dict[str, Any]) -> dict[str, Any]:
@@ -44,7 +44,7 @@ def _validate_grouped_geometry_response(response: dict[str, Any]) -> dict[str, A
 def nasa_power_merra2_available_variables() -> dict[str, Any]:
     """Return a list of available NASA POWER MERRA-2 variables with descriptions and units."""
     t0 = time.perf_counter()
-    variable_info = _get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
+    variable_info = get_variable_info(DatasetType.MERRA2, TemporalResolution.DAILY)
     latency = time.perf_counter() - t0
     return _validate_available_variables_response(
         {
@@ -65,7 +65,7 @@ def nasa_power_merra2_available_variables() -> dict[str, Any]:
 def nasa_power_syn1deg_available_variables() -> dict[str, Any]:
     """Return a list of available NASA POWER SYN1deg variables with descriptions and units."""
     t0 = time.perf_counter()
-    variable_info = _get_variable_info(DatasetType.SYN1DEG, TemporalResolution.DAILY)
+    variable_info = get_variable_info(DatasetType.SYN1DEG, TemporalResolution.DAILY)
     latency = time.perf_counter() - t0
     return _validate_available_variables_response(
         {
@@ -126,15 +126,15 @@ def nasa_power_merra2_point_query(
         point = PointInput(latitude=latitude, longitude=longitude)
         date_range = DateRange(start_date=start_date, end_date=end_date)
 
-        full_var_info = _get_variable_info(DatasetType.MERRA2, temporal_resolution)
+        full_var_info = get_variable_info(DatasetType.MERRA2, temporal_resolution)
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
 
         n_days = date_range_days(start_date, end_date)
-        if warn := _estimate_query_runtime_s(
+        if warn := estimate_query_runtime_s(
             n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s
         ):
             return _validate_grouped_geometry_response(warn)
-        data, unavailable = _query_point(
+        data, unavailable = query_point(
             point.latitude,
             point.longitude,
             date_range.start_date,
@@ -224,15 +224,15 @@ def nasa_power_syn1deg_point_query(
         point = PointInput(latitude=latitude, longitude=longitude)
         date_range = DateRange(start_date=start_date, end_date=end_date)
 
-        full_var_info = _get_variable_info(DatasetType.SYN1DEG, temporal_resolution)
+        full_var_info = get_variable_info(DatasetType.SYN1DEG, temporal_resolution)
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
 
         n_days = date_range_days(start_date, end_date)
-        if warn := _estimate_query_runtime_s(
+        if warn := estimate_query_runtime_s(
             n_days, temporal_resolution, len(variables), area_deg2=0.0, max_runtime_s=max_runtime_s
         ):
             return _validate_grouped_geometry_response(warn)
-        data, unavailable = _query_point(
+        data, unavailable = query_point(
             point.latitude,
             point.longitude,
             date_range.start_date,
@@ -329,11 +329,11 @@ def nasa_power_merra2_bbox_query(
     try:
         date_range = DateRange(start_date=start_date, end_date=end_date)
 
-        full_var_info = _get_variable_info(DatasetType.MERRA2, temporal_resolution)
+        full_var_info = get_variable_info(DatasetType.MERRA2, temporal_resolution)
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
 
         n_days = date_range_days(start_date, end_date)
-        if warn := _estimate_query_runtime_s(
+        if warn := estimate_query_runtime_s(
             n_days,
             temporal_resolution,
             len(variables),
@@ -341,7 +341,7 @@ def nasa_power_merra2_bbox_query(
             max_runtime_s=max_runtime_s,
         ):
             return _validate_grouped_geometry_response(warn)
-        data, unavailable = _query_bbox(
+        data, unavailable = query_bbox(
             bbox.min_lat,
             bbox.max_lat,
             bbox.min_lon,
@@ -440,11 +440,11 @@ def nasa_power_syn1deg_bbox_query(
     try:
         date_range = DateRange(start_date=start_date, end_date=end_date)
 
-        full_var_info = _get_variable_info(DatasetType.SYN1DEG, temporal_resolution)
+        full_var_info = get_variable_info(DatasetType.SYN1DEG, temporal_resolution)
         var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
 
         n_days = date_range_days(start_date, end_date)
-        if warn := _estimate_query_runtime_s(
+        if warn := estimate_query_runtime_s(
             n_days,
             temporal_resolution,
             len(variables),
@@ -452,7 +452,7 @@ def nasa_power_syn1deg_bbox_query(
             max_runtime_s=max_runtime_s,
         ):
             return _validate_grouped_geometry_response(warn)
-        data, unavailable = _query_bbox(
+        data, unavailable = query_bbox(
             bbox.min_lat,
             bbox.max_lat,
             bbox.min_lon,

@@ -12,7 +12,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_area_summary_bbox_query,
     ssurgo_area_summary_point_query,
 )
-from env_data_mcp.sources.ssurgo.constants import LICENSE_INFO
+from env_data_mcp.sources.ssurgo._constants import LICENSE_INFO
 
 from .conftest import (
     _LAT,

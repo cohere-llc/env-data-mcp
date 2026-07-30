@@ -6,13 +6,13 @@ import textwrap
 
 import pytest
 
+from env_data_mcp.sources.ssurgo._constants import (
+    AVAIL_SQL_TABLES,
+    QueryType,
+)
 from env_data_mcp.sources.ssurgo._var_cache import (
     _COLUMN_TABLE_CACHE,
     _VARIABLE_INFO_CACHE,
-)
-from env_data_mcp.sources.ssurgo.constants import (
-    _AVAIL_SQL_TABLES,
-    _QueryType,
 )
 
 # ---------------------------------------------------------------------------
@@ -299,9 +299,9 @@ TABLE_SCHEMA_XMLS: dict[str, str] = {
 }
 
 
-def add_schema_responses(httpx_mock: object, avail_sql: _QueryType) -> None:
+def add_schema_responses(httpx_mock: object, avail_sql: QueryType) -> None:
     """Register one mock schema response per table for the given avail_sql key."""
-    for table in _AVAIL_SQL_TABLES[avail_sql]:
+    for table in AVAIL_SQL_TABLES[avail_sql]:
         httpx_mock.add_response(  # type: ignore[attr-defined]
             method="POST", url=_SDA_URL, text=TABLE_SCHEMA_XMLS[table]
         )
@@ -539,7 +539,7 @@ def _reset_ssurgo_caches(request):
     _VARIABLE_INFO_CACHE.clear()
     _COLUMN_TABLE_CACHE.clear()
     _COLUMN_TABLE_CACHE.update(_COLUMN_TABLE_MAP_TEST_DATA)
-    for _qt in _QueryType:
+    for _qt in QueryType:
         _VARIABLE_INFO_CACHE[_qt] = dict(_STUB_VAR_INFO)
     yield
     _VARIABLE_INFO_CACHE.clear()

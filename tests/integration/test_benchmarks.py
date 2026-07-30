@@ -37,7 +37,7 @@ from env_data_mcp.sources.nasa_power import (
     nasa_power_merra2_point_query,
 )
 from env_data_mcp.sources.nasa_power._client import _clear_store_cache
-from env_data_mcp.sources.nasa_power.constants import TemporalResolution
+from env_data_mcp.sources.nasa_power._constants import TemporalResolution
 from env_data_mcp.sources.oco2 import oco2_bbox_query, oco2_query
 from env_data_mcp.sources.openaq import openaq_bbox_query, openaq_query
 from env_data_mcp.sources.soilgrids import soilgrids_bbox_query, soilgrids_point_query
@@ -59,7 +59,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_subsurface_barriers_bbox_query,
     ssurgo_subsurface_barriers_point_query,
 )
-from env_data_mcp.sources.ssurgo.constants import DEFAULT_SOIL_SUITABILITY_RULE_NAMES
+from env_data_mcp.sources.ssurgo._constants import DEFAULT_SOIL_SUITABILITY_RULE_NAMES
 from env_data_mcp.sources.tropomi import tropomi_bbox_query, tropomi_point_query
 
 # ---------------------------------------------------------------------------

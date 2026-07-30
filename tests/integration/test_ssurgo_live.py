@@ -41,7 +41,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_subsurface_barriers_bbox_query,
     ssurgo_subsurface_barriers_point_query,
 )
-from env_data_mcp.sources.ssurgo.constants import (
+from env_data_mcp.sources.ssurgo._constants import (
     DEFAULT_AREA_SUMMARY_VARIABLES,
     DEFAULT_ECOLOGICAL_SITE_VARIABLES,
     DEFAULT_PARENT_MATERIAL_VARIABLES,

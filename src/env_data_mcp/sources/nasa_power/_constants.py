@@ -116,7 +116,7 @@ SYN1DEG_INFO: dict[str, str] = {
 _ZARR_BASE = "https://nasa-power.s3.amazonaws.com"
 _M2 = f"{_ZARR_BASE}/merra2/spatial"
 _S1 = f"{_ZARR_BASE}/syn1deg/spatial"
-_ZARR_URLS = {
+ZARR_URLS = {
     DatasetType.MERRA2: {
         TemporalResolution.HOURLY: f"{_M2}/power_merra2_hourly_spatial_utc.zarr",
         TemporalResolution.DAILY: f"{_M2}/power_merra2_daily_spatial_utc.zarr",

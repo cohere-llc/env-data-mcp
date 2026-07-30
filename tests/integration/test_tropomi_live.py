@@ -14,8 +14,8 @@ from typing import Any
 import httpx
 import pytest
 
-from env_data_mcp.sources.tropomi._query import _get_netcdf_file_paths, _VariableInfo
-from env_data_mcp.sources.tropomi.constants import _PRODUCT_TYPES, DEFAULT_VARIABLES, ProductType
+from env_data_mcp.sources.tropomi._constants import DEFAULT_VARIABLES, PRODUCT_TYPES, ProductType
+from env_data_mcp.sources.tropomi._query import VariableInfo, _get_netcdf_file_paths
 from env_data_mcp.sources.tropomi.tools import (
     tropomi_available_variables,
     tropomi_bbox_query,
@@ -173,11 +173,11 @@ class TestAvailableVariables:
             parts = key.split("-")
             assert len(parts) >= 2, f"Variable key {key!r} does not match PRODUCT-name format"
             product = parts[0]
-            assert product in _PRODUCT_TYPES, (
+            assert product in PRODUCT_TYPES, (
                 f"Variable {key!r}: prefix {product!r} not in _PRODUCT_TYPES"
             )
-            assert _PRODUCT_TYPES[product] in val["description"], (
-                f"Variable {key!r}: product type description {_PRODUCT_TYPES[product]!r} "
+            assert PRODUCT_TYPES[product] in val["description"], (
+                f"Variable {key!r}: product type description {PRODUCT_TYPES[product]!r} "
                 f"absent from description {val['description']!r}"
             )
 
@@ -305,9 +305,9 @@ def _new_variable(
     property_name: str = "",
     underscored_name: str = "",
     cogt_name: str = "",
-) -> _VariableInfo:
+) -> VariableInfo:
     """Create a stub _VariableInfo for TestGetS3FilePaths."""
-    return _VariableInfo(
+    return VariableInfo(
         name=name,
         description=description,
         units=units,
@@ -321,7 +321,7 @@ def _new_variable(
 @dataclass(frozen=True)
 class _NetCDFPathTest:
     name: str
-    variable: _VariableInfo
+    variable: VariableInfo
     start_date: str
     end_date: str
     geometry: str
