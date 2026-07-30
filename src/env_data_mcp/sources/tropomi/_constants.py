@@ -33,10 +33,10 @@ LICENSE_INFO: dict[str, str] = {
 
 # AWS URL for Sentinel-5
 #  add "COGT/{PRODUCT_TYPE}/catalog.json" to get full path to catalog
-_AWS_URL: str = "https://meeo-s5p.s3.amazonaws.com/"
+AWS_URL: str = "https://meeo-s5p.s3.amazonaws.com/"
 
 # API for figuring out set of S3 keys to query for a given date/location
-_CDSE_ODATA_URL = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+CDSE_ODATA_URL = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
 
 # ---------------------------------------------------------------------------
 # Variable info
@@ -58,7 +58,7 @@ class ProductType(StrEnum):
     RPRO = "RPRO"
 
 
-_PRODUCT_TYPES: dict[ProductType, str] = {
+PRODUCT_TYPES: dict[ProductType, str] = {
     ProductType.OFFL: "Offline processed",
     ProductType.NRTI: "Near real-time",
     ProductType.RPRO: "Reprocessed",
@@ -68,7 +68,7 @@ _PRODUCT_TYPES: dict[ProductType, str] = {
 # appear to be a feasible way of accessing these programmatically, so we'll
 # hard-code them here and let any mismatches just result in "unknown" units.
 # source: https://sentiwiki.copernicus.eu/web/s5p-products
-_UNITS_MAP: dict[str, str] = {
+UNITS_MAP: dict[str, str] = {
     "L2_CH4": "ppb",
     "L2_SO2": "mol m-2",
     "L2_AER_AI": "unitless",
@@ -89,17 +89,17 @@ _UNITS_MAP: dict[str, str] = {
 # QA threshold — pixels with qa_value (0–1 scale) below this are excluded.
 # COGT files store qa_value on a 0–100 integer scale; we divide by 100
 # before comparing so this constant stays in the familiar 0–1 space.
-_QA_THRESHOLD = 0.5
+QA_THRESHOLD = 0.5
 
 # GDAL/VSICURL environment for efficient COG range reads.
-_GDAL_OPTS: dict[str, str] = {
+GDAL_OPTS: dict[str, str] = {
     "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
     "CPL_VSIL_CURL_CHUNK_SIZE": "65536",
     "GDAL_HTTP_MAX_RETRY": "2",
 }
 
 # Number of threads for parallel COGT reads.
-_IO_WORKERS = 16
+IO_WORKERS = 16
 
 # Minimum value for cleaning data
-_MINIMUM_VALUE: float = -1.0e10
+MINIMUM_VALUE: float = -1.0e10

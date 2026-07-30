@@ -15,7 +15,7 @@ from env_data_mcp.models import (
 )
 from env_data_mcp.server import mcp
 
-from ._constants import _DEFAULT_OCCURRENCE_VARIABLES, LICENSE_INFO, QueryType
+from ._constants import DEFAULT_OCCURRENCE_VARIABLES, LICENSE_INFO, QueryType
 from ._query import estimate_query_runtime_s, query_bbox, query_point
 from ._var_cache import get_variable_info
 
@@ -78,7 +78,7 @@ def gbif_occurrence_point_query(
     end_date: str,
     radius_km: float = 5.0,
     taxon_key: int | None = None,
-    variables: list[str] = _DEFAULT_OCCURRENCE_VARIABLES,
+    variables: list[str] = DEFAULT_OCCURRENCE_VARIABLES,
     limit: int | None = None,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
@@ -212,7 +212,7 @@ def gbif_occurrence_bbox_query(
     start_date: str,
     end_date: str,
     taxon_key: int | None = None,
-    variables: list[str] = _DEFAULT_OCCURRENCE_VARIABLES,
+    variables: list[str] = DEFAULT_OCCURRENCE_VARIABLES,
     limit: int | None = None,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:

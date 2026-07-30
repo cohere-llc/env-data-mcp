@@ -27,13 +27,13 @@ import httpx
 from env_data_mcp.helpers import load_json_cache
 from env_data_mcp.scripts.refresh_variable_caches import VariableCacheEntry, register
 
-from .constants import _AWS_URL, _PRODUCT_TYPES, _UNITS_MAP, ProductType
+from ._constants import AWS_URL, PRODUCT_TYPES, UNITS_MAP, ProductType
 
 _VARIABLES_PATH = Path(__file__).parent / "variables.json"
 
 
 @dataclass(frozen=True)
-class _VariableInfo:
+class VariableInfo:
     """Full set of per-variable information."""
 
     name: str  # Variable name exposed to MCP tool users (e.g., OFFL-L2_O3)
@@ -47,7 +47,7 @@ class _VariableInfo:
 
 # Session-level cache of dataclass instances, populated lazily on first
 # _get_full_variable_info call from the on-disk JSON.
-_VARIABLE_INFO_CACHE: dict[str, _VariableInfo] = {}
+_VARIABLE_INFO_CACHE: dict[str, VariableInfo] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -55,7 +55,7 @@ _VARIABLE_INFO_CACHE: dict[str, _VariableInfo] = {}
 # ---------------------------------------------------------------------------
 
 
-def _variable_info_to_dict(v: _VariableInfo) -> dict[str, str]:
+def _variable_info_to_dict(v: VariableInfo) -> dict[str, str]:
     """Convert a :class:`_VariableInfo` to the flat dict shape stored on disk."""
     return {
         "name": v.name,
@@ -68,9 +68,9 @@ def _variable_info_to_dict(v: _VariableInfo) -> dict[str, str]:
     }
 
 
-def _variable_info_from_dict(d: dict[str, str]) -> _VariableInfo:
+def _variable_info_from_dict(d: dict[str, str]) -> VariableInfo:
     """Rehydrate a :class:`_VariableInfo` from its on-disk dict shape."""
-    return _VariableInfo(
+    return VariableInfo(
         name=d["name"],
         description=d["description"],
         units=d["units"],
@@ -111,7 +111,7 @@ def _get_cogt_variable_name(product_type: ProductType, variable_folder: str) -> 
     e.g., ``("OFFL", "L2__O3____") -> "total_column_ozone"``.
     """
     resp = httpx.get(
-        _AWS_URL,
+        AWS_URL,
         params={
             "list-type": "2",
             "prefix": f"COGT/{product_type}/{variable_folder}/",
@@ -130,12 +130,12 @@ def _get_cogt_variable_name(product_type: ProductType, variable_folder: str) -> 
     return parts[1].removesuffix("_4326.tif")
 
 
-def _fetch_full_variable_info_live() -> dict[str, _VariableInfo]:
+def _fetch_full_variable_info_live() -> dict[str, VariableInfo]:
     """Discover available variables for TROPOMI by hitting S3 catalog + listings."""
-    result: dict[str, _VariableInfo] = {}
-    for product_type, product_description in _PRODUCT_TYPES.items():
+    result: dict[str, VariableInfo] = {}
+    for product_type, product_description in PRODUCT_TYPES.items():
         with httpx.Client(timeout=30) as client:
-            resp = client.get(f"{_AWS_URL}COGT/{product_type}/catalog.json")
+            resp = client.get(f"{AWS_URL}COGT/{product_type}/catalog.json")
             resp.raise_for_status()
             info = resp.json()
         for var in info.get("links", []):
@@ -143,10 +143,10 @@ def _fetch_full_variable_info_live() -> dict[str, _VariableInfo]:
                 continue
             cleaned, underscored = _extract_name_from_variable_url(var.get("href"))
             name = f"{product_type}-{cleaned}"
-            result[name] = _VariableInfo(
+            result[name] = VariableInfo(
                 name=name,
                 description=f"{product_description}: {var.get('title')}",
-                units=_UNITS_MAP.get(cleaned, "unknown"),
+                units=UNITS_MAP.get(cleaned, "unknown"),
                 product_type=product_type,
                 property_name=cleaned,
                 underscored_name=underscored,
@@ -173,7 +173,7 @@ def _load_all_variable_info_from_disk() -> dict[str, dict[str, str]]:
     return data
 
 
-def _get_full_variable_info() -> dict[str, _VariableInfo]:
+def get_full_variable_info() -> dict[str, VariableInfo]:
     """Return the full :class:`_VariableInfo` dict, loading from disk once."""
     if _VARIABLE_INFO_CACHE:
         return _VARIABLE_INFO_CACHE
@@ -186,7 +186,7 @@ def get_variable_info() -> dict[str, dict[str, str]]:
     """Return the flattened ``{name: {description, units}}`` view used by tools."""
     return {
         key: {"description": val.description, "units": val.units}
-        for key, val in _get_full_variable_info().items()
+        for key, val in get_full_variable_info().items()
     }
 
 

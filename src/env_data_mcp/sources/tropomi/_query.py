@@ -31,15 +31,15 @@ from rasterio.env import Env
 
 from env_data_mcp.helpers import parse_date
 
-from ._var_cache import _get_full_variable_info, _VariableInfo
-from .constants import (
-    _AWS_URL,
-    _CDSE_ODATA_URL,
-    _GDAL_OPTS,
-    _IO_WORKERS,
-    _MINIMUM_VALUE,
-    _QA_THRESHOLD,
+from ._constants import (
+    AWS_URL,
+    CDSE_ODATA_URL,
+    GDAL_OPTS,
+    IO_WORKERS,
+    MINIMUM_VALUE,
+    QA_THRESHOLD,
 )
+from ._var_cache import VariableInfo, get_full_variable_info
 
 # ---------------------------------------------------------------------------
 # Core query logic
@@ -72,7 +72,7 @@ def _get_bbox_geometry_string(
 
 
 def _get_netcdf_file_paths(
-    variable: _VariableInfo, start_date: str, end_date: str, geometry_string: str
+    variable: VariableInfo, start_date: str, end_date: str, geometry_string: str
 ) -> list[str]:
     """Returns a set of S3 paths to NetCDF files for given date and location ranges."""
     # the prefix is going to be something like 'S5P_OFFL_L2__CO'
@@ -93,7 +93,7 @@ def _get_netcdf_file_paths(
     page_size = 1000
     while True:
         resp = httpx.get(
-            _CDSE_ODATA_URL,
+            CDSE_ODATA_URL,
             params={
                 "$filter": filter_string,
                 "$top": str(page_size),
@@ -111,7 +111,7 @@ def _get_netcdf_file_paths(
     return paths
 
 
-def _get_cogt_urls(netcdf_path: str, variable: _VariableInfo) -> tuple[str, str]:
+def _get_cogt_urls(netcdf_path: str, variable: VariableInfo) -> tuple[str, str]:
     """Returns GDAL VSICURL URLs for an equivalent S3 NetCDF path.
 
     The URLs returned are for the requested variable and the qa_values."""
@@ -124,8 +124,8 @@ def _get_cogt_urls(netcdf_path: str, variable: _VariableInfo) -> tuple[str, str]
     new_name = f"{cogt_path.stem}_PRODUCT_{variable.cogt_name}_4326.tif"
     new_qa_name = f"{cogt_path.stem}_PRODUCT_qa_value_4326.tif"
     return (
-        f"/vsicurl/{_AWS_URL}{cogt_path.with_name(new_name)}",
-        f"/vsicurl/{_AWS_URL}{cogt_path.with_name(new_qa_name)}",
+        f"/vsicurl/{AWS_URL}{cogt_path.with_name(new_name)}",
+        f"/vsicurl/{AWS_URL}{cogt_path.with_name(new_qa_name)}",
     )
 
 
@@ -165,7 +165,7 @@ def _format_results(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _query_point_from_file(
-    variable: _VariableInfo,
+    variable: VariableInfo,
     netcdf_path: str,
     latitude: float,
     longitude: float,
@@ -175,7 +175,7 @@ def _query_point_from_file(
     Values below the QA threshold are excluded from the results.
     """
     var_url, qa_url = _get_cogt_urls(netcdf_path, variable)
-    with Env(aws_unsigned=True, **_GDAL_OPTS):
+    with Env(aws_unsigned=True, **GDAL_OPTS):
         with rasterio.open(var_url) as ds:
             var_nodata = ds.nodata
             row, col = ds.index(longitude, latitude)
@@ -188,13 +188,13 @@ def _query_point_from_file(
     if (
         (var_nodata is not None and var_val == var_nodata)
         or not np.isfinite(var_val)
-        or var_val < _MINIMUM_VALUE
+        or var_val < MINIMUM_VALUE
     ):
         return {}
     if qa_nodata is not None and qa_val == qa_nodata:
         return {}
     # normalize qa_value from 0-100 to 0-1 scale
-    if qa_val / 100.0 < _QA_THRESHOLD:
+    if qa_val / 100.0 < QA_THRESHOLD:
         return {}
 
     return {
@@ -207,7 +207,7 @@ def _query_point_from_file(
 
 
 def _query_bbox_from_file(
-    variable: _VariableInfo,
+    variable: VariableInfo,
     netcdf_path: str,
     min_lat: float,
     max_lat: float,
@@ -219,7 +219,7 @@ def _query_bbox_from_file(
     Values below the QA threshold are excluded from the results.
     """
     var_url, qa_url = _get_cogt_urls(netcdf_path, variable)
-    with Env(aws_unsigned=True, **_GDAL_OPTS):
+    with Env(aws_unsigned=True, **GDAL_OPTS):
         with rasterio.open(var_url) as ds:
             var_nodata = ds.nodata
             window = rasterio.windows.from_bounds(min_lon, min_lat, max_lon, max_lat, ds.transform)
@@ -250,9 +250,9 @@ def _query_bbox_from_file(
         )
         if not (var_nodata is not None and val == var_nodata)
         and np.isfinite(val)
-        and val >= _MINIMUM_VALUE
+        and val >= MINIMUM_VALUE
         and not (qa_nodata is not None and qa == qa_nodata)
-        and qa / 100.0 >= _QA_THRESHOLD
+        and qa / 100.0 >= QA_THRESHOLD
     ]
 
 
@@ -274,17 +274,17 @@ def query_point(
     Returns:
         Tuple of properties by geometry and list of unavailable variables.
     """
-    var_info = _get_full_variable_info()
+    var_info = get_full_variable_info()
     unavailable: set[str] = {var for var in variables if var not in var_info}
     geometry = _get_point_geometry_string(latitude=latitude, longitude=longitude)
-    netcdf_paths: list[tuple[_VariableInfo, str]] = [
+    netcdf_paths: list[tuple[VariableInfo, str]] = [
         (var_info[name], path)
         for name in variables
         if name not in unavailable
         for path in _get_netcdf_file_paths((var_info[name]), start_date, end_date, geometry)
     ]
     records: list[dict[str, Any]] = []
-    with ThreadPoolExecutor(max_workers=_IO_WORKERS) as pool:
+    with ThreadPoolExecutor(max_workers=IO_WORKERS) as pool:
         futures = [
             pool.submit(_query_point_from_file, rec[0], rec[1], latitude, longitude)
             for rec in netcdf_paths
@@ -327,19 +327,19 @@ def query_bbox(
     Returns:
         Tuple of properties by geometry and list of unavailable variables.
     """
-    var_info = _get_full_variable_info()
+    var_info = get_full_variable_info()
     unavailable: set[str] = {var for var in variables if var not in var_info}
     geometry = _get_bbox_geometry_string(
         min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon
     )
-    netcdf_paths: list[tuple[_VariableInfo, str]] = [
+    netcdf_paths: list[tuple[VariableInfo, str]] = [
         (var_info[name], path)
         for name in variables
         if name not in unavailable
         for path in _get_netcdf_file_paths((var_info[name]), start_date, end_date, geometry)
     ]
     records: list[dict[str, Any]] = []
-    with ThreadPoolExecutor(max_workers=_IO_WORKERS) as pool:
+    with ThreadPoolExecutor(max_workers=IO_WORKERS) as pool:
         futures = [
             pool.submit(_query_bbox_from_file, rec[0], rec[1], min_lat, max_lat, min_lon, max_lon)
             for rec in netcdf_paths

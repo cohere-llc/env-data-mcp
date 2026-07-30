@@ -25,7 +25,7 @@ LICENSE_INFO: dict[str, str] = {
 # Type 1: occurrence
 # ---------------------------------------------------------------------------
 
-_DEFAULT_OCCURRENCE_VARIABLES: list[str] = [
+DEFAULT_OCCURRENCE_VARIABLES: list[str] = [
     "key",
     "datasetKey",
     "datasetName",
@@ -74,7 +74,7 @@ class QueryType(StrEnum):
 
 # Default variables by query type
 DEFAULT_VARIABLES: dict[QueryType, list[str]] = {
-    QueryType.OCCURRENCE: _DEFAULT_OCCURRENCE_VARIABLES,
+    QueryType.OCCURRENCE: DEFAULT_OCCURRENCE_VARIABLES,
 }
 
 # Endpoints by query type

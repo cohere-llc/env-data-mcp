@@ -15,24 +15,24 @@ import numpy as np
 import pytest
 
 import env_data_mcp.sources.tropomi._query as _query_mod
+from env_data_mcp.sources.tropomi._constants import CDSE_ODATA_URL, ProductType
 from env_data_mcp.sources.tropomi._query import (
+    VariableInfo,
     _extract_date_from_netcdf_path,
     _format_results,
     _get_cogt_urls,
     _get_netcdf_file_paths,
     _query_bbox_from_file,
     _query_point_from_file,
-    _VariableInfo,
     query_bbox,
     query_point,
 )
-from env_data_mcp.sources.tropomi.constants import _CDSE_ODATA_URL, ProductType
 
 # ---------------------------------------------------------------------------
 # mock data — CDSE
 # ---------------------------------------------------------------------------
 
-_CDSE_URL_RE = re.compile(re.escape(_CDSE_ODATA_URL))
+_CDSE_URL_RE = re.compile(re.escape(CDSE_ODATA_URL))
 
 _CDSE_RESPONSE = {
     "value": [
@@ -51,7 +51,7 @@ _CDSE_RESPONSE = {
 # ---------------------------------------------------------------------------
 
 
-L2_CH4_VAR = _VariableInfo(
+L2_CH4_VAR = VariableInfo(
     name="OFFL-L2_CH4",
     description="",
     units="",
@@ -61,7 +61,7 @@ L2_CH4_VAR = _VariableInfo(
     cogt_name="methane_mixing_ratio",
 )
 
-L2_O3_VAR = _VariableInfo(
+L2_O3_VAR = VariableInfo(
     name="OFFL-L2_O3",
     description="",
     units="",
@@ -71,7 +71,7 @@ L2_O3_VAR = _VariableInfo(
     cogt_name="ozone_total_vertical_column",
 )
 
-L2_INVALID_VAR = _VariableInfo(
+L2_INVALID_VAR = VariableInfo(
     name="OFFL-L2_INVALID",
     description="",
     units="",
@@ -421,7 +421,7 @@ def test_format_results_merges_variables_on_same_date():
 
 def test_query_point_unknown_variable_is_unavailable():
     """Variables absent from variable info are immediately marked unavailable."""
-    with patch.object(_query_mod, "_get_full_variable_info", return_value={}):
+    with patch.object(_query_mod, "get_full_variable_info", return_value={}):
         results, unavailable = query_point(
             latitude=_QUERY_LAT,
             longitude=_QUERY_LON,
@@ -436,7 +436,7 @@ def test_query_point_unknown_variable_is_unavailable():
 def test_query_point_no_files_variable_is_unavailable():
     """A known variable with no matching CDSE files is returned as unavailable."""
     with (
-        patch.object(_query_mod, "_get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
+        patch.object(_query_mod, "get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
         patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[]),
     ):
         results, unavailable = query_point(
@@ -460,7 +460,7 @@ def test_query_point_returns_results():
         "value": 0.42,
     }
     with (
-        patch.object(_query_mod, "_get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
+        patch.object(_query_mod, "get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
         patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[_NETCDF_PATH]),
         patch.object(_query_mod, "_query_point_from_file", return_value=mock_record),
     ):
@@ -619,7 +619,7 @@ def test_query_bbox_from_file_partial_qa_below_threshold():
 
 def test_query_bbox_unknown_variable_is_unavailable():
     """Variables absent from variable info are immediately marked unavailable."""
-    with patch.object(_query_mod, "_get_full_variable_info", return_value={}):
+    with patch.object(_query_mod, "get_full_variable_info", return_value={}):
         results, unavailable = query_bbox(
             min_lat=45.75,
             max_lat=46.75,
@@ -636,7 +636,7 @@ def test_query_bbox_unknown_variable_is_unavailable():
 def test_query_bbox_no_files_variable_is_unavailable():
     """A known variable with no matching CDSE files is returned as unavailable."""
     with (
-        patch.object(_query_mod, "_get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
+        patch.object(_query_mod, "get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
         patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[]),
     ):
         results, unavailable = query_bbox(
@@ -666,7 +666,7 @@ def test_query_bbox_returns_results():
         for j in range(2)
     ]
     with (
-        patch.object(_query_mod, "_get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
+        patch.object(_query_mod, "get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
         patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[_NETCDF_PATH]),
         patch.object(_query_mod, "_query_bbox_from_file", return_value=mock_records),
     ):
