@@ -2,31 +2,31 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Final
 
-DEFAULT_VARIABLES: Final[tuple[str, ...]] = (
-    "soc_0-5cm_mean",  # Soil organic carbon
-    "nitrogen_0-5cm_mean",  # Total nitrogen
-    "phh2o_0-5cm_mean",  # pH
-    "cec_0-5cm_mean",  # Cation exchange capacity
-    "clay_0-5cm_mean",  # Clay content
-    "sand_0-5cm_mean",  # Sand fraction
-    "bdod_0-5cm_mean",  # Bulk density
-    "wv1500_0-5cm_mean",  # Permanent wilting point water content
-    "wv0010_0-5cm_mean",  # Field capacity water content
-    "cfvo_0-5cm_mean",  # Coarse fragment volume
+DEFAULT_VARIABLES: frozenset[str] = frozenset(
+    [
+        "soc_0-5cm_mean",  # Soil organic carbon
+        "nitrogen_0-5cm_mean",  # Total nitrogen
+        "phh2o_0-5cm_mean",  # pH
+        "cec_0-5cm_mean",  # Cation exchange capacity
+        "clay_0-5cm_mean",  # Clay content
+        "sand_0-5cm_mean",  # Sand fraction
+        "bdod_0-5cm_mean",  # Bulk density
+        "wv1500_0-5cm_mean",  # Permanent wilting point water content
+        "wv0010_0-5cm_mean",  # Field capacity water content
+        "cfvo_0-5cm_mean",  # Coarse fragment volume
+    ]
 )
 
-LICENSE_INFO: Final[Mapping[str, str]] = MappingProxyType(
+LICENSE_INFO: MappingProxyType[str, str] = MappingProxyType(
     {
         "license": "CC BY 4.0",
         "citation": (
             "Common soil chemical and physical properties: "
             "Poggio, L., de Sousa, L. M., Batjes, N. H., Heuvelink, G. B. M., Kempen, B., "
             "Ribeiro, E., and Rossiter, D.: SoilGrids 2.0: producing soil information for "
-            "the globe with quantified spatial uncertainty, SOIL, 7, 217–240, 2021. DOI: "
+            "the globe with quantified spatial uncertainty, SOIL, 7, 217-240, 2021. DOI: "
             "https://doi.org/10.5194/soil-7-217-2021 ;"
             "Soil water content at different pressure heads: "
             "Turek, M.E.;Poggio, L., Batjes, N. H., Armindo, R. A.;de Jong van Lier, Q.;de "
@@ -49,7 +49,7 @@ WEB_MAP_SERVICE_URL = "https://maps.isric.org/mapserv"
 
 LAYERS_INFO_URL = "https://docs.isric.org/globaldata/soilgrids/SoilGrids_faqs_01.html"
 
-QUANTILES: Final[Mapping[str, str]] = MappingProxyType(
+QUANTILES: MappingProxyType[str, str] = MappingProxyType(
     {
         "Q0.05": "5% quantile",
         "Q0.5": "median",
