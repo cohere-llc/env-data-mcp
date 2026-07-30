@@ -59,7 +59,7 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_subsurface_barriers_bbox_query,
     ssurgo_subsurface_barriers_point_query,
 )
-from env_data_mcp.sources.ssurgo.constants import DEFAULT_SOIL_SUITABILITY_RULE_NAMES
+from env_data_mcp.sources.ssurgo._constants import DEFAULT_SOIL_SUITABILITY_RULE_NAMES
 from env_data_mcp.sources.tropomi import tropomi_bbox_query, tropomi_point_query
 
 # ---------------------------------------------------------------------------

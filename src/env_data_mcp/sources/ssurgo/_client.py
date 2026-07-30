@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from .constants import _SDA_URL, _XS_NS
+from ._constants import SDA_URL, XS_NS
 
 
 def _parse_xml(xml_text: str) -> list[dict[str, Any]]:
@@ -39,7 +39,7 @@ def _fetch_sda(sql: str) -> tuple[list[dict[str, Any]], float]:
     """
     t0 = time.perf_counter()
     with httpx.Client(timeout=30.0) as client:
-        resp = client.post(_SDA_URL, data={"query": sql})
+        resp = client.post(SDA_URL, data={"query": sql})
         resp.raise_for_status()
     latency = time.perf_counter() - t0
     return _parse_xml(resp.text), latency
@@ -54,12 +54,12 @@ def _sda_table_columns(table: str) -> list[str]:
     without relying on the ``mdstatcolmas`` metadata catalogue.
     """
     with httpx.Client(timeout=30.0) as client:
-        resp = client.post(_SDA_URL, data={"query": f"SELECT TOP 1 * FROM {table}"})
+        resp = client.post(SDA_URL, data={"query": f"SELECT TOP 1 * FROM {table}"})
         resp.raise_for_status()
     root = ET.fromstring(resp.text)
     return [
         name
-        for el in root.findall(f".//{{{_XS_NS}}}element")
+        for el in root.findall(f".//{{{XS_NS}}}element")
         if (name := el.get("name")) is not None and name not in ("NewDataSet", "Table")
     ]
 

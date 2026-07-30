@@ -18,16 +18,7 @@ import pdfplumber
 import pytest
 
 import env_data_mcp.sources.ssurgo._var_cache as _var_cache
-from env_data_mcp.sources.ssurgo._var_cache import (
-    _PDF_URL,
-    _extract_uom,
-    _fetch_all_variable_info_live,
-    _get_column_table_map,
-    _get_variable_info,
-    _load_column_metadata_live,
-    _parse_col_metadata_pdf,
-)
-from env_data_mcp.sources.ssurgo.constants import (
+from env_data_mcp.sources.ssurgo._constants import (
     DEFAULT_AREA_SUMMARY_VARIABLES,
     DEFAULT_ECOLOGICAL_SITE_VARIABLES,
     DEFAULT_PARENT_MATERIAL_VARIABLES,
@@ -35,7 +26,16 @@ from env_data_mcp.sources.ssurgo.constants import (
     DEFAULT_SOIL_PROFILE_VARIABLES,
     DEFAULT_SOIL_TEMPERATURE_VARIABLES,
     DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
-    _QueryType,
+    QueryType,
+)
+from env_data_mcp.sources.ssurgo._var_cache import (
+    _PDF_URL,
+    _extract_uom,
+    _fetch_all_variable_info_live,
+    _load_column_metadata_live,
+    _parse_col_metadata_pdf,
+    get_column_table_map,
+    get_variable_info,
 )
 
 from .conftest import _SDA_URL, TABLE_SCHEMA_XMLS
@@ -171,7 +171,7 @@ def test_fetch_all_variable_info_live_builds_both_caches(httpx_mock, monkeypatch
     result = _fetch_all_variable_info_live()
 
     assert set(result) == {"variable_info", "column_table_map"}
-    assert set(result["variable_info"]) == {qt.value for qt in _QueryType}
+    assert set(result["variable_info"]) == {qt.value for qt in QueryType}
     # mapunit's mukey should be in column_table_map, resolved to mapunit
     assert result["column_table_map"].get("mukey") == "mapunit"
     # soil_profile should have columns from mapunit, component, chorizon
@@ -235,7 +235,7 @@ def _write_cache_file(tmp_path: Path, payload: dict) -> Path:
 def _minimal_payload() -> dict:
     return {
         "variable_info": {
-            _QueryType.SOIL_PROFILE.value: {
+            QueryType.SOIL_PROFILE.value: {
                 "mukey": {"table": "mapunit", "label": "Mapunit Key", "units": ""},
                 "sandtotal_r": {"table": "chorizon", "label": "Total Sand", "units": "percent"},
             }
@@ -255,7 +255,7 @@ def test_get_variable_info_reads_from_disk(monkeypatch, tmp_path):
         _var_cache, "_VARIABLES_PATH", _write_cache_file(tmp_path, _minimal_payload())
     )
 
-    info = _get_variable_info(_QueryType.SOIL_PROFILE)
+    info = get_variable_info(QueryType.SOIL_PROFILE)
     assert info["sandtotal_r"]["table"] == "chorizon"
     assert info["sandtotal_r"]["label"] == "Total Sand"
 
@@ -267,7 +267,7 @@ def test_get_column_table_map_reads_from_disk(monkeypatch, tmp_path):
         _var_cache, "_VARIABLES_PATH", _write_cache_file(tmp_path, _minimal_payload())
     )
 
-    ctm = _get_column_table_map()
+    ctm = get_column_table_map()
     assert ctm["mukey"] == "mapunit"
     assert ctm["sandtotal_r"] == "chorizon"
 
@@ -279,9 +279,9 @@ def test_disk_load_happens_once(monkeypatch, tmp_path):
     path = _write_cache_file(tmp_path, _minimal_payload())
     monkeypatch.setattr(_var_cache, "_VARIABLES_PATH", path)
 
-    _ = _get_variable_info(_QueryType.SOIL_PROFILE)
+    _ = get_variable_info(QueryType.SOIL_PROFILE)
     path.unlink()  # subsequent calls must not touch disk
-    _ = _get_column_table_map()
+    _ = get_column_table_map()
 
 
 def test_get_variable_info_raises_when_query_type_missing(monkeypatch, tmp_path):
@@ -294,7 +294,7 @@ def test_get_variable_info_raises_when_query_type_missing(monkeypatch, tmp_path)
     )
 
     with pytest.raises(RuntimeError, match="No cached variable info"):
-        _get_variable_info(_QueryType.SOIL_PROFILE)
+        get_variable_info(QueryType.SOIL_PROFILE)
 
 
 def test_disk_load_ignores_unknown_query_types(monkeypatch, tmp_path):
@@ -305,7 +305,7 @@ def test_disk_load_ignores_unknown_query_types(monkeypatch, tmp_path):
     _var_cache._VARIABLE_INFO_CACHE.clear()
     _var_cache._COLUMN_TABLE_CACHE.clear()
 
-    info = _get_variable_info(_QueryType.SOIL_PROFILE)
+    info = get_variable_info(QueryType.SOIL_PROFILE)
     assert "sandtotal_r" in info
 
 
@@ -318,7 +318,7 @@ def test_shipped_variables_json_is_wellformed():
     """The committed cache loads and every entry has the expected fields."""
     data = _var_cache._load_all_variable_info_from_disk()
     assert set(data) == {"variable_info", "column_table_map"}
-    assert set(data["variable_info"]) == {qt.value for qt in _QueryType}
+    assert set(data["variable_info"]) == {qt.value for qt in QueryType}
     for qt_value, cols in data["variable_info"].items():
         assert cols, f"{qt_value} has no columns in shipped cache"
         for col, entry in cols.items():
@@ -331,13 +331,13 @@ def test_shipped_variables_json_is_wellformed():
 
 
 _DEFAULTS_BY_QUERY_TYPE = {
-    _QueryType.SOIL_PROFILE: DEFAULT_SOIL_PROFILE_VARIABLES,
-    _QueryType.AREA_SUMMARY: DEFAULT_AREA_SUMMARY_VARIABLES,
-    _QueryType.SUBSURFACE_BARRIERS: DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
-    _QueryType.SEASONAL_HYDROLOGY: DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
-    _QueryType.ECOLOGICAL_SITE: DEFAULT_ECOLOGICAL_SITE_VARIABLES,
-    _QueryType.PARENT_MATERIAL: DEFAULT_PARENT_MATERIAL_VARIABLES,
-    _QueryType.SOIL_TEMPERATURE: DEFAULT_SOIL_TEMPERATURE_VARIABLES,
+    QueryType.SOIL_PROFILE: DEFAULT_SOIL_PROFILE_VARIABLES,
+    QueryType.AREA_SUMMARY: DEFAULT_AREA_SUMMARY_VARIABLES,
+    QueryType.SUBSURFACE_BARRIERS: DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
+    QueryType.SEASONAL_HYDROLOGY: DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
+    QueryType.ECOLOGICAL_SITE: DEFAULT_ECOLOGICAL_SITE_VARIABLES,
+    QueryType.PARENT_MATERIAL: DEFAULT_PARENT_MATERIAL_VARIABLES,
+    QueryType.SOIL_TEMPERATURE: DEFAULT_SOIL_TEMPERATURE_VARIABLES,
 }
 
 
@@ -369,6 +369,6 @@ def test_get_variable_info_reads_shipped_cache():
         patch.object(_var_cache, "_VARIABLE_INFO_CACHE", {}),
         patch.object(_var_cache, "_COLUMN_TABLE_CACHE", {}),
     ):
-        info = _get_variable_info(_QueryType.SOIL_PROFILE)
+        info = get_variable_info(QueryType.SOIL_PROFILE)
     assert "mukey" in info
     assert info["mukey"]["table"] == "mapunit"

@@ -20,13 +20,7 @@ LICENSE_INFO: dict[str, str] = {
     "description_url": "https://www.nrcs.usda.gov/resources/data-and-reports/soil-survey-geographic-database-ssurgo",
 }
 
-_SDA_URL = "https://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService/post.rest"
-
-_NO_COVERAGE_MSG = (
-    "No SSURGO data were returned for this location. "
-    "The point may be outside SSURGO coverage (non-US or unmapped area), "
-    "or the SDA service may have failed to match the point for this request."
-)
+SDA_URL = "https://sdmdataaccess.nrcs.usda.gov/Tabular/SDMTabularService/post.rest"
 
 # ---------------------------------------------------------------------------
 # Type 1: soil_profile  (mapunit → component → chorizon)
@@ -221,13 +215,13 @@ DEFAULT_SOIL_TEMPERATURE_VARIABLES: list[str] = [
 # ---------------------------------------------------------------------------
 
 # XML namespace used when parsing XSD schemas embedded in SDA tabular responses.
-_XS_NS = "http://www.w3.org/2001/XMLSchema"
+XS_NS = "http://www.w3.org/2001/XMLSchema"
 
 # Tables in the order used to build the column → table mapping.  PK-owning
 # tables must appear before FK tables so that shared column names (e.g.
 # ``mukey`` appears in both mapunit and component) resolve to the
 # primary-key table (first-wins insertion into ``_COLUMN_TABLE_CACHE``).
-_COLUMN_TABLE_PRIORITY: tuple[str, ...] = (
+COLUMN_TABLE_PRIORITY: tuple[str, ...] = (
     "mapunit",
     "muaggatt",
     "component",
@@ -247,7 +241,7 @@ _COLUMN_TABLE_PRIORITY: tuple[str, ...] = (
 # ---------------------------------------------------------------------------
 
 
-class _QueryType(StrEnum):
+class QueryType(StrEnum):
     """Identifier for each SSURGO data query type; doubles as a cache key."""
 
     SOIL_PROFILE = "soil_profile"
@@ -259,19 +253,19 @@ class _QueryType(StrEnum):
     SOIL_TEMPERATURE = "soil_temperature"
 
 
-_SOIL_SUITABILITY_RULES_SQL = """\
+SOIL_SUITABILITY_RULES_SQL = """\
 SELECT DISTINCT mrulename
 FROM cointerp
 ORDER BY mrulename"""
 
-# Mapping from query type → SDA tables whose XSD schemas are introspected to
+# Mapping from query type -> SDA tables whose XSD schemas are introspected to
 # discover available column names.
-_AVAIL_SQL_TABLES: dict[_QueryType, tuple[str, ...]] = {
-    _QueryType.SOIL_PROFILE: ("mapunit", "component", "chorizon"),
-    _QueryType.AREA_SUMMARY: ("mapunit", "muaggatt"),
-    _QueryType.SUBSURFACE_BARRIERS: ("mapunit", "component", "corestrictions"),
-    _QueryType.SEASONAL_HYDROLOGY: ("mapunit", "component", "comonth", "cosoilmoist"),
-    _QueryType.ECOLOGICAL_SITE: ("mapunit", "component", "coecoclass"),
-    _QueryType.PARENT_MATERIAL: ("mapunit", "component", "copmgrp", "copm"),
-    _QueryType.SOIL_TEMPERATURE: ("mapunit", "component", "comonth", "cosoiltemp"),
+AVAIL_SQL_TABLES: dict[QueryType, tuple[str, ...]] = {
+    QueryType.SOIL_PROFILE: ("mapunit", "component", "chorizon"),
+    QueryType.AREA_SUMMARY: ("mapunit", "muaggatt"),
+    QueryType.SUBSURFACE_BARRIERS: ("mapunit", "component", "corestrictions"),
+    QueryType.SEASONAL_HYDROLOGY: ("mapunit", "component", "comonth", "cosoilmoist"),
+    QueryType.ECOLOGICAL_SITE: ("mapunit", "component", "coecoclass"),
+    QueryType.PARENT_MATERIAL: ("mapunit", "component", "copmgrp", "copm"),
+    QueryType.SOIL_TEMPERATURE: ("mapunit", "component", "comonth", "cosoiltemp"),
 }

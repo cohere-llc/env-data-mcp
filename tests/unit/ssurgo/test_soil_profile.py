@@ -13,8 +13,8 @@ from env_data_mcp.sources.ssurgo import (
     ssurgo_soil_profile_bbox_query,
     ssurgo_soil_profile_point_query,
 )
+from env_data_mcp.sources.ssurgo._constants import LICENSE_INFO, QueryType
 from env_data_mcp.sources.ssurgo._var_cache import _VARIABLE_INFO_CACHE
-from env_data_mcp.sources.ssurgo.constants import LICENSE_INFO, _QueryType
 from env_data_mcp.sources.ssurgo.tools import _bbox_query, _point_query
 
 from .conftest import (
@@ -108,7 +108,7 @@ def test_soil_profile_query_http_error_returns_failure(httpx_mock):
 
 
 def test_soil_profile_query_variable_info_in_meta(httpx_mock):
-    _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
+    _VARIABLE_INFO_CACHE[QueryType.SOIL_PROFILE] = {
         "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
     }
     httpx_mock.add_response(method="POST", url=_SDA_URL, text=YAKIMA_XML)
@@ -269,7 +269,7 @@ def test_point_query_pointinput_validationerror_branch_is_covered(monkeypatch):
         variables=["mukey"],
         sql_builder=lambda _wkt, _vars: "SELECT 1",
         max_runtime_s=None,
-        query_type=_QueryType.SOIL_PROFILE,
+        query_type=QueryType.SOIL_PROFILE,
     )
     assert result["_meta"]["success"] is False
     assert result["data"] == []
@@ -294,14 +294,14 @@ def test_bbox_query_bboxinput_validationerror_branch_is_covered(monkeypatch):
         variables=["mukey"],
         sql_builder=lambda _wkt, _vars: "SELECT 1",
         max_runtime_s=None,
-        query_type=_QueryType.SOIL_PROFILE,
+        query_type=QueryType.SOIL_PROFILE,
     )
     assert result["_meta"]["success"] is False
     assert result["data"] == []
 
 
 def test_soil_profile_query_all_unknown_variables_returns_empty():
-    _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
+    _VARIABLE_INFO_CACHE[QueryType.SOIL_PROFILE] = {
         "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
     }
     result = ssurgo_soil_profile_point_query(
@@ -314,7 +314,7 @@ def test_soil_profile_query_all_unknown_variables_returns_empty():
 
 
 def test_soil_profile_bbox_query_all_unknown_variables_returns_empty():
-    _VARIABLE_INFO_CACHE[_QueryType.SOIL_PROFILE] = {
+    _VARIABLE_INFO_CACHE[QueryType.SOIL_PROFILE] = {
         "sandtotal_r": {"table": "chorizon", "label": "Sand Total", "units": "%"},
     }
     result = ssurgo_soil_profile_bbox_query(
