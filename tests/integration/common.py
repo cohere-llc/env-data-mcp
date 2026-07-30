@@ -290,7 +290,7 @@ class AdapterSpec:
     primary_variable: str
     """A single reliable variable that can be used in point and bbox queries."""
 
-    default_variables: list[str]
+    default_variables: frozenset[str] | list[str]
     """The list of default variables returned when none are explicitly requested."""
 
     max_runtime_s: float | None = None

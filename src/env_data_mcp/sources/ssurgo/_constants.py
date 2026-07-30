@@ -256,21 +256,19 @@ XS_NS = "http://www.w3.org/2001/XMLSchema"
 # tables must appear before FK tables so that shared column names (e.g.
 # ``mukey`` appears in both mapunit and component) resolve to the
 # primary-key table (first-wins insertion into ``_COLUMN_TABLE_CACHE``).
-COLUMN_TABLE_PRIORITY: frozenset[str] = frozenset(
-    [
-        "mapunit",
-        "muaggatt",
-        "component",
-        "chorizon",
-        "corestrictions",
-        "comonth",
-        "cosoilmoist",
-        "cointerp",
-        "coecoclass",
-        "copmgrp",
-        "copm",
-        "cosoiltemp",
-    ]
+COLUMN_TABLE_PRIORITY: tuple[str, ...] = (
+    "mapunit",
+    "muaggatt",
+    "component",
+    "chorizon",
+    "corestrictions",
+    "comonth",
+    "cosoilmoist",
+    "cointerp",
+    "coecoclass",
+    "copmgrp",
+    "copm",
+    "cosoiltemp",
 )
 
 # ---------------------------------------------------------------------------

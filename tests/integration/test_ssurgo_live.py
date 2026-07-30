@@ -246,10 +246,10 @@ class _QueryCase:
     bbox_fn: Callable
     avail_fn: Callable
     # Variable-based query types
-    default_vars: list[str] = field(default_factory=list)
+    default_vars: frozenset[str] | list[str] = field(default_factory=list)
     custom_var: str = ""  # A non-default column to verify custom queries work
     # Rule-based query types
-    default_rule_names: list[str] = field(default_factory=list)
+    default_rule_names: frozenset[str] | list[str] = field(default_factory=list)
     uses_rule_names: bool = False
     # Structural assertions
     primary_col: str = ""  # A column expected in every result row (inner record dict)

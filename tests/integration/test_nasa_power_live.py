@@ -233,7 +233,7 @@ class TestPointQuery:
         assert qp["start_date"] == NH_RURAL.start_date
         assert qp["end_date"] == NH_RURAL.end_date
         assert qp["temporal_resolution"] == TemporalResolution.DAILY.value
-        assert qp["variables"] == dc.spec.default_variables
+        assert qp["variables"] == list(dc.spec.default_variables)
         assert qp["max_runtime_s"] == dc.spec.max_runtime_s
 
     def test_variable_info_for_requested_vars(self, dc: _DatasetCase, nh_rural_daily: dict) -> None:
@@ -309,7 +309,7 @@ class TestBboxQuery:
         assert qp["start_date"] == NH_MIDLAT_BBOX.start_date
         assert qp["end_date"] == NH_MIDLAT_BBOX.end_date
         assert qp["temporal_resolution"] == TemporalResolution.DAILY.value
-        assert qp["variables"] == dc.spec.default_variables
+        assert qp["variables"] == list(dc.spec.default_variables)
         assert qp["max_runtime_s"] == dc.spec.max_runtime_s
 
     def test_variable_info_for_requested_vars(

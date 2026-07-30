@@ -78,7 +78,7 @@ def gbif_occurrence_point_query(
     end_date: str,
     radius_km: float = 5.0,
     taxon_key: int | None = None,
-    variables: list[str] = DEFAULT_OCCURRENCE_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_OCCURRENCE_VARIABLES,
     limit: int | None = None,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
@@ -101,6 +101,7 @@ def gbif_occurrence_point_query(
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
+    variables = list(variables)
     query_params: dict[str, Any] = {
         "latitude": latitude,
         "longitude": longitude,
@@ -212,7 +213,7 @@ def gbif_occurrence_bbox_query(
     start_date: str,
     end_date: str,
     taxon_key: int | None = None,
-    variables: list[str] = DEFAULT_OCCURRENCE_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_OCCURRENCE_VARIABLES,
     limit: int | None = None,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
@@ -236,6 +237,7 @@ def gbif_occurrence_bbox_query(
         max_runtime_s: Optional maximum runtime in seconds; if the query is estimated to
             exceed this, a warning is returned instead of data. If not provided, assumed to be 30 s.
     """
+    variables = list(variables)
     query_params: dict[str, Any] = {
         "min_lat": min_lat,
         "max_lat": max_lat,

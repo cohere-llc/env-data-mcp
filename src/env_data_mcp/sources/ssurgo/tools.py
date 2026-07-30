@@ -467,7 +467,7 @@ def ssurgo_soil_profile_point_query(
     *,
     latitude: float,
     longitude: float,
-    variables: list[str] = DEFAULT_SOIL_PROFILE_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SOIL_PROFILE_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil profile data for a point location.
@@ -484,7 +484,7 @@ def ssurgo_soil_profile_point_query(
     return _point_query(
         latitude,
         longitude,
-        variables,
+        list(variables),
         build_soil_profile_sql,
         max_runtime_s,
         QueryType.SOIL_PROFILE,
@@ -498,7 +498,7 @@ def ssurgo_soil_profile_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: list[str] = DEFAULT_SOIL_PROFILE_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SOIL_PROFILE_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil profile data for all map units in a bounding box.
@@ -519,7 +519,7 @@ def ssurgo_soil_profile_bbox_query(
         max_lat,
         min_lon,
         max_lon,
-        variables,
+        list(variables),
         build_soil_profile_sql,
         max_runtime_s,
         QueryType.SOIL_PROFILE,
@@ -542,7 +542,7 @@ def ssurgo_area_summary_point_query(
     *,
     latitude: float,
     longitude: float,
-    variables: list[str] = DEFAULT_AREA_SUMMARY_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_AREA_SUMMARY_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO pre-aggregated area summary data for a point location.
@@ -559,7 +559,7 @@ def ssurgo_area_summary_point_query(
     return _point_query(
         latitude,
         longitude,
-        variables,
+        list(variables),
         build_area_summary_sql,
         max_runtime_s,
         QueryType.AREA_SUMMARY,
@@ -573,7 +573,7 @@ def ssurgo_area_summary_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: list[str] = DEFAULT_AREA_SUMMARY_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_AREA_SUMMARY_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO area summary data for all map units in a bounding box.
@@ -594,7 +594,7 @@ def ssurgo_area_summary_bbox_query(
         max_lat,
         min_lon,
         max_lon,
-        variables,
+        list(variables),
         build_area_summary_sql,
         max_runtime_s,
         QueryType.AREA_SUMMARY,
@@ -617,7 +617,7 @@ def ssurgo_subsurface_barriers_point_query(
     *,
     latitude: float,
     longitude: float,
-    variables: list[str] = DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO subsurface barrier (restrictive layer) data for a point.
@@ -634,7 +634,7 @@ def ssurgo_subsurface_barriers_point_query(
     return _point_query(
         latitude,
         longitude,
-        variables,
+        list(variables),
         build_subsurface_barriers_sql,
         max_runtime_s,
         QueryType.SUBSURFACE_BARRIERS,
@@ -648,7 +648,7 @@ def ssurgo_subsurface_barriers_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: list[str] = DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SUBSURFACE_BARRIERS_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO subsurface barrier data for all map units in a bounding box.
@@ -669,7 +669,7 @@ def ssurgo_subsurface_barriers_bbox_query(
         max_lat,
         min_lon,
         max_lon,
-        variables,
+        list(variables),
         build_subsurface_barriers_sql,
         max_runtime_s,
         QueryType.SUBSURFACE_BARRIERS,
@@ -692,7 +692,7 @@ def ssurgo_seasonal_hydrology_point_query(
     *,
     latitude: float,
     longitude: float,
-    variables: list[str] = DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO seasonal hydrology data for a point location.
@@ -709,7 +709,7 @@ def ssurgo_seasonal_hydrology_point_query(
     return _point_query(
         latitude,
         longitude,
-        variables,
+        list(variables),
         build_seasonal_hydrology_sql,
         max_runtime_s,
         QueryType.SEASONAL_HYDROLOGY,
@@ -723,7 +723,7 @@ def ssurgo_seasonal_hydrology_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: list[str] = DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SEASONAL_HYDROLOGY_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO seasonal hydrology data for all map units in a bounding box.
@@ -744,7 +744,7 @@ def ssurgo_seasonal_hydrology_bbox_query(
         max_lat,
         min_lon,
         max_lon,
-        variables,
+        list(variables),
         build_seasonal_hydrology_sql,
         max_runtime_s,
         QueryType.SEASONAL_HYDROLOGY,
@@ -804,7 +804,7 @@ def ssurgo_soil_suitability_point_query(
     *,
     latitude: float,
     longitude: float,
-    rule_names: list[str] = DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
+    rule_names: frozenset[str] | list[str] = DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil suitability (interpretation) data for a point location.
@@ -841,7 +841,7 @@ def ssurgo_soil_suitability_point_query(
             }
         )
     try:
-        names = resolve_rule_names(rule_names)
+        names = resolve_rule_names(list(rule_names))
     except ValueError as exc:
         return _validate_grouped_geometry_response(
             {
@@ -928,7 +928,7 @@ def ssurgo_soil_suitability_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    rule_names: list[str] = DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
+    rule_names: frozenset[str] | list[str] = DEFAULT_SOIL_SUITABILITY_RULE_NAMES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil suitability data for all map units in a bounding box.
@@ -978,7 +978,7 @@ def ssurgo_soil_suitability_bbox_query(
         "max_lon": bbox.max_lon,
     }
     try:
-        names = resolve_rule_names(rule_names)
+        names = resolve_rule_names(list(rule_names))
     except ValueError as exc:
         return _validate_grouped_geometry_response(
             {
@@ -1067,7 +1067,7 @@ def ssurgo_ecological_site_point_query(
     *,
     latitude: float,
     longitude: float,
-    variables: list[str] = DEFAULT_ECOLOGICAL_SITE_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_ECOLOGICAL_SITE_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO ecological site classification data for a point location.
@@ -1084,7 +1084,7 @@ def ssurgo_ecological_site_point_query(
     return _point_query(
         latitude,
         longitude,
-        variables,
+        list(variables),
         build_ecological_site_sql,
         max_runtime_s,
         QueryType.ECOLOGICAL_SITE,
@@ -1098,7 +1098,7 @@ def ssurgo_ecological_site_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: list[str] = DEFAULT_ECOLOGICAL_SITE_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_ECOLOGICAL_SITE_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO ecological site data for all map units in a bounding box.
@@ -1119,7 +1119,7 @@ def ssurgo_ecological_site_bbox_query(
         max_lat,
         min_lon,
         max_lon,
-        variables,
+        list(variables),
         build_ecological_site_sql,
         max_runtime_s,
         QueryType.ECOLOGICAL_SITE,
@@ -1142,7 +1142,7 @@ def ssurgo_parent_material_point_query(
     *,
     latitude: float,
     longitude: float,
-    variables: list[str] = DEFAULT_PARENT_MATERIAL_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_PARENT_MATERIAL_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO parent material data for a point location.
@@ -1159,7 +1159,7 @@ def ssurgo_parent_material_point_query(
     return _point_query(
         latitude,
         longitude,
-        variables,
+        list(variables),
         build_parent_material_sql,
         max_runtime_s,
         QueryType.PARENT_MATERIAL,
@@ -1173,7 +1173,7 @@ def ssurgo_parent_material_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: list[str] = DEFAULT_PARENT_MATERIAL_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_PARENT_MATERIAL_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO parent material data for all map units in a bounding box.
@@ -1194,7 +1194,7 @@ def ssurgo_parent_material_bbox_query(
         max_lat,
         min_lon,
         max_lon,
-        variables,
+        list(variables),
         build_parent_material_sql,
         max_runtime_s,
         QueryType.PARENT_MATERIAL,
@@ -1217,7 +1217,7 @@ def ssurgo_soil_temperature_point_query(
     *,
     latitude: float,
     longitude: float,
-    variables: list[str] = DEFAULT_SOIL_TEMPERATURE_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SOIL_TEMPERATURE_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil temperature data for a point location.
@@ -1234,7 +1234,7 @@ def ssurgo_soil_temperature_point_query(
     return _point_query(
         latitude,
         longitude,
-        variables,
+        list(variables),
         build_soil_temperature_sql,
         max_runtime_s,
         QueryType.SOIL_TEMPERATURE,
@@ -1248,7 +1248,7 @@ def ssurgo_soil_temperature_bbox_query(
     max_lat: float,
     min_lon: float,
     max_lon: float,
-    variables: list[str] = DEFAULT_SOIL_TEMPERATURE_VARIABLES,
+    variables: frozenset[str] | list[str] = DEFAULT_SOIL_TEMPERATURE_VARIABLES,
     max_runtime_s: float = 30.0,
 ) -> dict[str, Any]:
     """Query USDA SSURGO soil temperature data for all map units in a bounding box.
@@ -1269,7 +1269,7 @@ def ssurgo_soil_temperature_bbox_query(
         max_lat,
         min_lon,
         max_lon,
-        variables,
+        list(variables),
         build_soil_temperature_sql,
         max_runtime_s,
         QueryType.SOIL_TEMPERATURE,
