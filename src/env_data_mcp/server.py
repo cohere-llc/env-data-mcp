@@ -6,7 +6,14 @@ Source modules are imported below.
 """
 
 import argparse
-from mcp.server.fastmcp import FastMCP
+
+try:  # mcp 1.x
+    from mcp.server.fastmcp import FastMCP
+except ImportError:
+    # mcp 2.x renamed FastMCP -> MCPServer (same tool() decorator and run()); see
+    # https://py.sdk.modelcontextprotocol.io/v2/migration/#fastmcp-renamed-to-mcpserver
+    # A consumer whose resolver picks mcp 2.x (pipx, a fresh venv) must still import the tools.
+    from mcp.server.mcpserver import MCPServer as FastMCP
 
 mcp = FastMCP(
     "env-data-mcp",
