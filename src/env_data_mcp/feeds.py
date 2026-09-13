@@ -42,7 +42,7 @@ from env_data_mcp.helpers import build_meta
 _REDACT = (
     (re.compile(r"(/api/area/csv/)[A-Za-z0-9]{16,}(/)"), r"\1<redacted>\2"),
     (
-        re.compile(r"([?&](?:api_key|apikey|key|token|MAP_KEY)=)[^&\s\"']+", re.IGNORECASE),
+        re.compile(r"([?&](?:api_key|apikey|key|token|MAP_KEY|user)=)[^&\s\"']+", re.IGNORECASE),
         r"\1<redacted>",
     ),
 )

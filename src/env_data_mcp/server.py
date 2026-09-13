@@ -50,6 +50,7 @@ from env_data_mcp.sources import daymet
 from env_data_mcp.sources import macrostrat
 from env_data_mcp.sources import elevation_3dep
 from env_data_mcp.sources import arm
+from env_data_mcp.sources import arm_live
 from env_data_mcp.sources import eia
 from env_data_mcp.sources import era5_cds
 

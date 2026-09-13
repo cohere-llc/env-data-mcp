@@ -27,6 +27,7 @@ from ._constants import (
     TTL_S,
 )
 from ._query import fetch_generators, plants_near
+from ._states import states_near
 
 
 def _validate(response: dict[str, Any]) -> dict[str, Any]:
@@ -46,9 +47,10 @@ def eia_plants_near(
     Needs ``EIA_API_KEY`` (free).  Returns ``{data: [record, …], _meta}`` — one record per plant:
     ``name``, ``plant_id``, ``lat``/``lon``, ``distance_km``, ``nameplate_capacity_mw`` (sum over
     generators), ``energy_sources`` and ``technologies`` (MW by code), ``period`` (the data
-    month).  The generator list for the state (or the nation when ``state`` is omitted — slower)
-    is fetched once and cached 24 h.  Without the key: ``auth_required: True, auth_present:
-    False`` and empty data.
+    month).  The generator list is pulled PER STATE — ``state`` when given, else every state
+    whose bounding box the search circle touches (usually one or two; a point outside the US
+    answers empty) — and each state's list is cached 24 h.  Without the key: ``auth_required:
+    True, auth_present: False`` and empty data.
 
     ### Args
     * __latitude, longitude__: The point (WGS84).
@@ -73,21 +75,34 @@ def eia_plants_near(
         pt = PointInput(latitude=latitude, longitude=longitude)
         if radius_km < 1 or radius_km > 500:
             raise ValueError("radius_km must be between 1 and 500")
-        list_key = cache_key(SOURCE, {"state": (state or "").upper() or "US"})
-        hit = cache().get(list_key)
-        cached = hit is not None
-        if hit is not None:
-            rows, fetched_at = hit
-        else:
-            allowed, quota = gov.try_acquire()
-            if not allowed:
-                return _validate(
-                    quota_refused(
-                        SOURCE, query_params, LICENSE_INFO, quota, ttl_s=TTL_S, auth_required=True
+        states = [state.upper()] if state else states_near(pt.latitude, pt.longitude, radius_km)
+        rows: list[dict] = []
+        fetched_at: str | None = None
+        cached = True
+        for st in states:
+            list_key = cache_key(SOURCE, {"state": st})
+            hit = cache().get(list_key)
+            if hit is not None:
+                st_rows, st_at = hit
+            else:
+                cached = False
+                allowed, quota = gov.try_acquire()
+                if not allowed:
+                    return _validate(
+                        quota_refused(
+                            SOURCE,
+                            query_params,
+                            LICENSE_INFO,
+                            quota,
+                            ttl_s=TTL_S,
+                            auth_required=True,
+                        )
                     )
-                )
-            rows = fetch_generators(api_key=api_key, state=state)
-            fetched_at = cache().set(list_key, rows, TTL_S)
+                st_rows = fetch_generators(api_key=api_key, state=st)
+                st_at = cache().set(list_key, st_rows, TTL_S)
+            rows.extend(st_rows)
+            fetched_at = fetched_at or st_at
+        query_params["states"] = states
         data = plants_near(rows, pt.latitude, pt.longitude, radius_km)
         return _validate(
             {
