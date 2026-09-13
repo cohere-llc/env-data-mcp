@@ -10,8 +10,11 @@ structured JSON with the data and a `_meta` block that includes the data license
 citations, query latency, and enough information to reproduce the query.
 
 **Status:** 6 sources have been made fully functional (NASA POWER,
-SSURGO, SoilGrids, GBIF, TROPOMI, OpenAQ); 3 sources are still only protoyped (OCO-2, EMIT,
-and ESS-DIVE).
+SSURGO, SoilGrids, GBIF, TROPOMI, OpenAQ); 3 sources are still only prototyped (OCO-2, EMIT,
+and ESS-DIVE).  The **`feeds` family** (live events: EONET, USGS earthquakes, NASA FIRMS, NWS
+alerts, USGS Water Data, Open-Meteo) and six **point accessors** (Daymet, Macrostrat, 3DEP
+elevation, ARM, EIA, ERA5 via CDS) return the same `{data, _meta}` shape with a shared event
+schema, a per-source TTL and a quota governor — see "Feeds and point accessors" below.
 
 ---
 
@@ -201,6 +204,37 @@ See [Credential setup](#environment-variables) for how to obtain each token.
 
 \* For SSURGO tools, replace the (`*`) with one of: `area_summary`, `ecological_site`, `parent_material`, `seasonal_hydrology`, `soil_profile`, `soil_suitability`, `soil_temperature`, or `subsurface_barriers`.
 
+## Feeds and point accessors
+
+Live events share one schema, `models.EventRecord` (`id, source, kind, title, lat, lon, geometry,
+t_start, t_end, magnitude, magnitude_unit, severity, url, licence` + source `properties`), and
+every feed tool returns `{data: [EventRecord, …], _meta}`.  `_meta` gains `ttl_s` (the source's
+cache TTL, honoured in-process), `fetched_at`, `cached`, and for keyed or rate-limited sources
+`quota = {limit, window_s, used, remaining, resets_in_s}` — at the limit the tool refuses with a
+normal response, never an exception.  A keyed tool without its key answers
+`auth_required: true, auth_present: false` and empty `data`.  Keys travel in headers (or, for
+FIRMS, in a URL that is never returned or logged); no key is ever echoed.
+
+| Tool | Source | Auth | TTL | Description |
+|---|---|---|---|---|
+| `eonet_events` | NASA EONET v3 | none | 30 min | Curated natural events (fires, storms, volcanoes, floods, ice …), optional bbox, last N days |
+| `usgs_quakes_events` | USGS FDSN / ComCat | none | 5 min | Earthquakes with magnitude, depth, PAGER alert level, optional bbox |
+| `nasa_firms_fires` | NASA FIRMS | `NASA_FIRMS_MAP_KEY` (5,000 / 10 min) | 30 min | VIIRS / MODIS fire detections in a bbox, FRP and confidence |
+| `nws_alerts_at` | NWS api.weather.gov | none | 10 min | Active alerts at a point or for a state/marine area (US) |
+| `usgs_water_latest` | USGS Water Data OGC API | none 50/h · `USGS_WATERDATA_API_KEY` 1,000/h | 15 min | Latest instantaneous values per monitoring location (discharge, gage height …) |
+| `open_meteo_current` | Open-Meteo | none; **gated** unless `ENV_DATA_ALLOW_NC=1` | 15 min | Current conditions + daily forecast at a point (non-commercial terms) |
+| `daymet_at` | Daymet (ORNL DAAC) | none | 24 h | Daily tmax / tmin / prcp … at a 1 km pixel on one date, North America 1980– |
+| `macrostrat_at` | Macrostrat | none | 7 d | The geologic map unit at a point: lithology, age, interval |
+| `elevation_3dep` | USGS 3DEP (EPQS) | none | 30 d | Ground elevation at a point (US); the service can take 10–15 s |
+| `arm_nearest` | DOE ARM | none (site table) | — | The nearest ARM fixed observatory and its distance |
+| `eia_plants_near` | EIA API v2 (EIA-860M) | `EIA_API_KEY` | 24 h | Power plants within a radius, capacity by fuel [field names unverified live until the integration test runs with a key] |
+| `era5_monthly_at` | ERA5 via CDS | `CDS_API_KEY` | 30 d | Monthly means at the nearest 0.25° point; **a queued job** — answers `queued:` with a `job_id` to resume |
+
+Not built, and why: **NWI wetlands** — the point/envelope query answers HTTP 400 for every
+variant (probed 2026-09); **ARM Live data** — its API takes `user:token` in the query string, which
+this server never does (a credential in a URL); the site table stands in until a header-based path
+exists.
+
 ## Prototyped tools
 
 These tools are functional but may return subsets of requested data, not expose all dataset
@@ -222,6 +256,11 @@ parameters, and not follow the standardized response schema.
 | `EARTHDATA_TOKEN` | OCO-2, EMIT | NASA EarthData bearer token — register free at [urs.earthdata.nasa.gov](https://urs.earthdata.nasa.gov) |
 | `ESSDIVE_TOKEN` | ESS-DIVE | ESS-DIVE API token — register free at [ess-dive.lbl.gov](https://ess-dive.lbl.gov) |
 | `OPENAQ_API_KEY` | OpenAQ | Free key from [openaq.org](https://openaq.org) — requests without a key are rejected by the API |
+| `NASA_FIRMS_MAP_KEY` | NASA FIRMS | Free MAP_KEY from [firms.modaps.eosdis.nasa.gov/api/map_key](https://firms.modaps.eosdis.nasa.gov/api/map_key/) — 5,000 transactions / 10 min |
+| `USGS_WATERDATA_API_KEY` | USGS Water Data (optional) | Free key from [api.waterdata.usgs.gov/signup](https://api.waterdata.usgs.gov/signup/) — lifts the keyless 50/h to 1,000/h |
+| `EIA_API_KEY` | EIA | Free key from [eia.gov/opendata/register.php](https://www.eia.gov/opendata/register.php) |
+| `CDS_API_KEY` | ERA5 (CDS) | A CDS Personal Access Token ([cds.climate.copernicus.eu/how-to-api](https://cds.climate.copernicus.eu/how-to-api)); accept the ERA5 dataset licence once on the CDS site |
+| `ENV_DATA_ALLOW_NC` | Open-Meteo | Set to `1` to attest non-commercial use; without it the tool answers `gated` |
 
 ---
 
@@ -311,6 +350,18 @@ sources are collected in [LICENSES.md](LICENSES.md).
 | OCO-2 | Public domain (NASA) |
 | EMIT | Public domain (NASA) |
 | ESS-DIVE | Varies per dataset |
+| NASA EONET | Public domain (NASA) |
+| USGS earthquakes | Public domain (USGS) |
+| NASA FIRMS | NASA data policy — free and open, attribution requested |
+| NWS alerts | Public domain (NOAA) |
+| USGS Water Data | Public domain (USGS) |
+| Open-Meteo | CC BY 4.0 — free API for non-commercial use only (gated) |
+| Daymet | Open (ORNL DAAC) |
+| Macrostrat | CC BY 4.0 |
+| USGS 3DEP | Public domain (USGS) |
+| ARM | Free and open (ARM data use guidelines) |
+| EIA | Public domain (US Government) |
+| ERA5 (CDS) | CC BY 4.0 |
 
 ---
 

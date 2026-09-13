@@ -146,6 +146,44 @@ class ToolResponse(BaseModel):
     meta: ResponseMeta = Field(alias="_meta")
 
 
+class EventRecord(BaseModel):
+    """One live event from the ``feeds`` family (EONET, USGS earthquakes, NASA FIRMS, NWS alerts).
+
+    Every feed tool returns ``{data: [EventRecord, …], _meta}``.  ``kind`` is a small controlled
+    vocabulary (``fire | quake | storm | volcano | flood | ice | drought | dust | landslide |
+    alert | air | water | weather | other``); ``geometry`` is the event's own GeoJSON when the
+    source gives one (a polygon, a track) and ``None`` for a bare point — ``lat``/``lon`` are
+    always set (the representative point).  Times are ISO 8601 UTC strings.  ``extra="allow"``
+    keeps source-specific fields (``properties``) without a schema change.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    source: str
+    kind: str
+    title: str
+    lat: float = Field(..., ge=-90.0, le=90.0)
+    lon: float = Field(..., ge=-180.0, le=180.0)
+    geometry: GeoJsonGeometry | None = None
+    t_start: str
+    t_end: str | None = None
+    magnitude: float | None = None
+    magnitude_unit: str | None = None
+    severity: str | None = None
+    url: str = ""
+    licence: str = ""
+
+
+class EventResponse(BaseModel):
+    """Response schema for every ``feeds`` tool: ``{data: [EventRecord, …], _meta}``."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    data: list[EventRecord]
+    meta: ResponseMeta = Field(alias="_meta")
+
+
 class VariableInfo(BaseModel):
     """Metadata for a single variable returned by an ``available_variables`` tool.
 

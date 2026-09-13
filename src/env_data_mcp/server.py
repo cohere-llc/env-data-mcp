@@ -32,6 +32,20 @@ from env_data_mcp.sources import oco2
 from env_data_mcp.sources import emit
 from env_data_mcp.sources import essdive
 
+# feeds (live events) + point accessors
+from env_data_mcp.sources import eonet
+from env_data_mcp.sources import usgs_quakes
+from env_data_mcp.sources import nasa_firms
+from env_data_mcp.sources import nws_alerts
+from env_data_mcp.sources import usgs_water
+from env_data_mcp.sources import open_meteo
+from env_data_mcp.sources import daymet
+from env_data_mcp.sources import macrostrat
+from env_data_mcp.sources import elevation_3dep
+from env_data_mcp.sources import arm
+from env_data_mcp.sources import eia
+from env_data_mcp.sources import era5_cds
+
 # GUI dashboard
 from env_data_mcp.dashboard import launch_gui
 
