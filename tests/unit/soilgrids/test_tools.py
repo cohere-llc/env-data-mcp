@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import TypedDict
 from unittest.mock import MagicMock, patch
 
 from env_data_mcp.helpers import check_runtime
@@ -231,7 +232,18 @@ def test_soilgrids_point_query_handles_invalid_coordinate() -> None:
 # soilgrids_bbox_query
 # ---------------------------------------------------------------------------
 
-_BBOX = {
+
+class _Bbox(TypedDict):
+    """The four keyword arguments a *_bbox_query takes - typed so `**bbox` unpacks onto exactly
+    those parameters (pyright unpacks a plain dict[str, float] onto every keyword parameter)."""
+
+    min_lat: float
+    max_lat: float
+    min_lon: float
+    max_lon: float
+
+
+_BBOX: _Bbox = {
     "min_lat": 33.8105,
     "max_lat": 33.8136,
     "min_lon": -116.6900,

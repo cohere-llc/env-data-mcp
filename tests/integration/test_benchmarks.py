@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import sqrt
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import numpy as np
 import pytest
@@ -79,9 +79,20 @@ _SCENARIOS: list[dict[str, Any]] = [
 # Sources that are skipped for the 1-month scenario to stay inside the 5-min budget
 _SLOW_SOURCES = {"oco2", "emit"}
 
+
 # Small consistency-check bbox — 0.5° × 0.5° centred on the reference point
+class _Bbox(TypedDict):
+    """The four keyword arguments a *_bbox_query takes - typed so `**bbox` unpacks onto exactly
+    those parameters (pyright unpacks a plain dict[str, float] onto every keyword parameter)."""
+
+    min_lat: float
+    max_lat: float
+    min_lon: float
+    max_lon: float
+
+
 _BBOX_HALF = 0.25
-_BBOX = {
+_BBOX: _Bbox = {
     "min_lat": _LAT - _BBOX_HALF,
     "max_lat": _LAT + _BBOX_HALF,
     "min_lon": _LON - _BBOX_HALF,
@@ -184,7 +195,7 @@ def _record(
     )
 
 
-def _make_bbox(lat: float, lon: float, half: float) -> dict[str, float]:
+def _make_bbox(lat: float, lon: float, half: float) -> _Bbox:
     """Return a min/max lat/lon bbox dict centred on (lat, lon) with given half-width."""
     return {
         "min_lat": lat - half,
@@ -909,7 +920,6 @@ def test_openaq_point_bbox_consistent(_openaq_key):
         **_BBOX,
         start_date="2019-08-19",
         end_date="2019-08-19",
-        limit=200,
     )
     _assert_or_skip(pt, "openaq/point")
     _assert_or_skip(bx, "openaq/bbox")

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any
+from typing import Any, TypedDict
 
 import httpx
 import pytest
@@ -142,7 +142,19 @@ _DATASET_CASES = [
 # Yakima Valley, WA - primary validation location (also used in original tests)
 _YAKIMA_LAT = 46.2531882
 _YAKIMA_LON = -119.4768203
-_YAKIMA_BBOX_KWARGS: dict[str, float] = {
+
+
+class _Bbox(TypedDict):
+    """The four keyword arguments a *_bbox_query takes - typed so `**bbox` unpacks onto exactly
+    those parameters (pyright unpacks a plain dict[str, float] onto every keyword parameter)."""
+
+    min_lat: float
+    max_lat: float
+    min_lon: float
+    max_lon: float
+
+
+_YAKIMA_BBOX_KWARGS: _Bbox = {
     "min_lat": 46.244,
     "max_lat": 46.262,
     "min_lon": -119.490,

@@ -8,6 +8,7 @@ The reference point is the Oak Ridge Field Research Center, Tennessee (35.9748, 
 from __future__ import annotations
 
 import os
+from typing import TypedDict
 
 import pytest
 
@@ -25,8 +26,24 @@ from env_data_mcp.sources.open_meteo import open_meteo_current
 from env_data_mcp.sources.usgs_quakes import usgs_quakes_events
 from env_data_mcp.sources.usgs_water import usgs_water_latest
 
-FRC = {"latitude": 35.9748, "longitude": -84.277}
-FRC_BOX = {"min_lat": 35.8, "max_lat": 36.2, "min_lon": -84.6, "max_lon": -84.0}
+
+class _Point(TypedDict):
+    latitude: float
+    longitude: float
+
+
+class _Bbox(TypedDict):
+    """The four keyword arguments a *_bbox_query takes - typed so `**bbox` unpacks onto exactly
+    those parameters (pyright unpacks a plain dict[str, float] onto every keyword parameter)."""
+
+    min_lat: float
+    max_lat: float
+    min_lon: float
+    max_lon: float
+
+
+FRC: _Point = {"latitude": 35.9748, "longitude": -84.277}
+FRC_BOX: _Bbox = {"min_lat": 35.8, "max_lat": 36.2, "min_lon": -84.6, "max_lon": -84.0}
 
 pytestmark = pytest.mark.integration
 
