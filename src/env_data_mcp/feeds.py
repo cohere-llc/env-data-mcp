@@ -22,13 +22,58 @@ from __future__ import annotations
 
 import collections
 import datetime
+import logging
 import os
+import re
 import threading
 import time
 from collections.abc import Mapping
 from typing import Any
 
 from env_data_mcp.helpers import build_meta
+
+# ---------------------------------------------------------------------------
+# Credentials never reach a log line.  httpx logs every request URL at INFO
+# ("HTTP Request: GET <url>"); FIRMS carries its MAP_KEY in the URL path, others may carry one
+# in a query string.  A filter on the httpx/httpcore loggers rewrites those before the record
+# is emitted -- installed once, at import, by every feed module.
+# ---------------------------------------------------------------------------
+
+_REDACT = (
+    (re.compile(r"(/api/area/csv/)[A-Za-z0-9]{16,}(/)"), r"\1<redacted>\2"),
+    (
+        re.compile(r"([?&](?:api_key|apikey|key|token|MAP_KEY)=)[^&\s\"']+", re.IGNORECASE),
+        r"\1<redacted>",
+    ),
+)
+
+
+class RedactCredentials(logging.Filter):
+    """Rewrite a credential embedded in a URL (path segment or query value) in a log message."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            msg = record.getMessage()
+        except Exception:
+            return True
+        clean = msg
+        for pat, rep in _REDACT:
+            clean = pat.sub(rep, clean)
+        if clean != msg:
+            record.msg = clean
+            record.args = ()
+        return True
+
+
+def install_redaction() -> None:
+    """Idempotent: one RedactCredentials filter on the httpx and httpcore loggers."""
+    for name in ("httpx", "httpcore"):
+        lg = logging.getLogger(name)
+        if not any(isinstance(f, RedactCredentials) for f in lg.filters):
+            lg.addFilter(RedactCredentials())
+
+
+install_redaction()
 
 # ---------------------------------------------------------------------------
 # TTL cache
