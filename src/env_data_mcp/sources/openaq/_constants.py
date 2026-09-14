@@ -42,3 +42,4 @@ class Location:
     lat: float
     lon: float
     sensors: list[Sensor]
+    name: str | None = None

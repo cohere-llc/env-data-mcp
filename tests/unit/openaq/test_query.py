@@ -223,6 +223,7 @@ def test_extract_location():
     result: Location | None = _extract_location(data, [222, 333])
     assert result is not None
     assert result.id == 999
+    assert result.name == "Yakima Monitor"
     assert result.lat == _LAT
     assert result.lon == _LON
     assert len(result.sensors) == 1
@@ -371,6 +372,7 @@ def test_fetch_measurements(httpx_mock, monkeypatch):
                 Sensor(id=312, parameter_id=111),
                 Sensor(id=456, parameter_id=333),
             ],
+            name="Yakima Monitor",
         ),
         Location(
             id=53,
@@ -386,6 +388,10 @@ def test_fetch_measurements(httpx_mock, monkeypatch):
         client, _API_KEY, locations=locs, start_date="2019-08-19", end_date="2019-08-19"
     )
     assert len(result) == 2
+    assert result[0]["station_id"] == 72
+    assert result[0]["station_name"] == "Yakima Monitor"
+    assert result[1]["station_id"] == 53
+    assert result[1]["station_name"] is None
     assert result[0]["geometry"]["type"] == "Point"
     assert result[0]["geometry"]["coordinates"] == [_LON, _LAT]
     assert result[0]["latitude"] == _LAT

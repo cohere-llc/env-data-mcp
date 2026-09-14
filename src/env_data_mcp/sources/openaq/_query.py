@@ -192,6 +192,7 @@ def _extract_location(data: dict[str, Any], parameter_ids: list[int]) -> Locatio
             lat=data["coordinates"]["latitude"],
             lon=data["coordinates"]["longitude"],
             sensors=sensors,
+            name=data.get("name"),
         )
         if sensors
         else None
@@ -283,7 +284,11 @@ def _fetch_measurements(
     start_date: str,
     end_date: str,
 ) -> list[dict[str, Any]]:
-    """Fetch measurements for specified locations and all included sensors."""
+    """Fetch measurements for specified locations and all included sensors.
+
+    Each group carries the OpenAQ location's ``station_id`` and ``station_name`` so a
+    caller can link a group back to the station (``https://explore.openaq.org/locations/<id>``).
+    """
     results: list[dict[str, Any]] = []
     for location in locations:
         location_records: list[dict[str, Any]] = []
@@ -293,6 +298,8 @@ def _fetch_measurements(
             )
         results.append(
             {
+                "station_id": location.id,
+                "station_name": location.name,
                 "geometry": {"type": "Point", "coordinates": [location.lon, location.lat]},
                 "latitude": location.lat,
                 "longitude": location.lon,
