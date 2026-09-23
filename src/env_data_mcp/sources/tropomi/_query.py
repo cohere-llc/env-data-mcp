@@ -39,7 +39,7 @@ from ._constants import (
     MINIMUM_VALUE,
     QA_THRESHOLD,
 )
-from ._var_cache import VariableInfo, get_full_variable_info
+from ._var_cache import VariableInfo, get_equivalent_variables, get_full_variable_info
 
 # ---------------------------------------------------------------------------
 # Core query logic
@@ -109,6 +109,53 @@ def _get_netcdf_file_paths(
             break
         skip += page_size
     return paths
+
+
+def _resolve_granules(
+    variable: VariableInfo, start_date: str, end_date: str, geometry_string: str
+) -> tuple[VariableInfo, list[str]]:
+    """Return the variable the catalogue can serve, and its granule paths.
+
+    CDSE lists a single processing stream per acquisition.  When the mission
+    archive was reprocessed the superseded ``OFFL`` granules were withdrawn in
+    favour of ``RPRO`` ones, so a stream-pinned search finds nothing for those
+    dates even though both streams remain published as COGTs.  Fall back to an
+    equivalent stream whenever the requested one has no granules at all in the
+    window; the fallback cannot be applied granule by granule, because a day
+    with no overpass of the target location is indistinguishable from a day
+    whose stream was withdrawn.
+    """
+    paths = _get_netcdf_file_paths(variable, start_date, end_date, geometry_string)
+    if paths:
+        return variable, paths
+    for equivalent in get_equivalent_variables(variable):
+        paths = _get_netcdf_file_paths(equivalent, start_date, end_date, geometry_string)
+        if paths:
+            return equivalent, paths
+    return variable, []
+
+
+def _plan_reads(
+    variables: list[str], start_date: str, end_date: str, geometry_string: str
+) -> tuple[list[tuple[VariableInfo, str]], set[str], dict[str, str]]:
+    """Resolve every requested variable to the COGT reads that will serve it.
+
+    Returns the ``(variable served, granule path)`` work items, the requested
+    names this adapter knows nothing about, and the ``requested -> served``
+    substitutions made by :func:`_resolve_granules`.
+    """
+    var_info = get_full_variable_info()
+    unavailable: set[str] = {var for var in variables if var not in var_info}
+    reads: list[tuple[VariableInfo, str]] = []
+    substitutions: dict[str, str] = {}
+    for name in variables:
+        if name in unavailable:
+            continue
+        served, paths = _resolve_granules(var_info[name], start_date, end_date, geometry_string)
+        if served.name != name:
+            substitutions[name] = served.name
+        reads.extend((served, path) for path in paths)
+    return reads, unavailable, substitutions
 
 
 def _get_cogt_urls(netcdf_path: str, variable: VariableInfo) -> tuple[str, str]:
@@ -262,7 +309,7 @@ def query_point(
     start_date: str,
     end_date: str,
     variables: list[str],
-) -> tuple[list[dict[str, Any]], list[str]]:
+) -> tuple[list[dict[str, Any]], list[str], dict[str, str]]:
     """Query for a set of variables at a point location.
 
     Args:
@@ -272,37 +319,34 @@ def query_point(
         end_date: ISO 8601 date (YYYY-MM-DD).
         variables: list of variable names to query for.
     Returns:
-        Tuple of properties by geometry and list of unavailable variables.
+        Tuple of properties by geometry, list of unavailable variables, and the
+        ``requested -> served`` processing streams substituted for any variable
+        whose own stream the catalogue no longer lists for this window.  Values
+        are keyed by the name of the variable that actually served them, so a
+        substituted variable appears under its serving stream's name.
     """
-    var_info = get_full_variable_info()
-    unavailable: set[str] = {var for var in variables if var not in var_info}
     geometry = _get_point_geometry_string(latitude=latitude, longitude=longitude)
-    netcdf_paths: list[tuple[VariableInfo, str]] = [
-        (var_info[name], path)
-        for name in variables
-        if name not in unavailable
-        for path in _get_netcdf_file_paths((var_info[name]), start_date, end_date, geometry)
-    ]
+    reads, unavailable, substitutions = _plan_reads(variables, start_date, end_date, geometry)
     records: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=IO_WORKERS) as pool:
         futures = [
-            pool.submit(_query_point_from_file, rec[0], rec[1], latitude, longitude)
-            for rec in netcdf_paths
+            pool.submit(_query_point_from_file, served, path, latitude, longitude)
+            for served, path in reads
         ]
         for future in as_completed(futures):
             try:
                 rec = future.result()
-                if rec:
-                    records.append(rec)
             except Exception:
                 # silently ignore failures for individual file reads to avoid failing the whole run
                 continue
+            if rec:
+                records.append(rec)
     results = _format_results(records)
     has_data: set[str] = {
         var for geo in results for rec in geo["records"] for var in rec if var != "date"
     }
-    unavailable |= {var for var in variables if var not in has_data}
-    return results, list(unavailable)
+    unavailable |= {var for var in variables if substitutions.get(var, var) not in has_data}
+    return results, list(unavailable), substitutions
 
 
 def query_bbox(
@@ -313,7 +357,7 @@ def query_bbox(
     start_date: str,
     end_date: str,
     variables: list[str],
-) -> tuple[list[dict[str, Any]], list[str]]:
+) -> tuple[list[dict[str, Any]], list[str], dict[str, str]]:
     """Query for a set of variables within a bounding box.
 
     Args:
@@ -325,36 +369,32 @@ def query_bbox(
         end_date: ISO 8601 date (YYYY-MM-DD).
         variables: list of variable names to query for.
     Returns:
-        Tuple of properties by geometry and list of unavailable variables.
+        Tuple of properties by geometry, list of unavailable variables, and the
+        ``requested -> served`` processing streams substituted for any variable
+        whose own stream the catalogue no longer lists for this window.  Values
+        are keyed by the name of the variable that actually served them, so a
+        substituted variable appears under its serving stream's name.
     """
-    var_info = get_full_variable_info()
-    unavailable: set[str] = {var for var in variables if var not in var_info}
     geometry = _get_bbox_geometry_string(
         min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon
     )
-    netcdf_paths: list[tuple[VariableInfo, str]] = [
-        (var_info[name], path)
-        for name in variables
-        if name not in unavailable
-        for path in _get_netcdf_file_paths((var_info[name]), start_date, end_date, geometry)
-    ]
+    reads, unavailable, substitutions = _plan_reads(variables, start_date, end_date, geometry)
     records: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=IO_WORKERS) as pool:
         futures = [
-            pool.submit(_query_bbox_from_file, rec[0], rec[1], min_lat, max_lat, min_lon, max_lon)
-            for rec in netcdf_paths
+            pool.submit(_query_bbox_from_file, served, path, min_lat, max_lat, min_lon, max_lon)
+            for served, path in reads
         ]
         for future in as_completed(futures):
             try:
                 recs = future.result()
-                if recs:
-                    records.extend(recs)
             except Exception:
                 # silently ignore failures for individual file reads to avoid failing the whole run
                 continue
+            records.extend(recs)
     results = _format_results(records)
     has_data: set[str] = {
         var for geo in results for rec in geo["records"] for var in rec if var != "date"
     }
-    unavailable |= {var for var in variables if var not in has_data}
-    return results, list(unavailable)
+    unavailable |= {var for var in variables if substitutions.get(var, var) not in has_data}
+    return results, list(unavailable), substitutions

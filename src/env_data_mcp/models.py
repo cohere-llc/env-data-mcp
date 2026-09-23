@@ -85,6 +85,7 @@ class ResponseMeta(BaseModel):
     variables: list[str] = Field(default_factory=list)
     variable_info: dict[str, Any] = Field(default_factory=dict)
     unavailable_variables: list[str] = Field(default_factory=list)
+    substituted_variables: dict[str, str] = Field(default_factory=dict)
     citation_urls: list[str] | str = Field(default_factory=list)
     description: str = ""
     description_url: str = ""

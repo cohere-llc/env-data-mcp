@@ -324,3 +324,48 @@ def test_shipped_variables_json_hydrates_to_dataclass_instances():
     for name, vi in info.items():
         assert isinstance(vi, _var_cache.VariableInfo), f"{name} not a _VariableInfo"
         assert isinstance(vi.product_type, ProductType)
+
+
+# ---------------------------------------------------------------------------
+# get_equivalent_variables
+# ---------------------------------------------------------------------------
+
+
+def _shipped(name: str) -> _var_cache.VariableInfo:
+    """Return one hydrated entry from the shipped cache."""
+    return _var_cache.get_full_variable_info()[name]
+
+
+def test_get_equivalent_variables_finds_other_streams():
+    """A measurement published by several streams reports the others."""
+    equivalents = _var_cache.get_equivalent_variables(_shipped("OFFL-L2_CO"))
+
+    assert [info.name for info in equivalents] == ["RPRO-L2_CO", "NRTI-L2_CO"]
+
+
+def test_get_equivalent_variables_prefers_reprocessed_stream():
+    """The reprocessed stream is offered ahead of the near-real-time one."""
+    equivalents = _var_cache.get_equivalent_variables(_shipped("OFFL-L2_CO"))
+
+    assert equivalents[0].product_type is ProductType.RPRO
+
+
+def test_get_equivalent_variables_excludes_a_different_measurement():
+    """NRTI NO2 is a tropospheric column, so it never stands in for the total column."""
+    offl_no2 = _shipped("OFFL-L2_NO2")
+    equivalents = _var_cache.get_equivalent_variables(offl_no2)
+
+    assert [info.name for info in equivalents] == ["RPRO-L2_NO2"]
+    assert _shipped("NRTI-L2_NO2").cogt_name != offl_no2.cogt_name
+
+
+def test_get_equivalent_variables_none_for_single_stream_measurement():
+    """A measurement only one stream publishes has no equivalent."""
+    assert _var_cache.get_equivalent_variables(_shipped("OFFL-L2_CH4")) == []
+
+
+def test_get_equivalent_variables_excludes_the_variable_itself():
+    """The requested variable is never offered as its own substitute."""
+    offl_co = _shipped("OFFL-L2_CO")
+
+    assert offl_co not in _var_cache.get_equivalent_variables(offl_co)

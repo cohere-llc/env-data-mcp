@@ -422,7 +422,7 @@ def test_format_results_merges_variables_on_same_date():
 def test_query_point_unknown_variable_is_unavailable():
     """Variables absent from variable info are immediately marked unavailable."""
     with patch.object(_query_mod, "get_full_variable_info", return_value={}):
-        results, unavailable = query_point(
+        results, unavailable, _ = query_point(
             latitude=_QUERY_LAT,
             longitude=_QUERY_LON,
             start_date="2024-01-03",
@@ -439,7 +439,7 @@ def test_query_point_no_files_variable_is_unavailable():
         patch.object(_query_mod, "get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
         patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[]),
     ):
-        results, unavailable = query_point(
+        results, unavailable, _ = query_point(
             latitude=_QUERY_LAT,
             longitude=_QUERY_LON,
             start_date="2024-01-03",
@@ -464,7 +464,7 @@ def test_query_point_returns_results():
         patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[_NETCDF_PATH]),
         patch.object(_query_mod, "_query_point_from_file", return_value=mock_record),
     ):
-        results, unavailable = query_point(
+        results, unavailable, _ = query_point(
             latitude=_QUERY_LAT,
             longitude=_QUERY_LON,
             start_date="2024-01-03",
@@ -620,7 +620,7 @@ def test_query_bbox_from_file_partial_qa_below_threshold():
 def test_query_bbox_unknown_variable_is_unavailable():
     """Variables absent from variable info are immediately marked unavailable."""
     with patch.object(_query_mod, "get_full_variable_info", return_value={}):
-        results, unavailable = query_bbox(
+        results, unavailable, _ = query_bbox(
             min_lat=45.75,
             max_lat=46.75,
             min_lon=-120.0,
@@ -639,7 +639,7 @@ def test_query_bbox_no_files_variable_is_unavailable():
         patch.object(_query_mod, "get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
         patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[]),
     ):
-        results, unavailable = query_bbox(
+        results, unavailable, _ = query_bbox(
             min_lat=45.75,
             max_lat=46.75,
             min_lon=-120.0,
@@ -670,7 +670,7 @@ def test_query_bbox_returns_results():
         patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[_NETCDF_PATH]),
         patch.object(_query_mod, "_query_bbox_from_file", return_value=mock_records),
     ):
-        results, unavailable = query_bbox(
+        results, unavailable, _ = query_bbox(
             min_lat=45.75,
             max_lat=46.75,
             min_lon=-120.0,
@@ -688,3 +688,225 @@ def test_query_bbox_returns_results():
         if "OFFL-L2_O3" in record
     ]
     assert sorted(all_values) == pytest.approx(sorted(_VALID_VALS.ravel()))
+
+
+# ---------------------------------------------------------------------------
+# _resolve_granules — processing-stream fallback
+# ---------------------------------------------------------------------------
+
+
+L2_CO_OFFL_VAR = VariableInfo(
+    name="OFFL-L2_CO",
+    description="",
+    units="mol m-2",
+    product_type=ProductType.OFFL,
+    property_name="L2_CO",
+    underscored_name="L2__CO____",
+    cogt_name="carbonmonoxide_total_column",
+)
+
+L2_CO_RPRO_VAR = VariableInfo(
+    name="RPRO-L2_CO",
+    description="",
+    units="mol m-2",
+    product_type=ProductType.RPRO,
+    property_name="L2_CO",
+    underscored_name="L2__CO____",
+    cogt_name="carbonmonoxide_total_column",
+)
+
+_RPRO_NETCDF_PATH = (
+    "/eodata/Sentinel-5P/TROPOMI/L2__CO____/2022/06/07/"
+    "S5P_RPRO_L2__CO_____20220607T185134_20220607T203303_24096_03_020400_20230202T222544.nc"
+)
+
+_GEOMETRY = "geography'SRID=4326;POINT(-116.4856 33.8434)'"
+
+
+def test_resolve_granules_uses_requested_stream_when_listed():
+    """A stream the catalogue still lists is used as-is, with no fallback lookup."""
+    with (
+        patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[_NETCDF_PATH]) as paths,
+        patch.object(_query_mod, "get_equivalent_variables") as equivalents,
+    ):
+        served, resolved = _query_mod._resolve_granules(
+            L2_CO_OFFL_VAR, "2024-01-03", "2024-01-05", _GEOMETRY
+        )
+
+    assert served is L2_CO_OFFL_VAR
+    assert resolved == [_NETCDF_PATH]
+    assert paths.call_count == 1
+    equivalents.assert_not_called()
+
+
+def test_resolve_granules_falls_back_to_equivalent_stream():
+    """A withdrawn stream falls back to the equivalent one that is still listed."""
+
+    def _paths(variable, *_args):
+        return [_RPRO_NETCDF_PATH] if variable is L2_CO_RPRO_VAR else []
+
+    with (
+        patch.object(_query_mod, "_get_netcdf_file_paths", side_effect=_paths),
+        patch.object(_query_mod, "get_equivalent_variables", return_value=[L2_CO_RPRO_VAR]),
+    ):
+        served, resolved = _query_mod._resolve_granules(
+            L2_CO_OFFL_VAR, "2022-06-01", "2022-06-07", _GEOMETRY
+        )
+
+    assert served is L2_CO_RPRO_VAR
+    assert resolved == [_RPRO_NETCDF_PATH]
+
+
+def test_resolve_granules_without_any_listed_stream_returns_empty():
+    """When no stream is listed for the window the requested variable comes back empty."""
+    with (
+        patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[]),
+        patch.object(_query_mod, "get_equivalent_variables", return_value=[L2_CO_RPRO_VAR]),
+    ):
+        served, resolved = _query_mod._resolve_granules(
+            L2_CO_OFFL_VAR, "2022-06-01", "2022-06-07", _GEOMETRY
+        )
+
+    assert served is L2_CO_OFFL_VAR
+    assert resolved == []
+
+
+def test_resolve_granules_stops_at_the_first_listed_equivalent():
+    """The preference order is honoured — a later equivalent is never queried."""
+    third_stream = VariableInfo(
+        name="NRTI-L2_CO",
+        description="",
+        units="mol m-2",
+        product_type=ProductType.NRTI,
+        property_name="L2_CO",
+        underscored_name="L2__CO____",
+        cogt_name="carbonmonoxide_total_column",
+    )
+
+    def _paths(variable, *_args):
+        return [] if variable is L2_CO_OFFL_VAR else [_RPRO_NETCDF_PATH]
+
+    with (
+        patch.object(_query_mod, "_get_netcdf_file_paths", side_effect=_paths) as paths,
+        patch.object(
+            _query_mod, "get_equivalent_variables", return_value=[L2_CO_RPRO_VAR, third_stream]
+        ),
+    ):
+        served, _resolved = _query_mod._resolve_granules(
+            L2_CO_OFFL_VAR, "2022-06-01", "2022-06-07", _GEOMETRY
+        )
+
+    assert served is L2_CO_RPRO_VAR
+    assert paths.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# query_point / query_bbox — substitution reporting
+# ---------------------------------------------------------------------------
+
+
+def _substituted_stream_patches(from_file: str, record):
+    """Patches where OFFL is withdrawn for the window and RPRO serves it instead."""
+
+    def _paths(variable, *_args):
+        return [_RPRO_NETCDF_PATH] if variable is L2_CO_RPRO_VAR else []
+
+    return (
+        patch.object(
+            _query_mod, "get_full_variable_info", return_value={"OFFL-L2_CO": L2_CO_OFFL_VAR}
+        ),
+        patch.object(_query_mod, "get_equivalent_variables", return_value=[L2_CO_RPRO_VAR]),
+        patch.object(_query_mod, "_get_netcdf_file_paths", side_effect=_paths),
+        patch.object(_query_mod, from_file, return_value=record),
+    )
+
+
+def test_query_point_serves_a_withdrawn_stream_from_its_equivalent():
+    """Data is returned for a window whose requested stream the catalogue dropped."""
+    mock_record = {
+        "variable_name": "RPRO-L2_CO",
+        "date": "2022-06-07",
+        "latitude": _PIXEL_LAT,
+        "longitude": _PIXEL_LON,
+        "value": 0.031,
+    }
+    patches = _substituted_stream_patches("_query_point_from_file", mock_record)
+    with patches[0], patches[1], patches[2], patches[3]:
+        results, unavailable, substituted = query_point(
+            latitude=_QUERY_LAT,
+            longitude=_QUERY_LON,
+            start_date="2022-06-01",
+            end_date="2022-06-07",
+            variables=["OFFL-L2_CO"],
+        )
+
+    assert len(results) == 1
+    assert unavailable == []
+    # values are reported under the name of the stream that served them
+    record = results[0]["records"][0]
+    assert record["RPRO-L2_CO"] == pytest.approx(0.031)
+    assert "OFFL-L2_CO" not in record
+    assert substituted == {"OFFL-L2_CO": "RPRO-L2_CO"}
+
+
+def test_query_point_reports_no_substitution_for_a_listed_stream():
+    """No substitution is declared when the requested stream serves the window."""
+    mock_record = {
+        "variable_name": "OFFL-L2_O3",
+        "date": "2024-01-03",
+        "latitude": _PIXEL_LAT,
+        "longitude": _PIXEL_LON,
+        "value": 0.42,
+    }
+    with (
+        patch.object(_query_mod, "get_full_variable_info", return_value={"OFFL-L2_O3": L2_O3_VAR}),
+        patch.object(_query_mod, "_get_netcdf_file_paths", return_value=[_NETCDF_PATH]),
+        patch.object(_query_mod, "_query_point_from_file", return_value=mock_record),
+    ):
+        _results, _unavailable, substituted = query_point(
+            latitude=_QUERY_LAT,
+            longitude=_QUERY_LON,
+            start_date="2024-01-03",
+            end_date="2024-01-05",
+            variables=["OFFL-L2_O3"],
+        )
+
+    assert substituted == {}
+
+
+def test_query_bbox_serves_a_withdrawn_stream_from_its_equivalent():
+    """Bbox reads follow the same fallback and labelling as point reads."""
+    mock_records = [
+        {
+            "variable_name": "RPRO-L2_CO",
+            "date": "2022-06-07",
+            "latitude": float(_GRID_LATS[i, j]),
+            "longitude": float(_GRID_LONS[i, j]),
+            "value": float(_VALID_VALS[i, j]),
+        }
+        for i in range(2)
+        for j in range(2)
+    ]
+    patches = _substituted_stream_patches("_query_bbox_from_file", mock_records)
+    with patches[0], patches[1], patches[2], patches[3]:
+        results, unavailable, substituted = query_bbox(
+            min_lat=45.75,
+            max_lat=46.75,
+            min_lon=-120.0,
+            max_lon=-119.0,
+            start_date="2022-06-01",
+            end_date="2022-06-07",
+            variables=["OFFL-L2_CO"],
+        )
+
+    assert len(results) == 4
+    assert unavailable == []
+    assert substituted == {"OFFL-L2_CO": "RPRO-L2_CO"}
+    all_values = [
+        record["RPRO-L2_CO"]
+        for geo in results
+        for record in geo["records"]
+        if "RPRO-L2_CO" in record
+    ]
+    assert sorted(all_values) == pytest.approx(sorted(_VALID_VALS.ravel()))
+    assert not any("OFFL-L2_CO" in record for geo in results for record in geo["records"])

@@ -92,6 +92,10 @@ def tropomi_point_query(
     * __end_date__: Inclusive end date, ISO 8601 date string, e.g., "2019-08-15".
     * __variables__: TROPOMI variable names. Use the ``tropomi_available_variables()`` tool to get
           a list of valid variable names. Defaults to a set of commonly used variables.
+          A variable whose processing stream the catalogue no longer lists for the
+          requested dates is served from an equivalent stream measuring the same
+          quantity; records are keyed by the serving stream's name and
+          ``_meta.substituted_variables`` reports any such swap.
     * __max_runtime_s__: Optional maximum runtime in seconds; if the query is estimated to
           exceed this, a warning is returned instead of data. If not provided, assumed to
           be 60s.
@@ -110,9 +114,6 @@ def tropomi_point_query(
         point = PointInput(latitude=latitude, longitude=longitude)
         date_range = DateRange(start_date=start_date, end_date=end_date)
 
-        full_var_info = get_variable_info()
-        var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
-
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
@@ -124,13 +125,17 @@ def tropomi_point_query(
             scale_factor=len(variables),
         ):
             return _validate_grouped_geometry_response(warn)
-        data, unavailable = query_point(
+        data, unavailable, substituted = query_point(
             point.latitude,
             point.longitude,
             date_range.start_date,
             date_range.end_date,
             variables,
         )
+        full_var_info = get_variable_info()
+        var_info = {
+            k: full_var_info[k] for k in (*variables, *substituted.values()) if k in full_var_info
+        }
         latency = time.perf_counter() - t0
         return _validate_grouped_geometry_response(
             {
@@ -145,6 +150,7 @@ def tropomi_point_query(
                     variables=variables,
                     variable_info=var_info,
                     unavailable_variables=unavailable,
+                    substituted_variables=substituted,
                 ),
             }
         )
@@ -196,6 +202,10 @@ def tropomi_bbox_query(
     * __end_date__: Inclusive end date, ISO 8601 date string, e.g., "2019-08-15".
     * __variables__: TROPOMI variable names. Use the ``tropomi_available_variables()`` tool to get
           a list of valid variable names. Defaults to a set of commonly used variables.
+          A variable whose processing stream the catalogue no longer lists for the
+          requested dates is served from an equivalent stream measuring the same
+          quantity; records are keyed by the serving stream's name and
+          ``_meta.substituted_variables`` reports any such swap.
     * __max_runtime_s__: Optional maximum runtime in seconds; if the query is estimated to
           exceed this, a warning is returned instead of data. If not provided, assumed to
           be 60s.
@@ -216,9 +226,6 @@ def tropomi_bbox_query(
         bbox = BboxInput(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
         date_range = DateRange(start_date=start_date, end_date=end_date)
 
-        full_var_info = get_variable_info()
-        var_info = {k: full_var_info[k] for k in variables if k in full_var_info}
-
         _sd = parse_date(start_date)
         _ed = parse_date(end_date)
         n_days = (_ed - _sd).days + 1
@@ -230,7 +237,7 @@ def tropomi_bbox_query(
             scale_factor=len(variables),
         ):
             return _validate_grouped_geometry_response(warn)
-        data, unavailable = query_bbox(
+        data, unavailable, substituted = query_bbox(
             bbox.min_lat,
             bbox.max_lat,
             bbox.min_lon,
@@ -239,6 +246,10 @@ def tropomi_bbox_query(
             date_range.end_date,
             variables,
         )
+        full_var_info = get_variable_info()
+        var_info = {
+            k: full_var_info[k] for k in (*variables, *substituted.values()) if k in full_var_info
+        }
         latency = time.perf_counter() - t0
         return _validate_grouped_geometry_response(
             {
@@ -253,6 +264,7 @@ def tropomi_bbox_query(
                     variables=variables,
                     variable_info=var_info,
                     unavailable_variables=unavailable,
+                    substituted_variables=substituted,
                 ),
             }
         )

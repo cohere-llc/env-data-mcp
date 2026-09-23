@@ -332,6 +332,7 @@ def build_meta(
     variables: list[str] | None = None,
     variable_info: dict[str, Any] | None = None,
     unavailable_variables: list[str] | None = None,
+    substituted_variables: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Construct the standard _meta dict returned by every tool.
 
@@ -353,12 +354,16 @@ def build_meta(
         variable_info: Dict mapping each variable name to its metadata
             (description, units, valid_range). Populated from the source
             module's VARIABLE_INFO constant, filtered to requested variables.
+        substituted_variables: Mapping of requested variable to the one
+            actually served, when a source answered with an equivalent
+            product. Empty when every value came from what was asked for.
     """
     return {
         "source": source,
         "variables": variables if variables is not None else [],
         "variable_info": variable_info if variable_info is not None else {},
         "unavailable_variables": unavailable_variables if unavailable_variables is not None else [],
+        "substituted_variables": substituted_variables if substituted_variables is not None else {},
         "geometries_returned": geometries_returned,
         "total_records_returned": total_records_returned,
         "latency_s": round(latency_s, 6),

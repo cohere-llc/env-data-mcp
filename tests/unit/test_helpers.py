@@ -263,6 +263,22 @@ class TestBuildMeta:
         meta = build_meta("s", {}, 2, 3, 0.5, _LICENSE)
         assert meta["variables"] == []
 
+    def test_substituted_variables_defaults_to_empty(self) -> None:
+        meta = build_meta("s", {}, 2, 3, 0.5, _LICENSE)
+        assert meta["substituted_variables"] == {}
+
+    def test_substituted_variables_are_echoed(self) -> None:
+        meta = build_meta(
+            "s",
+            {},
+            2,
+            3,
+            0.5,
+            _LICENSE,
+            substituted_variables={"OFFL-L2_CO": "RPRO-L2_CO"},
+        )
+        assert meta["substituted_variables"] == {"OFFL-L2_CO": "RPRO-L2_CO"}
+
     def test_empty_license_info(self) -> None:
         meta = build_meta("s", {}, 2, 0, 0.0, {})
         assert meta["license"] == ""
@@ -283,6 +299,7 @@ class TestBuildMeta:
             "license",
             "license_url",
             "query_params",
+            "substituted_variables",
         }
         assert required_keys.issubset(meta.keys())
 

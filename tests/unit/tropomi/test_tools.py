@@ -43,6 +43,8 @@ _EXPECTED_VARIABLES: dict[str, dict[str, str]] = {
 _MOCK_VAR_INFO: dict[str, dict[str, str]] = {
     "OFFL-L2_O3": {"description": "Offline processed: Ozone", "units": "DU"},
     "OFFL-L2_NO2": {"description": "Offline processed: Nitrogen Dioxide", "units": "mol m-2"},
+    "OFFL-L2_CO": {"description": "Offline processed: Carbon Monoxide", "units": "mol m-2"},
+    "RPRO-L2_CO": {"description": "Reprocessed: Carbon Monoxide", "units": "mol m-2"},
 }
 
 _MOCK_GEO_POINT = {
@@ -112,7 +114,7 @@ def get_mock_http_error():
 
 
 @contextmanager
-def _mock_point_query(data=_MOCK_POINT_RESULT, unavailable=None):
+def _mock_point_query(data=_MOCK_POINT_RESULT, unavailable=None, substituted=None):
     """Patch get_variable_info and query_point for tropomi_point_query tests."""
     with (
         patch(
@@ -121,14 +123,14 @@ def _mock_point_query(data=_MOCK_POINT_RESULT, unavailable=None):
         ),
         patch(
             "env_data_mcp.sources.tropomi.tools.query_point",
-            return_value=(data, unavailable or []),
+            return_value=(data, unavailable or [], substituted or {}),
         ),
     ):
         yield
 
 
 @contextmanager
-def _mock_bbox_query(data=_MOCK_BBOX_RESULT, unavailable=None):
+def _mock_bbox_query(data=_MOCK_BBOX_RESULT, unavailable=None, substituted=None):
     """Patch get_variable_info and query_bbox for tropomi_bbox_query tests."""
     with (
         patch(
@@ -137,7 +139,7 @@ def _mock_bbox_query(data=_MOCK_BBOX_RESULT, unavailable=None):
         ),
         patch(
             "env_data_mcp.sources.tropomi.tools.query_bbox",
-            return_value=(data, unavailable or []),
+            return_value=(data, unavailable or [], substituted or {}),
         ),
     ):
         yield
@@ -270,6 +272,44 @@ class TestTropomiQuery:
                 variables=["OFFL-L2_NO2"],
             )
         assert "OFFL-L2_NO2" in result["_meta"]["unavailable_variables"]
+
+    def test_substituted_variables_in_meta(self):
+        """Tests that a stream substitution from query_point appears in meta."""
+        with _mock_point_query(substituted={"OFFL-L2_CO": "RPRO-L2_CO"}):
+            result = tropomi_point_query(
+                latitude=33.84,
+                longitude=-116.49,
+                start_date="2024-01-03",
+                end_date="2024-01-05",
+                variables=["OFFL-L2_CO"],
+            )
+        assert result["_meta"]["substituted_variables"] == {"OFFL-L2_CO": "RPRO-L2_CO"}
+
+    def test_substituted_variable_info_in_meta(self):
+        """Tests the serving stream is described, since records are keyed by its name."""
+        with _mock_point_query(substituted={"OFFL-L2_CO": "RPRO-L2_CO"}):
+            result = tropomi_point_query(
+                latitude=33.84,
+                longitude=-116.49,
+                start_date="2024-01-03",
+                end_date="2024-01-05",
+                variables=["OFFL-L2_CO"],
+            )
+        variable_info = result["_meta"]["variable_info"]
+        assert variable_info["RPRO-L2_CO"]["units"] == "mol m-2"
+        assert "OFFL-L2_CO" in variable_info
+
+    def test_substituted_variables_present_when_none_substituted(self):
+        """Tests the key is always emitted, so the meta schema never varies."""
+        with _mock_point_query():
+            result = tropomi_point_query(
+                latitude=33.84,
+                longitude=-116.49,
+                start_date="2024-01-03",
+                end_date="2024-01-05",
+                variables=["OFFL-L2_CO"],
+            )
+        assert result["_meta"]["substituted_variables"] == {}
 
     def test_slow_query_warning(self):
         """Tests that a slow-query warning from check_runtime is passed through."""
@@ -439,6 +479,50 @@ class TestTropomiBboxQuery:
                 variables=["OFFL-L2_NO2"],
             )
         assert "OFFL-L2_NO2" in result["_meta"]["unavailable_variables"]
+
+    def test_substituted_variables_in_meta(self):
+        """Tests that a stream substitution from query_bbox appears in meta."""
+        with _mock_bbox_query(substituted={"OFFL-L2_CO": "RPRO-L2_CO"}):
+            result = tropomi_bbox_query(
+                min_lat=33.5,
+                max_lat=34.5,
+                min_lon=-117.0,
+                max_lon=-116.0,
+                start_date="2024-01-03",
+                end_date="2024-01-05",
+                variables=["OFFL-L2_CO"],
+            )
+        assert result["_meta"]["substituted_variables"] == {"OFFL-L2_CO": "RPRO-L2_CO"}
+
+    def test_substituted_variable_info_in_meta(self):
+        """Tests the serving stream is described, since records are keyed by its name."""
+        with _mock_bbox_query(substituted={"OFFL-L2_CO": "RPRO-L2_CO"}):
+            result = tropomi_bbox_query(
+                min_lat=33.5,
+                max_lat=34.5,
+                min_lon=-117.0,
+                max_lon=-116.0,
+                start_date="2024-01-03",
+                end_date="2024-01-05",
+                variables=["OFFL-L2_CO"],
+            )
+        variable_info = result["_meta"]["variable_info"]
+        assert variable_info["RPRO-L2_CO"]["units"] == "mol m-2"
+        assert "OFFL-L2_CO" in variable_info
+
+    def test_substituted_variables_present_when_none_substituted(self):
+        """Tests the key is always emitted, so the meta schema never varies."""
+        with _mock_bbox_query():
+            result = tropomi_bbox_query(
+                min_lat=33.5,
+                max_lat=34.5,
+                min_lon=-117.0,
+                max_lon=-116.0,
+                start_date="2024-01-03",
+                end_date="2024-01-05",
+                variables=["OFFL-L2_CO"],
+            )
+        assert result["_meta"]["substituted_variables"] == {}
 
     def test_slow_query_warning(self):
         """Tests that a slow-query warning from check_runtime is passed through."""

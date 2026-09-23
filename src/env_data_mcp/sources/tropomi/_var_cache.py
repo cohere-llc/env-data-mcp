@@ -49,6 +49,16 @@ class VariableInfo:
 # _get_full_variable_info call from the on-disk JSON.
 _VARIABLE_INFO_CACHE: dict[str, VariableInfo] = {}
 
+# Processing streams in the order an equivalent variable is preferred: RPRO is
+# the reprocessed archive (most refined calibration), OFFL the routine offline
+# stream, and NRTI the near-real-time one (published within hours, least
+# refined).
+_STREAM_PREFERENCE: tuple[ProductType, ...] = (
+    ProductType.RPRO,
+    ProductType.OFFL,
+    ProductType.NRTI,
+)
+
 
 # ---------------------------------------------------------------------------
 # Serialization
@@ -188,6 +198,26 @@ def get_variable_info() -> dict[str, dict[str, str]]:
         key: {"description": val.description, "units": val.units}
         for key, val in get_full_variable_info().items()
     }
+
+
+def get_equivalent_variables(variable: VariableInfo) -> list[VariableInfo]:
+    """Return the same measurement from other processing streams, best first.
+
+    Two entries are equivalent only when the product folder, the COGT variable
+    name and the units all match, so a caller substituting one for the other
+    never swaps in a different quantity: ``NRTI-L2_NO2`` is a tropospheric
+    column while ``OFFL-L2_NO2`` is a summed total column, and the differing
+    ``cogt_name`` keeps the two apart.
+    """
+    equivalents = [
+        info
+        for info in get_full_variable_info().values()
+        if info.product_type != variable.product_type
+        and info.underscored_name == variable.underscored_name
+        and info.cogt_name == variable.cogt_name
+        and info.units == variable.units
+    ]
+    return sorted(equivalents, key=lambda info: _STREAM_PREFERENCE.index(info.product_type))
 
 
 # ---------------------------------------------------------------------------
