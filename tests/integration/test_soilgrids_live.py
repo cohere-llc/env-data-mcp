@@ -192,9 +192,13 @@ def yakima_point_result(dc: _DatasetCase) -> dict[str, Any]:
 @pytest.fixture(scope="module")
 def yakima_bbox_result(dc: _DatasetCase) -> dict[str, Any]:
     """Default-variable bbox query over the small Yakima study area; loaded once."""
+    if dc.spec.max_runtime_s is not None:
+        return soilgrids_bbox_query(
+            **_YAKIMA_BBOX_KWARGS,
+            max_runtime_s=dc.spec.max_runtime_s,
+        )
     return soilgrids_bbox_query(
         **_YAKIMA_BBOX_KWARGS,
-        max_runtime_s=dc.spec.max_runtime_s,
     )
 
 
@@ -270,12 +274,19 @@ class TestPointQuery:
 
     def test_too_small_radius_returns_no_data(self, dc: _DatasetCase) -> None:
         """A sub-pixel radius (< 250 m) returns no data records."""
-        result = soilgrids_point_query(
-            latitude=_YAKIMA_LAT,
-            longitude=_YAKIMA_LON,
-            radius_km=0.00001,
-            max_runtime_s=dc.spec.max_runtime_s,
-        )
+        if dc.spec.max_runtime_s is not None:
+            result = soilgrids_point_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                radius_km=0.00001,
+                max_runtime_s=dc.spec.max_runtime_s,
+            )
+        else:
+            result = soilgrids_point_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                radius_km=0.00001,
+            )
         assert_meta_success(result)
         assert len(result["data"]) == 0, (
             f"Expected no data for sub-pixel radius; got {len(result['data'])} records"
@@ -283,13 +294,21 @@ class TestPointQuery:
 
     def test_single_variable_query(self, dc: _DatasetCase) -> None:
         """Querying a single variable returns only that variable in each record."""
-        result = soilgrids_point_query(
-            latitude=_YAKIMA_LAT,
-            longitude=_YAKIMA_LON,
-            radius_km=0.5,
-            variables=["soc_0-5cm_mean"],
-            max_runtime_s=dc.spec.max_runtime_s,
-        )
+        if dc.spec.max_runtime_s is not None:
+            result = soilgrids_point_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                radius_km=0.5,
+                variables=["soc_0-5cm_mean"],
+                max_runtime_s=dc.spec.max_runtime_s,
+            )
+        else:
+            result = soilgrids_point_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                radius_km=0.5,
+                variables=["soc_0-5cm_mean"],
+            )
         assert_meta_success(result)
         assert len(result["data"]) > 0
         for group in result["data"]:
@@ -300,13 +319,21 @@ class TestPointQuery:
     def test_non_standard_quantile_and_depth_variables(self, dc: _DatasetCase) -> None:
         """Non-default quantile (Q0.95) and uncertainty variables are queryable."""
         vars_ = ["soc_0-5cm_Q0.95", "silt_0-5cm_uncertainty"]
-        result = soilgrids_point_query(
-            latitude=_YAKIMA_LAT,
-            longitude=_YAKIMA_LON,
-            radius_km=0.5,
-            variables=vars_,
-            max_runtime_s=dc.spec.max_runtime_s,
-        )
+        if dc.spec.max_runtime_s is not None:
+            result = soilgrids_point_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                radius_km=0.5,
+                variables=vars_,
+                max_runtime_s=dc.spec.max_runtime_s,
+            )
+        else:
+            result = soilgrids_point_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                radius_km=0.5,
+                variables=vars_,
+            )
         assert_meta_success(result)
         assert len(result["data"]) > 0
         for group in result["data"]:
@@ -315,13 +342,21 @@ class TestPointQuery:
 
     def test_partial_unavailable_variables_returns_available_subset(self, dc: _DatasetCase) -> None:
         """When only some requested variables exist, available ones are returned."""
-        result = soilgrids_point_query(
-            latitude=_YAKIMA_LAT,
-            longitude=_YAKIMA_LON,
-            radius_km=0.5,
-            variables=["soc_15-30cm_Q0.5", "foo_does_not_exist"],
-            max_runtime_s=dc.spec.max_runtime_s,
-        )
+        if dc.spec.max_runtime_s is not None:
+            result = soilgrids_point_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                radius_km=0.5,
+                variables=["soc_15-30cm_Q0.5", "foo_does_not_exist"],
+                max_runtime_s=dc.spec.max_runtime_s,
+            )
+        else:
+            result = soilgrids_point_query(
+                latitude=_YAKIMA_LAT,
+                longitude=_YAKIMA_LON,
+                radius_km=0.5,
+                variables=["soc_15-30cm_Q0.5", "foo_does_not_exist"],
+            )
         assert_meta_success(result)
         assert len(result["data"]) > 0
         assert "foo_does_not_exist" in result["_meta"]["unavailable_variables"]
@@ -391,13 +426,21 @@ class TestBboxQuery:
 
     def test_too_small_bbox_returns_no_data(self, dc: _DatasetCase) -> None:
         """A sub-pixel bbox (< 250 m side) returns no data records."""
-        result = soilgrids_bbox_query(
-            min_lat=_YAKIMA_BBOX_KWARGS["min_lat"],
-            max_lat=_YAKIMA_BBOX_KWARGS["min_lat"] + 0.000001,
-            min_lon=_YAKIMA_BBOX_KWARGS["min_lon"],
-            max_lon=_YAKIMA_BBOX_KWARGS["min_lon"] + 0.000001,
-            max_runtime_s=dc.spec.max_runtime_s,
-        )
+        if dc.spec.max_runtime_s is not None:
+            result = soilgrids_bbox_query(
+                min_lat=_YAKIMA_BBOX_KWARGS["min_lat"],
+                max_lat=_YAKIMA_BBOX_KWARGS["min_lat"] + 0.000001,
+                min_lon=_YAKIMA_BBOX_KWARGS["min_lon"],
+                max_lon=_YAKIMA_BBOX_KWARGS["min_lon"] + 0.000001,
+                max_runtime_s=dc.spec.max_runtime_s,
+            )
+        else:
+            result = soilgrids_bbox_query(
+                min_lat=_YAKIMA_BBOX_KWARGS["min_lat"],
+                max_lat=_YAKIMA_BBOX_KWARGS["min_lat"] + 0.000001,
+                min_lon=_YAKIMA_BBOX_KWARGS["min_lon"],
+                max_lon=_YAKIMA_BBOX_KWARGS["min_lon"] + 0.000001,
+            )
         assert_meta_success(result)
         assert len(result["data"]) == 0, (
             f"Expected no data for sub-pixel bbox; got {len(result['data'])} records"

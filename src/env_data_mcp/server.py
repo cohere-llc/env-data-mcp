@@ -8,12 +8,12 @@ Source modules are imported below.
 import argparse
 
 try:  # mcp 1.x
-    from mcp.server.fastmcp import FastMCP
+    from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
 except ImportError:
     # mcp 2.x renamed FastMCP -> MCPServer (same tool() decorator and run()); see
     # https://py.sdk.modelcontextprotocol.io/v2/migration/#fastmcp-renamed-to-mcpserver
     # A consumer whose resolver picks mcp 2.x (pipx, a fresh venv) must still import the tools.
-    from mcp.server.mcpserver import MCPServer as FastMCP
+    from mcp.server.mcpserver import MCPServer as FastMCP  # pyright: ignore[reportMissingImports]
 
 mcp = FastMCP(
     "env-data-mcp",

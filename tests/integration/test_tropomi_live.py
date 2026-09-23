@@ -123,18 +123,35 @@ def avail_result() -> dict[str, Any]:
 @pytest.fixture(scope="module")
 def nh_rural_result() -> dict[str, Any]:
     """Point query at NH_RURAL over the standard date window."""
+    if TROPOMI_SPEC.max_runtime_s is not None:
+        return tropomi_point_query(
+            latitude=NH_RURAL.coordinates.latitude,
+            longitude=NH_RURAL.coordinates.longitude,
+            start_date=NH_RURAL.start_date,
+            end_date=NH_RURAL.end_date,
+            max_runtime_s=TROPOMI_SPEC.max_runtime_s,
+        )
     return tropomi_point_query(
         latitude=NH_RURAL.coordinates.latitude,
         longitude=NH_RURAL.coordinates.longitude,
         start_date=NH_RURAL.start_date,
         end_date=NH_RURAL.end_date,
-        max_runtime_s=TROPOMI_SPEC.max_runtime_s,
     )
 
 
 @pytest.fixture(scope="module")
 def nh_midlat_bbox_result() -> dict[str, Any]:
     """Bbox query over the 1×1-degree NH_MIDLAT small bbox."""
+    if TROPOMI_SPEC.max_runtime_s is not None:
+        return tropomi_bbox_query(
+            min_lat=NH_MIDLAT_SMALL_BBOX.coordinates.min_lat,
+            max_lat=NH_MIDLAT_SMALL_BBOX.coordinates.max_lat,
+            min_lon=NH_MIDLAT_SMALL_BBOX.coordinates.min_lon,
+            max_lon=NH_MIDLAT_SMALL_BBOX.coordinates.max_lon,
+            start_date=NH_MIDLAT_SMALL_BBOX.start_date,
+            end_date=NH_MIDLAT_SMALL_BBOX.end_date,
+            max_runtime_s=TROPOMI_SPEC.max_runtime_s,
+        )
     return tropomi_bbox_query(
         min_lat=NH_MIDLAT_SMALL_BBOX.coordinates.min_lat,
         max_lat=NH_MIDLAT_SMALL_BBOX.coordinates.max_lat,
@@ -142,7 +159,6 @@ def nh_midlat_bbox_result() -> dict[str, Any]:
         max_lon=NH_MIDLAT_SMALL_BBOX.coordinates.max_lon,
         start_date=NH_MIDLAT_SMALL_BBOX.start_date,
         end_date=NH_MIDLAT_SMALL_BBOX.end_date,
-        max_runtime_s=TROPOMI_SPEC.max_runtime_s,
     )
 
 

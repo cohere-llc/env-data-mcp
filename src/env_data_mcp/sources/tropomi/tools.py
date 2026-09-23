@@ -77,7 +77,7 @@ def tropomi_point_query(
     start_date: str,
     end_date: str,
     variables: frozenset[str] | list[str] = DEFAULT_VARIABLES,
-    max_runtime_s: float | None = 60,
+    max_runtime_s: float = 60,
 ) -> dict[str, Any]:
     """Query Sentinel5-TROPOMI data for a point location.
 
@@ -179,7 +179,7 @@ def tropomi_bbox_query(
     start_date: str,
     end_date: str,
     variables: frozenset[str] | list[str] = DEFAULT_VARIABLES,
-    max_runtime_s: float | None = 60.0,
+    max_runtime_s: float = 60.0,
 ) -> dict[str, Any]:
     """Query Sentinel5-TROPOMI data within a bounding box.
 

@@ -71,7 +71,7 @@ def soilgrids_point_query(
     longitude: float,
     radius_km: float,
     variables: frozenset[str] | list[str] = DEFAULT_VARIABLES,
-    max_runtime_s: float | None = 60.0,
+    max_runtime_s: float = 60.0,
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a point location.
 
@@ -174,7 +174,7 @@ def soilgrids_bbox_query(
     min_lon: float,
     max_lon: float,
     variables: frozenset[str] | list[str] = DEFAULT_VARIABLES,
-    max_runtime_s: float | None = 60.0,
+    max_runtime_s: float = 60.0,
 ) -> dict[str, Any]:
     """Query SoilGrids soil properties for a bounding box region.
 
