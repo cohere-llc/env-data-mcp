@@ -30,7 +30,7 @@ import pytest
 
 from env_data_mcp.helpers import point_to_bbox
 from env_data_mcp.sources.emit import emit_bbox_query, emit_query
-from env_data_mcp.sources.essdive import essdive_bbox_query, essdive_query
+from env_data_mcp.sources.essdive import essdive_bbox_query, essdive_point_query
 from env_data_mcp.sources.gbif import gbif_occurrence_bbox_query, gbif_occurrence_point_query
 from env_data_mcp.sources.nasa_power import (
     nasa_power_merra2_bbox_query,
@@ -927,7 +927,7 @@ def test_openaq_point_bbox_consistent(_openaq_key):
 
 
 # ===========================================================================
-# ESS-DIVE — requires ESSDIVE_TOKEN
+# ESS-DIVE — optionally accepts ESSDIVE_TOKEN
 # ===========================================================================
 
 
@@ -937,11 +937,10 @@ def test_openaq_point_bbox_consistent(_openaq_key):
 def test_essdive_timing(sc, _essdive_token):
     # ESS-DIVE is a dataset catalog — temporal filtering by observation window
     # is not meaningful and tends to return zero results.  Omit date filter.
-    result = essdive_query(
+    result = essdive_point_query(
         latitude=_LAT,
         longitude=_LON,
         radius_km=50.0,
-        limit=10,
     )
     _assert_or_skip(result, "essdive")
     _record("essdive", sc["name"], sc["n_days"], result)
@@ -955,7 +954,6 @@ def test_essdive_timing(sc, _essdive_token):
 def test_essdive_bbox_timing(sc, bz, _essdive_token):
     result = essdive_bbox_query(
         **_make_bbox(_LAT, _LON, bz["half"]),
-        limit=10,
     )
     _assert_or_skip(result, "essdive/bbox")
     _record(
@@ -972,11 +970,10 @@ def test_essdive_bbox_timing(sc, bz, _essdive_token):
 @pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
 def test_essdive_extra_location_timing(loc, _essdive_token):
-    result = essdive_query(
+    result = essdive_point_query(
         latitude=loc["lat"],
         longitude=loc["lon"],
         radius_km=50.0,
-        limit=10,
     )
     _assert_or_skip(result, f"essdive/{loc['name']}")
     _record("essdive", "1month", 31, result, location=loc["name"])
@@ -987,19 +984,17 @@ def test_essdive_extra_location_timing(loc, _essdive_token):
 @pytest.mark.benchmark
 def test_essdive_point_bbox_consistent(_essdive_token):
     """ESS-DIVE: count-only consistency (no per-record lat/lon in results)."""
-    pt = essdive_query(
+    pt = essdive_point_query(
         latitude=_LAT,
         longitude=_LON,
         radius_km=50.0,
         start_date="2019-08-01",
         end_date="2019-08-31",
-        limit=10,
     )
     bx = essdive_bbox_query(
         **_BBOX,
         start_date="2019-08-01",
         end_date="2019-08-31",
-        limit=10,
     )
     _assert_or_skip(pt, "essdive/point")
     _assert_or_skip(bx, "essdive/bbox")

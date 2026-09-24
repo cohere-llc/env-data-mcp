@@ -153,6 +153,7 @@ def dc(request) -> _DatasetCase:
 @pytest.fixture(scope="module")
 def avail_vars(dc: _DatasetCase) -> dict:
     """Available variables; loaded once per module run."""
+    assert dc.spec.available_variables
     return dc.spec.available_variables()
 
 
@@ -258,6 +259,7 @@ class TestPointQuery:
     def test_default_vars_present_in_rows(self, dc: _DatasetCase, wide_point_result: dict) -> None:
         """At least one default variable appears in the first occurrence record."""
         row = wide_point_result["data"][0]["records"][0]
+        assert dc.spec.default_variables
         found = [v for v in dc.spec.default_variables if v in row]
         assert len(found) > 0, f"{dc.spec.name}: no default variables found in output row"
 
@@ -371,6 +373,7 @@ class TestAvailableVariablesRoundtrip:
         assert avail_vars["_meta"]["success"] is True, (
             f"{dc.spec.name}: avail_fn() failed: {avail_vars['_meta'].get('error')}"
         )
+        assert dc.spec.default_variables
         default_set = set(dc.spec.default_variables)
         non_default = [v for v in avail_vars["data"] if v not in default_set][:3]
         if not non_default:
@@ -397,6 +400,7 @@ class TestAvailableVariablesRoundtrip:
         assert avail_vars["_meta"]["success"] is True, (
             f"{dc.spec.name}: avail_fn() failed: {avail_vars['_meta'].get('error')}"
         )
+        assert dc.spec.default_variables
         default_set = set(dc.spec.default_variables)
         non_default = [v for v in avail_vars["data"] if v not in default_set][:3]
         if not non_default:

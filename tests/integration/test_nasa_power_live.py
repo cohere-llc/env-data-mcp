@@ -148,6 +148,7 @@ def dc(request) -> _DatasetCase:
 @pytest.fixture(scope="module")
 def avail_vars(dc: _DatasetCase) -> dict:
     """Available variables; loaded once per module run."""
+    assert dc.spec.available_variables
     return dc.spec.available_variables()
 
 
@@ -233,6 +234,7 @@ class TestPointQuery:
         assert qp["start_date"] == NH_RURAL.start_date
         assert qp["end_date"] == NH_RURAL.end_date
         assert qp["temporal_resolution"] == TemporalResolution.DAILY.value
+        assert dc.spec.default_variables
         assert qp["variables"] == list(dc.spec.default_variables)
         assert qp["max_runtime_s"] == dc.spec.max_runtime_s
 
@@ -247,6 +249,7 @@ class TestPointQuery:
         assert var_info[dc.spec.primary_variable]["description"], (
             f"{dc.spec.primary_variable} missing non-empty description"
         )
+        assert dc.spec.default_variables
         for var in dc.spec.default_variables:
             assert var in var_info, f"{dc.spec.name}: {var} not in variable_info"
             assert var_info[var]["units"], f"{var} missing non-empty units"
@@ -254,6 +257,7 @@ class TestPointQuery:
 
     def test_default_variables_in_records(self, dc: _DatasetCase, nh_rural_daily: dict) -> None:
         record = nh_rural_daily["data"][0]["records"][0]
+        assert dc.spec.default_variables
         for v in dc.spec.default_variables:
             assert v in record, f"{dc.spec.name}: default variable {v} not found in output record"
 
@@ -309,6 +313,7 @@ class TestBboxQuery:
         assert qp["start_date"] == NH_MIDLAT_BBOX.start_date
         assert qp["end_date"] == NH_MIDLAT_BBOX.end_date
         assert qp["temporal_resolution"] == TemporalResolution.DAILY.value
+        assert dc.spec.default_variables
         assert qp["variables"] == list(dc.spec.default_variables)
         assert qp["max_runtime_s"] == dc.spec.max_runtime_s
 
@@ -325,6 +330,7 @@ class TestBboxQuery:
         assert var_info[dc.spec.primary_variable]["description"], (
             f"{dc.spec.primary_variable} missing non-empty description"
         )
+        assert dc.spec.default_variables
         for var in dc.spec.default_variables:
             assert var in var_info, f"{dc.spec.name}: {var} not in variable_info"
             assert var_info[var]["units"], f"{var} missing non-empty units"
@@ -334,6 +340,7 @@ class TestBboxQuery:
         self, dc: _DatasetCase, nh_midlat_bbox_daily: dict
     ) -> None:
         record = nh_midlat_bbox_daily["data"][0]["records"][0]
+        assert dc.spec.default_variables
         for v in dc.spec.default_variables:
             assert v in record, f"{dc.spec.name}: default variable {v} not found in output record"
 

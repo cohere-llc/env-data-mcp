@@ -175,6 +175,7 @@ def dc(request) -> _DatasetCase:
 @pytest.fixture(scope="module")
 def avail_vars(dc: _DatasetCase) -> dict[str, Any]:
     """Available-variables result; loaded once per module run."""
+    assert dc.spec.available_variables
     return dc.spec.available_variables()
 
 
@@ -243,6 +244,7 @@ class TestPointQuery:
     def test_default_variables_in_records(
         self, dc: _DatasetCase, yakima_point_result: dict[str, Any]
     ) -> None:
+        assert dc.spec.default_variables
         for group in yakima_point_result["data"]:
             rec = group["records"][0]
             for var in dc.spec.default_variables:
@@ -381,6 +383,7 @@ class TestBboxQuery:
         self, dc: _DatasetCase, yakima_bbox_result: dict[str, Any]
     ) -> None:
         vi = yakima_bbox_result["_meta"]["variable_info"]
+        assert dc.spec.default_variables
         for var in dc.spec.default_variables:
             assert var in vi, f"{var!r} absent from variable_info"
             assert vi[var]["description"]
@@ -389,6 +392,7 @@ class TestBboxQuery:
     def test_default_variables_in_records(
         self, dc: _DatasetCase, yakima_bbox_result: dict[str, Any]
     ) -> None:
+        assert dc.spec.default_variables
         for group in yakima_bbox_result["data"]:
             rec = group["records"][0]
             for var in dc.spec.default_variables:

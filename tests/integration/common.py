@@ -24,6 +24,7 @@ __all__ = [
     "BboxCase",
     "DataExpectation",
     "LocationCase",
+    "MORE_TIME_END_DATE",
     "STANDARD_BBOXES",
     "STANDARD_END_DATE",
     "STANDARD_LOCATIONS",
@@ -47,6 +48,7 @@ __all__ = [
 # date range available is most datasets
 STANDARD_START_DATE = "2022-06-01"
 STANDARD_END_DATE = "2022-06-07"
+MORE_TIME_END_DATE = "2025-06-07"
 
 
 class Hemisphere(StrEnum):
@@ -133,6 +135,66 @@ STANDARD_LOCATIONS: list[LocationCase] = [
         hemisphere=Hemisphere.EQUATOR,
         environment=Environment.OCEAN,
         description="Mid-Atlantic Ocean (equatorial)",
+    ),
+]
+
+
+MORE_TIME_LOCATIONS: list[LocationCase] = [
+    LocationCase(
+        label="nh_rural",
+        coordinates=PointInput(latitude=46.2531882, longitude=-119.4768203),
+        hemisphere=Hemisphere.NORTH,
+        environment=Environment.RURAL,
+        description="Yakima River, WA",
+        end_date=MORE_TIME_END_DATE,
+    ),
+    LocationCase(
+        label="nh_urban",
+        coordinates=PointInput(latitude=40.7128, longitude=-74.0060),
+        hemisphere=Hemisphere.NORTH,
+        environment=Environment.URBAN,
+        description="New York City, NY",
+        end_date=MORE_TIME_END_DATE,
+    ),
+    LocationCase(
+        label="sh_rural",
+        coordinates=PointInput(latitude=-50.0, longitude=-70.0),
+        hemisphere=Hemisphere.SOUTH,
+        environment=Environment.RURAL,
+        description="Patagonia, Argentina",
+        end_date=MORE_TIME_END_DATE,
+    ),
+    LocationCase(
+        label="sh_urban",
+        coordinates=PointInput(latitude=-23.5505, longitude=-46.6333),
+        hemisphere=Hemisphere.SOUTH,
+        environment=Environment.URBAN,
+        description="Sao Paulo, Brazil",
+        end_date=MORE_TIME_END_DATE,
+    ),
+    LocationCase(
+        label="nh_polar",
+        coordinates=PointInput(latitude=78.0, longitude=16.0),
+        hemisphere=Hemisphere.NORTH,
+        environment=Environment.POLAR,
+        description="Svalbard, Norway",
+        end_date=MORE_TIME_END_DATE,
+    ),
+    LocationCase(
+        label="sh_polar",
+        coordinates=PointInput(latitude=-78.0, longitude=0.0),
+        hemisphere=Hemisphere.SOUTH,
+        environment=Environment.POLAR,
+        description="Antarctic coast, at meridian",
+        end_date=MORE_TIME_END_DATE,
+    ),
+    LocationCase(
+        label="ocean",
+        coordinates=PointInput(latitude=0.0, longitude=-30.0),
+        hemisphere=Hemisphere.EQUATOR,
+        environment=Environment.OCEAN,
+        description="Mid-Atlantic Ocean (equatorial)",
+        end_date=MORE_TIME_END_DATE,
     ),
 ]
 
@@ -238,6 +300,47 @@ SMALL_BBOXES: list[BboxCase] = [
     ),
 ]
 
+# longer date range for sparse temporal coverage (e.g., ESS-DIVE)
+MORE_TIME_BBOXES: list[BboxCase] = [
+    BboxCase(
+        label="nh_midlat",
+        coordinates=BboxInput(min_lat=44, max_lat=48, min_lon=-122, max_lon=-118),
+        split_lon=-120,
+        hemisphere=Hemisphere.NORTH,
+        environment=Environment.RURAL,
+        description="Yakima River, WA",
+        end_date=MORE_TIME_END_DATE,
+    ),
+    BboxCase(
+        label="sh_midlat",
+        coordinates=BboxInput(
+            min_lat=-52,
+            max_lat=-48,
+            min_lon=-72,
+            max_lon=-68,
+        ),
+        split_lon=-70,
+        hemisphere=Hemisphere.SOUTH,
+        environment=Environment.RURAL,
+        description="Patagonia, Argentia",
+        end_date=MORE_TIME_END_DATE,
+    ),
+    BboxCase(
+        label="equatorial",
+        coordinates=BboxInput(
+            min_lat=-2,
+            max_lat=2,
+            min_lon=-32,
+            max_lon=-28,
+        ),
+        split_lon=-30,
+        hemisphere=Hemisphere.EQUATOR,
+        environment=Environment.OCEAN,
+        description="Mid-Atlantic Ocean (equitorial)",
+        end_date=MORE_TIME_END_DATE,
+    ),
+]
+
 
 # ---------------------------------------------------------------------------
 # Module-level landmark references
@@ -273,7 +376,7 @@ class AdapterSpec:
     name: str
     """Unique identifier used as the pytest id, e.g., ``"nasa_power_merra2"``."""
 
-    available_variables: Callable[..., dict]
+    available_variables: Callable[..., dict] | None
     """Tool function returning an ``AvailableVariablesResponse``-compatible dict."""
 
     point_query: Callable[..., dict]
@@ -287,10 +390,10 @@ class AdapterSpec:
     supports_date_range: bool
     """True for adapters that accept ``start_date`` and ``end_date``."""
 
-    primary_variable: str
+    primary_variable: str | None
     """A single reliable variable that can be used in point and bbox queries."""
 
-    default_variables: frozenset[str] | list[str]
+    default_variables: frozenset[str] | list[str] | None
     """The list of default variables returned when none are explicitly requested."""
 
     max_runtime_s: float | None = None
@@ -326,6 +429,9 @@ class AdapterSpec:
     validate_bbox_result: Callable[[dict], None] | None = None
     """Optional adapter-specific hook called after common assertions on a bbox query
     result. Raise ``AssertionError`` to fail the test."""
+
+    longer_date_range: bool = False
+    """Set to True to extend the date range of queries to 3 years instead of 7 days."""
 
     def expects_data(self, location: LocationCase | BboxCase) -> bool:
         """Return whether this adapter is expected to return data for *location*."""

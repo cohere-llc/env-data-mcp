@@ -78,12 +78,13 @@ def launch_gui():
     print(f"[dashboard] {len(tools_list)} tools found")
 
     CATEGORIES = {
+        "ESS-DIVE": "essdive",
+        "GBIF": "gbif",
         "NASA POWER": "nasa_power",
+        "OpenAQ": "openaq",
+        "Sentinel-5 TROPOMI": "tropomi",
         "SoilGrids": "soilgrids",
         "USDA SSURGO": "ssurgo",
-        "GBIF": "gbif",
-        "Sentinel-5 TROPOMI": "tropomi",
-        "OpenAQ": "openaq",
     }
 
     subcategories = {

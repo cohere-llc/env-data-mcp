@@ -1,6 +1,7 @@
 """Full set of adapter specs for live integration tests."""
 
 from .common import AdapterSpec
+from .test_essdive_live import ESSDIVE_SPEC
 from .test_gbif_live import OCCURRENCE_SPEC as GBIF_OCCURRENCE_SPEC
 from .test_nasa_power_live import MERRA2_SPEC, SYN1DEG_SPEC
 from .test_openaq_live import OPENAQ_SPEC
@@ -22,4 +23,6 @@ ALL_ADAPTER_SPECS: list[AdapterSpec] = [
     *ALL_SSURGO_SPECS,
     # TROPOMI (Sentinel-5P atmospheric composition)
     TROPOMI_SPEC,
+    # ESS-DIVE
+    ESSDIVE_SPEC,
 ]

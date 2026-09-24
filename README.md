@@ -9,12 +9,12 @@ workflow.  Tools accept a location (point or bounding box) and a date range and 
 structured JSON with the data and a `_meta` block that includes the data license,
 citations, query latency, and enough information to reproduce the query.
 
-**Status:** 6 sources have been made fully functional (NASA POWER,
-SSURGO, SoilGrids, GBIF, TROPOMI, OpenAQ); 3 sources are still only prototyped (OCO-2, EMIT,
-and ESS-DIVE).  The **`feeds` family** (live events: EONET, USGS earthquakes, NASA FIRMS, NWS
+**Status:** 7 sources have been made fully functional (NASA POWER,
+SSURGO, SoilGrids, GBIF, TROPOMI, OpenAQ, ESS-DIVE); 2 sources are still only prototyped (OCO-2, EMIT).
+The **`feeds` family** (live events: EONET, USGS earthquakes, NASA FIRMS, NWS
 alerts, USGS Water Data, Open-Meteo) and six **point accessors** (Daymet, Macrostrat, 3DEP
 elevation, ARM, EIA, ERA5 via CDS) return the same `{data, _meta}` shape with a shared event
-schema, a per-source TTL and a quota governor — see "Feeds and point accessors" below.
+schema, a per-source TTL and a quota governor. See "Feeds and point accessors" below.
 
 ---
 
@@ -200,6 +200,8 @@ See [Credential setup](#environment-variables) for how to obtain each token.
 | `tropomi_bbox_query` | Sentinel-5P TROPOMI | none | Atmospheric composition over a bounding box |
 | `openaq_point_query` | OpenAQ v3 | API key (free) | Surface air quality measurements near a point |
 | `openaq_bbox_query` | OpenAQ v3 | API key (free) | Surface air quality measurements within a bounding box |
+| `essdive_point_query` | ESS-DIVE | ESS-DIVE token (free) | DOE environmental field datasets near a point |
+| `essdive_bbox_query` | ESS-DIVE | ESS-DIVE token (free) | DOE environmental field datasets within a bounding box |
 
 
 \* For SSURGO tools, replace the (`*`) with one of: `area_summary`, `ecological_site`, `parent_material`, `seasonal_hydrology`, `soil_profile`, `soil_suitability`, `soil_temperature`, or `subsurface_barriers`.
@@ -246,8 +248,6 @@ parameters, and not follow the standardized response schema.
 | `oco2_bbox_query` | OCO-2 GEOS L3 | NASA EarthData token | Daily XCO₂ column over a bounding box |
 | `emit_query` | NASA EMIT L2B | NASA EarthData token | Mineral identification at a point |
 | `emit_bbox_query` | NASA EMIT L2B | NASA EarthData token | Mineral identification over a bounding box |
-| `essdive_query` | ESS-DIVE | ESS-DIVE token (free) | DOE environmental field datasets near a point |
-| `essdive_bbox_query` | ESS-DIVE | ESS-DIVE token (free) | DOE environmental field datasets within a bounding box |
 
 ## Environment variables
 

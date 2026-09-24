@@ -8,6 +8,8 @@ import pytest
 
 from .adapter_specs import ALL_ADAPTER_SPECS
 from .common import (
+    MORE_TIME_BBOXES,
+    MORE_TIME_LOCATIONS,
     NH_MIDLAT_BBOX,
     NH_MIDLAT_SMALL_BBOX,
     NH_RURAL,
@@ -31,12 +33,29 @@ pytestmark = pytest.mark.integration
 # Pre-built label: small-bbox lookup for access inside tests.
 _SMALL_BBOXES_BY_LABEL: dict[str, BboxCase] = {b.label: b for b in SMALL_BBOXES}
 
+# Pre-built label: longer date range bbox lookup for access inside tests.
+_MORE_TIME_BBOXES_BY_LABEL: dict[str, BboxCase] = {b.label: b for b in MORE_TIME_BBOXES}
+
+# Pre-built label: longer date range location lookup for access inside tests.
+_MORE_TIME_LOCATIONS_BY_LABEL: dict[str, LocationCase] = {
+    loc.label: loc for loc in MORE_TIME_LOCATIONS
+}
+
 
 def _effective_bbox(spec: AdapterSpec, bbox: BboxCase) -> BboxCase:
     """Return the spec-appropriate version of *bbox*."""
-    if not spec.use_small_bboxes:
-        return bbox
-    return _SMALL_BBOXES_BY_LABEL.get(bbox.label, bbox)
+    if spec.use_small_bboxes:
+        return _SMALL_BBOXES_BY_LABEL.get(bbox.label, bbox)
+    if spec.longer_date_range:
+        return _MORE_TIME_BBOXES_BY_LABEL.get(bbox.label, bbox)
+    return bbox
+
+
+def _effective_location(spec: AdapterSpec, loc: LocationCase) -> LocationCase:
+    """Return the spec-approprate version of *loc*."""
+    if spec.longer_date_range:
+        return _MORE_TIME_LOCATIONS_BY_LABEL.get(loc.label, loc)
+    return loc
 
 
 # ---------------------------------------------------------------------------
@@ -152,8 +171,10 @@ def spec(request) -> AdapterSpec:
 
 
 @pytest.fixture(scope="module")
-def avail_result(spec: AdapterSpec) -> dict[str, Any]:
+def avail_result(spec: AdapterSpec) -> dict[str, Any] | None:
     """Available-variables query result; fetched once per module run."""
+    if not spec.available_variables:
+        return None
     return spec.available_variables()
 
 
@@ -172,13 +193,14 @@ def bbox_case(request) -> BboxCase:
 @pytest.fixture(scope="module")
 def nh_rural_result(spec: AdapterSpec) -> dict[str, Any]:
     """Cached point query at NH_RURAL with default parameters; used by meta/schema tests."""
-    return spec.point_query(**_location_case_kwargs(spec, NH_RURAL))
+    effective = _effective_location(spec, NH_RURAL)
+    return spec.point_query(**_location_case_kwargs(spec, effective))
 
 
 @pytest.fixture(scope="module")
 def nh_midlat_bbox_result(spec: AdapterSpec) -> dict[str, Any]:
     """Cached bbox query at NH_MIDLAT_BBOX with default parameters; used by bbox tests."""
-    bbox = NH_MIDLAT_SMALL_BBOX if spec.use_small_bboxes else NH_MIDLAT_BBOX
+    bbox = _effective_bbox(spec, NH_MIDLAT_BBOX)
     return spec.bbox_query(**_bbox_case_kwargs(spec, bbox))
 
 
@@ -189,6 +211,11 @@ def nh_midlat_bbox_result(spec: AdapterSpec) -> dict[str, Any]:
 
 class TestAvailableVariables:
     """``available_variables`` returns a valid schema and non-empty variables catalog."""
+
+    @pytest.fixture(autouse=True)
+    def _skip_if_no_available_variables(seld, spec: AdapterSpec) -> None:
+        if not spec.available_variables:
+            pytest.skip(f"{spec.name}: no available_variables function registered")
 
     def test_schema_and_meta(self, spec: AdapterSpec, avail_result: dict) -> None:
         assert_available_variables_valid(avail_result)
@@ -219,9 +246,10 @@ class TestPointQuery:
     """Point queries at all standard locations: metadata, schema, and adapter hooks."""
 
     def test_meta_at_location(self, spec: AdapterSpec, loc: LocationCase) -> None:
-        result = spec.point_query(**_location_case_kwargs(spec, loc))
+        effective = _effective_location(spec, loc)
+        result = spec.point_query(**_location_case_kwargs(spec, effective))
         assert_meta_success(result)
-        if spec.expects_data(loc):
+        if spec.expects_data(effective):
             assert result["_meta"]["geometries_returned"] > 0
             assert result["_meta"]["total_records_returned"] > 0
         else:
@@ -233,7 +261,8 @@ class TestPointQuery:
             pytest.skip(f"{spec.name}: no validate_point_result hook registered")
         if not spec.expects_data(loc):
             pytest.skip(f"{spec.name}: no data expected at {loc.label!r}; skipping hook")
-        result = spec.point_query(**_location_case_kwargs(spec, loc))
+        effective = _effective_location(spec, loc)
+        result = spec.point_query(**_location_case_kwargs(spec, effective))
         spec.validate_point_result(result)
 
     def test_full_response_schema_valid(self, spec: AdapterSpec, nh_rural_result: dict) -> None:
@@ -425,6 +454,8 @@ class TestNonDefaultVariable:
     """Requesting a non-default variable returns it in the output records."""
 
     def test_non_default_variable_returned(self, spec: AdapterSpec) -> None:
+        if not spec.available_variables:
+            pytest.skip(f"{spec.name}: no available_variables function registered")
         all_vars = spec.available_variables()["data"]
         extra = next((v for v in all_vars if v not in spec.default_variables), None)
         if extra is None:
@@ -453,6 +484,11 @@ class TestUnavailableVariable:
     """Requesting a non-existent variable does not error; it is reported in metadata."""
 
     _BOGUS = "DOES_NOT_EXIST_XYZ"
+
+    @pytest.fixture(autouse=True)
+    def _skip_if_no_available_variables(seld, spec: AdapterSpec) -> None:
+        if not spec.available_variables:
+            pytest.skip(f"{spec.name}: no available_variables function registered")
 
     def _unavail_result(self, spec: AdapterSpec) -> dict:
         return spec.point_query(**_location_case_kwargs(spec, NH_RURAL), variables=[self._BOGUS])
@@ -497,15 +533,20 @@ class TestMaxRuntimeGate:
     @pytest.mark.parametrize("query_mode", ["point", "bbox"])
     def test_generous_max_runtime_allows_query(self, spec: AdapterSpec, query_mode: str) -> None:
         if query_mode == "point":
-            if not spec.expects_data(NH_RURAL):
+            effective = _effective_location(spec, NH_RURAL)
+            if not spec.expects_data(effective):
                 pytest.skip(
                     f"{spec.name}: no data expected at nh_rural; skipping max runtime check"
                 )
             result = spec.point_query(
-                **_location_case_kwargs(spec, NH_RURAL, max_runtime_s_override=3600.0)
+                **_location_case_kwargs(spec, effective, max_runtime_s_override=3600.0)
             )
         else:
-            bbox = NH_MIDLAT_SMALL_BBOX if spec.use_small_bboxes else NH_MIDLAT_BBOX
+            bbox = _effective_bbox(spec, NH_MIDLAT_BBOX)
+            if not spec.expects_data(bbox):
+                pytest.skip(
+                    f"{spec.name}: no data expected at nh_midlat_bbox; skipping max runtime check"
+                )
             result = spec.bbox_query(**_bbox_case_kwargs(spec, bbox, max_runtime_s_override=3600.0))
         assert_meta_success(result)
         assert len(result["data"]) > 0, (
