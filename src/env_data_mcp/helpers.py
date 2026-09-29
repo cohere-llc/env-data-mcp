@@ -134,15 +134,6 @@ def estimate_runtime(source: str, n_days: int, area_deg2: float) -> float:
         # Temporal-only CMR search; 10 parallel workers, each batch ≈ 3 s.
         t_override = 2.84 + math.ceil(n_days / 10) * 3.0
         t_model = max(t_model, t_override)
-    elif source == "emit":
-        # ~1 granule per 3 days at any point location; spatially-filtered CMR
-        # returns proportionally more granules for larger bboxes (ISS orbit,
-        # ~2.5× more at max 10°×10°).  Each granule: 2 sequential OPeNDAP
-        # round-trips ≈ 3.5 s total.  Divisor=40 is a middle-ground between
-        # aggressive (25) and conservative (50) orbital track density estimates.
-        granules_per_3days = max(1.0, area_deg2 / 40.0)
-        t_override = 0.2 + (n_days // 3) * granules_per_3days * 3.5
-        t_model = max(t_model, t_override)
     elif source == "openaq":
         # Fitted R²=0.07 — model is nearly useless (density varies by location).
         # Assumes a moderately busy urban station: ~1 page of measurements per

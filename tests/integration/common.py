@@ -417,6 +417,12 @@ class AdapterSpec:
     """Set to False for adapters whose projected grid means that splitting a bbox into
     east/west halves does not produce an exact pixel-set union of the full bbox."""
 
+    supports_point_in_bbox_consistency: bool = True
+    """Set to False for adapters whose point query can return a match anywhere in the
+    matched granule/scene rather than only near the queried coordinates (e.g. a
+    nearest-pixel search with no distance bound), so its result isn't guaranteed to
+    fall inside any particular bbox around that same point."""
+
     use_small_bboxes: bool = False
     """Set to True for adapters with high data density (e.g. GBIF) so the common bbox tests
     use ``SMALL_BBOXES`` (1-degree) instead of ``STANDARD_BBOXES`` (4-degree). This keeps
@@ -432,6 +438,16 @@ class AdapterSpec:
 
     longer_date_range: bool = False
     """Set to True to extend the date range of queries to 3 years instead of 7 days."""
+
+    custom_locations: dict[str, LocationCase] | None = None
+    """Per-label ``LocationCase`` overrides, for adapters whose per-query cost profile
+    (e.g. one geometry group per pixel, or a fixed large per-request payload) makes the
+    shared ``STANDARD_LOCATIONS`` dates impractical. Same coordinates, adapter-specific
+    date window. Takes priority over ``longer_date_range`` for matching labels."""
+
+    custom_bboxes: dict[str, BboxCase] | None = None
+    """Per-label ``BboxCase`` overrides, analogous to ``custom_locations``. Takes
+    priority over ``use_small_bboxes``/``longer_date_range`` for matching labels."""
 
     def expects_data(self, location: LocationCase | BboxCase) -> bool:
         """Return whether this adapter is expected to return data for *location*."""

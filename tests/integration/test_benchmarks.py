@@ -29,9 +29,9 @@ import numpy as np
 import pytest
 
 from env_data_mcp.helpers import point_to_bbox
-from env_data_mcp.sources.emit import emit_bbox_query, emit_query
 from env_data_mcp.sources.essdive import essdive_bbox_query, essdive_point_query
 from env_data_mcp.sources.gbif import gbif_occurrence_bbox_query, gbif_occurrence_point_query
+from env_data_mcp.sources.nasa_emit import nasa_emit_bbox_query, nasa_emit_point_query
 from env_data_mcp.sources.nasa_power import (
     nasa_power_merra2_bbox_query,
     nasa_power_merra2_point_query,
@@ -77,7 +77,7 @@ _SCENARIOS: list[dict[str, Any]] = [
 ]
 
 # Sources that are skipped for the 1-month scenario to stay inside the 5-min budget
-_SLOW_SOURCES = {"oco2", "emit"}
+_SLOW_SOURCES = {"oco2", "nasa_emit"}
 
 
 # Small consistency-check bbox — 0.5° × 0.5° centred on the reference point
@@ -126,6 +126,16 @@ _EXTRA_LOCATIONS = _LOCATIONS[1:]  # additional locations beyond the primary Yak
 _BBOX_SIZES: list[dict[str, Any]] = [
     {"name": "0.5x0.5", "half": 0.25, "area_deg2": 0.25},  # 0.5° × 0.5°
     {"name": "2x2", "half": 1.0, "area_deg2": 4.0},  # 2° × 2°
+]
+
+# NASA EMIT reports one geometry group per ~60 m pixel and always downloads a
+# fixed-cost full-scene lat/lon array per granule regardless of bbox size, so
+# the shared _BBOX_SIZES above (each ~400K+ pixels here) would take many
+# minutes per query. Verified live (2026-09-29): these two sizes stay under
+# 25 s each while still varying area_deg2 for the OLS fit.
+_NASA_EMIT_BBOX_SIZES: list[dict[str, Any]] = [
+    {"name": "tiny", "half": 0.002, "area_deg2": 0.002**2 * 4},
+    {"name": "small", "half": 0.006, "area_deg2": 0.006**2 * 4},
 ]
 
 # Extended scenarios for Zarr-based sources — larger ranges give better OLS signal
@@ -1079,44 +1089,46 @@ def test_oco2_point_bbox_consistent(_earthdata_token):
 
 
 # ===========================================================================
-# EMIT — requires EARTHDATA_TOKEN; skip 1-month to stay within time budget
+# NASA EMIT: requires EARTHDATA_TOKEN; skip 1-month to stay within time budget
 # ===========================================================================
 
-# EMIT launched August 2022 — use 2023 dates (2019 queries return zero granules).
+# EMIT granule coverage is sparse (not the ~1-per-3-days ballpark used
+# elsewhere in this repo) — verified live (2026-09-29) at Yakima: these exact
+# windows contain real granules (1 on 2023-08-01, 2 across 2023-04-14..20).
 _EMIT_SCENARIOS: list[dict[str, Any]] = [
-    {"name": "1day", "start": "2023-08-19", "end": "2023-08-19", "n_days": 1},
-    {"name": "1week", "start": "2023-08-15", "end": "2023-08-21", "n_days": 7},
+    {"name": "1day", "start": "2023-08-01", "end": "2023-08-01", "n_days": 1},
+    {"name": "1week", "start": "2023-04-14", "end": "2023-04-20", "n_days": 7},
 ]
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
 @pytest.mark.parametrize("sc", _EMIT_SCENARIOS, ids=lambda s: s["name"])
-def test_emit_timing(sc, _earthdata_token):
-    result = emit_query(
+def test_nasa_emit_timing(sc, _earthdata_token):
+    result = nasa_emit_point_query(
         latitude=_LAT,
         longitude=_LON,
         start_date=sc["start"],
         end_date=sc["end"],
     )
-    _assert_or_skip(result, "emit")
-    _record("emit", sc["name"], sc["n_days"], result)
+    _assert_or_skip(result, "nasa_emit")
+    _record("nasa_emit", sc["name"], sc["n_days"], result)
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
-@pytest.mark.parametrize("bz", _BBOX_SIZES, ids=lambda b: b["name"])
+@pytest.mark.parametrize("bz", _NASA_EMIT_BBOX_SIZES, ids=lambda b: b["name"])
 @pytest.mark.parametrize("sc", _EMIT_SCENARIOS, ids=lambda s: s["name"])
-def test_emit_bbox_timing(sc, bz, _earthdata_token):
-    result = emit_bbox_query(
+def test_nasa_emit_bbox_timing(sc, bz, _earthdata_token):
+    result = nasa_emit_bbox_query(
         **_make_bbox(_LAT, _LON, bz["half"]),
         start_date=sc["start"],
         end_date=sc["end"],
     )
     _assert_or_skip(result, "emit/bbox")
     _record(
-        "emit",
+        "nasa_emit",
         f"{sc['name']}/bbox/{bz['name']}",
         sc["n_days"],
         result,
@@ -1128,35 +1140,35 @@ def test_emit_bbox_timing(sc, bz, _earthdata_token):
 @pytest.mark.integration
 @pytest.mark.benchmark
 @pytest.mark.parametrize("loc", _EXTRA_LOCATIONS, ids=lambda loc: loc["name"])
-def test_emit_extra_location_timing(loc, _earthdata_token):
-    result = emit_query(
+def test_nasa_emit_extra_location_timing(loc, _earthdata_token):
+    result = nasa_emit_point_query(
         latitude=loc["lat"],
         longitude=loc["lon"],
         start_date="2023-08-15",
         end_date="2023-08-21",
     )
     _assert_or_skip(result, f"emit/{loc['name']}")
-    _record("emit", "1week", 7, result, location=loc["name"])  # query window is Aug 15–21 (7 days)
+    _record("nasa_emit", "1week", 7, result, location=loc["name"])  # query window is Aug 15–21
     assert result["_meta"]["latency_s"] <= _MAX_LATENCY_S
 
 
 @pytest.mark.integration
 @pytest.mark.benchmark
-def test_emit_point_bbox_consistent(_earthdata_token):
-    pt = emit_query(
+def test_nasa_emit_point_bbox_consistent(_earthdata_token):
+    pt = nasa_emit_point_query(
         latitude=_LAT,
         longitude=_LON,
-        start_date="2023-08-19",
-        end_date="2023-08-19",
+        start_date="2023-04-14",
+        end_date="2023-04-20",
     )
-    bx = emit_bbox_query(
-        **_BBOX,
-        start_date="2023-08-19",
-        end_date="2023-08-19",
+    bx = nasa_emit_bbox_query(
+        **_make_bbox(_LAT, _LON, _NASA_EMIT_BBOX_SIZES[0]["half"]),
+        start_date="2023-04-14",
+        end_date="2023-04-20",
     )
     _assert_or_skip(pt, "emit/point")
     _assert_or_skip(bx, "emit/bbox")
-    _check_geo_overlap(pt["data"], bx["data"], "emit")
+    _check_nasa_emit_geo_overlap(pt["data"], bx["data"])
 
 
 # ===========================================================================
@@ -1217,6 +1229,30 @@ def _check_geo_overlap(
             f"{source}: no bbox record found within {_GEO_TOLERANCE_DEG}° of "
             f"reference point ({_LAT}, {_LON}); closest is {min(dists):.3f}°"
         )
+
+
+def _check_nasa_emit_geo_overlap(
+    point_data: list[dict[str, Any]],
+    bbox_data: list[dict[str, Any]],
+) -> None:
+    """Geo-overlap only, no count-ratio check.
+
+    NASA EMIT returns one geometry group per pixel, so a point query (>=1 pixel)
+    and a bbox query (dozens+ pixels) never have comparable counts the way other
+    sources' point vs. small-bbox results do.
+    """
+    if not point_data and not bbox_data:
+        pytest.skip("nasa_emit: both point and bbox returned no records — sparse coverage")
+    if not point_data:
+        pytest.skip("nasa_emit: point query returned no records — sparse coverage")
+    if not bbox_data:
+        pytest.skip("nasa_emit: bbox query returned no records — sparse coverage")
+    bbox_coords = _extract_coords(bbox_data)
+    dists = [sqrt((lat - _LAT) ** 2 + (lon - _LON) ** 2) for lat, lon in bbox_coords]
+    assert min(dists) <= _GEO_TOLERANCE_DEG, (
+        f"nasa_emit: no bbox record found within {_GEO_TOLERANCE_DEG}° of "
+        f"reference point ({_LAT}, {_LON}); closest is {min(dists):.3f}°"
+    )
 
 
 def _check_count_only(

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-24T17:43:33.285812+00:00",
+  "generated_at": "2026-09-29T19:19:55.396052+00:00",
   "note": "Phase 3 \u2014 multiple locations (Yakima WA, Manaus BR, Frankfurt DE), point + bbox queries. Model: t_est(n_days, area_deg2) = alpha + beta_n_days\u00b7n_days + beta_area_deg2\u00b7area_deg2 (seconds). Fit uses only observations with n_records > 0. All coefficients floored at 0 (latency cannot decrease with more data). Centroid-based sources (soilgrids only) have beta_area_deg2 forced to 0 before the floor. Regenerate: uv run pytest tests/integration/test_benchmarks.py -m integration",
   "locations": [
     {
@@ -22,12 +22,12 @@
     }
   ],
   "model": {
-    "emit": {
-      "alpha": 0.331,
-      "beta_n_days": 0.0,
+    "nasa_emit": {
+      "alpha": 10.08,
+      "beta_n_days": 1.5732,
       "beta_area_deg2": 0.0,
-      "r2": 0.2405,
-      "equation": "t \u2248 0.33 + 0.000\u00b7n_days + 0.0000\u00b7area_deg2"
+      "r2": 0.9872,
+      "equation": "t \u2248 10.08 + 1.573\u00b7n_days + 0.0000\u00b7area_deg2"
     },
     "essdive": {
       "alpha": 0.192,
@@ -1296,67 +1296,67 @@
         "n_records": 7
       }
     ],
-    "emit": [
+    "nasa_emit": [
       {
         "scenario": "1day",
         "n_days": 1,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.426597,
+        "latency_s": 12.434618,
         "success": true,
-        "n_records": 0
+        "n_records": 1
       },
       {
         "scenario": "1week",
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "yakima_wa",
-        "latency_s": 0.224119,
+        "latency_s": 21.462414,
         "success": true,
-        "n_records": 0
+        "n_records": 2
       },
       {
-        "scenario": "1day/bbox/0.5x0.5",
+        "scenario": "1day/bbox/tiny",
         "n_days": 1,
-        "area_deg2": 0.25,
+        "area_deg2": 1.6e-05,
         "location": "yakima_wa",
-        "latency_s": 0.239668,
+        "latency_s": 10.609274,
         "success": true,
-        "n_records": 0
+        "n_records": 4
       },
       {
-        "scenario": "1day/bbox/2x2",
+        "scenario": "1day/bbox/small",
         "n_days": 1,
-        "area_deg2": 4.0,
+        "area_deg2": 0.000144,
         "location": "yakima_wa",
-        "latency_s": 0.22379,
+        "latency_s": 10.662301,
         "success": true,
-        "n_records": 0
+        "n_records": 90
       },
       {
-        "scenario": "1week/bbox/0.5x0.5",
+        "scenario": "1week/bbox/tiny",
         "n_days": 7,
-        "area_deg2": 0.25,
+        "area_deg2": 1.6e-05,
         "location": "yakima_wa",
-        "latency_s": 0.364615,
+        "latency_s": 20.590339,
         "success": true,
-        "n_records": 0
+        "n_records": 29
       },
       {
-        "scenario": "1week/bbox/2x2",
+        "scenario": "1week/bbox/small",
         "n_days": 7,
-        "area_deg2": 4.0,
+        "area_deg2": 0.000144,
         "location": "yakima_wa",
-        "latency_s": 0.223512,
+        "latency_s": 19.97107,
         "success": true,
-        "n_records": 0
+        "n_records": 115
       },
       {
         "scenario": "1week",
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "manaus_br",
-        "latency_s": 0.234051,
+        "latency_s": 0.190051,
         "success": true,
         "n_records": 0
       },
@@ -1365,7 +1365,7 @@
         "n_days": 7,
         "area_deg2": 0.0,
         "location": "frankfurt_de",
-        "latency_s": 0.22885,
+        "latency_s": 0.202817,
         "success": true,
         "n_records": 0
       }

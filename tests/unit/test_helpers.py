@@ -357,7 +357,7 @@ class TestEstimateRuntime:
 
     def test_result_is_clamped_non_negative(self) -> None:
         # A source with large negative coefficients and 0 n_days/area should still be >= 0.
-        t = estimate_runtime("emit", n_days=0, area_deg2=0.0)
+        t = estimate_runtime("nasa_emit", n_days=0, area_deg2=0.0)
         assert t >= 0.0
 
     def test_oco2_override_applied(self) -> None:
@@ -365,17 +365,6 @@ class TestEstimateRuntime:
         # override = 2.84 + ceil(100/10) * 3.0 = 2.84 + 30 = 32.84
         t = estimate_runtime("oco2", n_days=100, area_deg2=0.0)
         assert t >= 32.84
-
-    def test_emit_override_applied(self) -> None:
-        # For a 30-day EMIT query at a point, override = 0.2 + (30//3)*1.0*3.5 = 35.2
-        t = estimate_runtime("emit", n_days=30, area_deg2=0.0)
-        assert t >= 35.2
-
-    def test_emit_override_area_aware(self) -> None:
-        # Larger bbox → more granules per 3-day window → higher estimate.
-        t_point = estimate_runtime("emit", n_days=30, area_deg2=0.0)
-        t_bbox = estimate_runtime("emit", n_days=30, area_deg2=100.0)
-        assert t_bbox > t_point
 
     def test_openaq_override_applied(self) -> None:
         # 100-day: override = 1.5 + 0.15*100 = 16.5 s
@@ -401,7 +390,7 @@ class TestEstimateRuntime:
 
     def test_all_9_sources_parseable(self) -> None:
         sources = [
-            "emit",
+            "nasa_emit",
             "essdive",
             "gbif",
             "nasa_power",

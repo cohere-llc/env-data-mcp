@@ -44,6 +44,8 @@ _MORE_TIME_LOCATIONS_BY_LABEL: dict[str, LocationCase] = {
 
 def _effective_bbox(spec: AdapterSpec, bbox: BboxCase) -> BboxCase:
     """Return the spec-appropriate version of *bbox*."""
+    if spec.custom_bboxes and bbox.label in spec.custom_bboxes:
+        return spec.custom_bboxes[bbox.label]
     if spec.use_small_bboxes:
         return _SMALL_BBOXES_BY_LABEL.get(bbox.label, bbox)
     if spec.longer_date_range:
@@ -53,6 +55,8 @@ def _effective_bbox(spec: AdapterSpec, bbox: BboxCase) -> BboxCase:
 
 def _effective_location(spec: AdapterSpec, loc: LocationCase) -> LocationCase:
     """Return the spec-approprate version of *loc*."""
+    if spec.custom_locations and loc.label in spec.custom_locations:
+        return spec.custom_locations[loc.label]
     if spec.longer_date_range:
         return _MORE_TIME_LOCATIONS_BY_LABEL.get(loc.label, loc)
     return loc
@@ -337,6 +341,8 @@ class TestBboxQuery:
         bbox_case: BboxCase,
     ) -> None:
         """Every (lat, lon) from a bbox-center point query appears in the full bbox result."""
+        if not spec.supports_point_in_bbox_consistency:
+            pytest.skip(f"{spec.name}: point query isn't guaranteed to stay near its coordinates")
         effective = _effective_bbox(spec, bbox_case)
         if not spec.expects_data(effective):
             pytest.skip(
